@@ -70,7 +70,7 @@ struct RequestItem: Identifiable {
                     guard !Task.isCancelled else { return }
                     do {
                         if try await api.finishLogin(flow) {
-                            self.loginURL=nil;self.loginPhrase="";self.isSignedIn=true;self.message="Link 登录成功。";await self.refreshAccount();if self.isSignedIn {self.load()};return
+                            self.loginURL=nil;self.loginPhrase="";self.isSignedIn=true;self.lastError="";self.message="Link 登录成功。";await self.refreshAccount();if self.isSignedIn {self.load()};return
                         }
                     } catch is LoginSlowDown { interval += 5 }
                 }

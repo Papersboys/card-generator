@@ -45,6 +45,7 @@ actor NativeLink {
     private let session:URLSession
     private var tokens:LinkTokens?
     private var ownsSession=false
+    private var sessionRevoked=false
     private let persistTokens:Bool
     private var refreshTask:Task<LinkTokens,Error>?
     private let clientID="lwlpk_U7Qy7ThG69STZk" // Public device-flow client from Stripe's MIT-licensed Link CLI.
@@ -59,6 +60,7 @@ actor NativeLink {
         self.tokens=testTokens
     }
     private func readTokens() throws -> LinkTokens {
+        guard !sessionRevoked else {throw LinkError(message:"Link 登录授权已失效，请重新登录。",requiresLogin:true)}
         if let tokens=tokens { return tokens }
         if let saved=try TokenStore.load() { tokens=saved; ownsSession=true; return saved }
         // Read-only compatibility: never rotate or write the CLI's shared refresh token.
@@ -84,7 +86,12 @@ actor NativeLink {
         }
         refreshTask=task
         defer { refreshTask=nil }
-        let renewed=try await task.value
+        let renewed:LinkTokens
+        do {renewed=try await task.value}
+        catch {
+            if (error as? LinkError)?.requiresLogin == true {sessionRevoked=true;tokens=nil}
+            throw error
+        }
         if ownsSession && persistTokens { try TokenStore.save(renewed) }
         tokens=renewed; return renewed.access_token
     }
@@ -97,7 +104,11 @@ actor NativeLink {
         let nested=data["error"] as? [String:Any] ?? [:]
         let message=data["error_description"] as? String ?? nested["message"] as? String ?? data["message"] as? String ?? data["error"] as? String ?? "请求失败"
         let code=data["error"] as? String ?? nested["code"] as? String ?? ""
-        return LinkError(message:"Link HTTP \(status): \(message)",requiresLogin:status==401 || ["invalid_grant","invalid_token","expired_token"].contains(code))
+        let lower=message.lowercased()
+        let revokedRefresh=(status==400 || status==401) && lower.contains("refresh_token") && (lower.contains("not active") || lower.contains("revoked"))
+        let needsLogin=status==401 || ["invalid_grant","invalid_token","expired_token"].contains(code) || revokedRefresh
+        let guidance=revokedRefresh ? "\nLink 登录授权已失效，请重新登录。" : ""
+        return LinkError(message:"Link HTTP \(status): \(message)"+guidance,requiresLogin:needsLogin)
     }
     private func form(_ path:String,_ fields:[String:String]) async throws -> (Int,[String:Any]) {
         var request=URLRequest(url:URL(string:"https://login.link.com"+path)!)
@@ -121,7 +132,7 @@ actor NativeLink {
             if code=="slow_down" { throw LoginSlowDown() }
         }
         guard (200..<300).contains(status) else { throw error(status,data) }
-        let saved=try decodeTokens(data);if persistTokens { try TokenStore.save(saved) };tokens=saved;ownsSession=true;return true
+        let saved=try decodeTokens(data);if persistTokens { try TokenStore.save(saved) };tokens=saved;ownsSession=true;sessionRevoked=false;return true
     }
     func request(_ path:String,method:String="GET",body:[String:Any]?=nil,retry:Bool=true) async throws -> Any {
         let token=try await accessToken()

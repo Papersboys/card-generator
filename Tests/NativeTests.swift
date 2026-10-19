@@ -2,6 +2,7 @@ import Foundation
 
 final class MockProtocol:URLProtocol {
     static var calls:[URLRequest]=[]
+    static var revokeRefresh=false
     static var rejectCreate=false
     static var emptyList=false
     static var requestStatus="approved"
@@ -23,7 +24,8 @@ final class MockProtocol:URLProtocol {
         if path=="/device/code" {
             payload=["device_code":"mock_device","user_code":"MOCK PHRASE","verification_uri":"https://app.link.com/login","expires_in":600,"interval":1]
         } else if path=="/device/token" {
-            payload=["access_token":"MOCK_NEW","refresh_token":"MOCK_REFRESH","expires_in":3600]
+            if Self.revokeRefresh {status=400;payload=["message":"refresh_token is not active: status: revoked"]}
+            else {payload=["access_token":"MOCK_NEW","refresh_token":"MOCK_REFRESH","expires_in":3600]}
         } else if Self.force401 && request.value(forHTTPHeaderField:"Authorization")=="Bearer MOCK_OLD" {
             status=401;payload=["error":["message":"Expired"]]
         } else {
@@ -96,6 +98,21 @@ final class MockProtocol:URLProtocol {
         let expiredModel=Model(api:expiredAPI)
         await expiredModel.refreshAccount()
         precondition(!expiredModel.isSignedIn && expiredModel.account==nil && !expiredModel.checkingAccount)
+        MockProtocol.revokeRefresh=true
+        let revokedAPI=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_OLD",refresh_token:"MOCK_REFRESH",expires_at:0),persistTokens:false)
+        let revokedModel=Model(api:revokedAPI)
+        revokedModel.requests=[RequestItem(raw:["id":"lsrq_mock","status":"approved"])]
+        revokedModel.detail=[("CVC","MOCK_CVC")]
+        await revokedModel.refreshAccount()
+        precondition(!revokedModel.isSignedIn && revokedModel.account==nil && revokedModel.detail.isEmpty && revokedModel.requests.isEmpty)
+        precondition(revokedModel.lastError.contains("revoked"))
+        let hasRevokedSession=await revokedAPI.hasSession()
+        precondition(!hasRevokedSession)
+        MockProtocol.revokeRefresh=false
+        revokedModel.login();await revokedModel.loginTask?.value
+        while revokedModel.busy {try await Task.sleep(nanoseconds:10_000_000)}
+        precondition(revokedModel.isSignedIn && revokedModel.account?.email=="example@example.com" && revokedModel.lastError.isEmpty)
+        print("PASS: revoked refresh token restores login and fresh authorization recovers the session")
         // Successful device authorization loads the verified profile immediately.
         model.login()
         await model.loginTask?.value

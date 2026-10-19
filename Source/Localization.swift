@@ -8,6 +8,7 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "Link 登录授权已失效，请重新登录。":"Your Link authorization is no longer valid. Please log in again.",
         "选择付款方式，或粘贴 ID":"Select a payment method or paste its ID",
         "例如 1500（$15.00 USD）":"e.g. 1500 ($15.00 USD)",
         "填写该币种的最小单位金额":"Enter an amount in this currency's minor units",
@@ -90,6 +91,6 @@ enum L10n {
         for (prefix,translation) in [("无法读取 Keychain 登录凭证（","Unable to read Keychain credentials ("),("无法保存 Keychain 登录凭证（","Unable to save Keychain credentials (")] {
             if value.hasPrefix(prefix) {return translation+value.dropFirst(prefix.count).replacingOccurrences(of:"）",with:")")}
         }
-        return value.replacingOccurrences(of:"请求失败",with:"Request failed")
+        return value.replacingOccurrences(of:"请求失败",with:"Request failed").replacingOccurrences(of:"Link 登录授权已失效，请重新登录。",with:"Your Link authorization is no longer valid. Please log in again.")
     }
 }

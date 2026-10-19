@@ -191,3 +191,5 @@ For `amount must be at least $0.50 usd`, enter at least `50` for USD. A rejected
 - One item per request, quantity fixed at 1.
 - No automatic merchant checkout, approval, launch at login, or refund operation.
 - Local ad-hoc signing, without Apple notarization.
+
+If `refresh_token is not active: status: revoked` appears, the saved refresh credential is no longer valid. From v2.5.7 onward, Log in to Link becomes available again; use it to authorize a fresh session. Do not share tokens.
