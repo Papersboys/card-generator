@@ -1,8 +1,29 @@
-# Link Card 2.0 — native macOS menu-bar app
+# Link Card
+
+A native macOS menu-bar app to create Link spend requests, approve them in Link, display virtual card details, and cancel unused requests. Built with SwiftUI, AppKit, and URLSession.
 
 Run `./build.sh`, then open **dist/LinkCard.app**. Use the credit-card icon in the macOS menu bar to open the window or quit. You can move the app to Applications.
 
 **No link-cli binary, Node.js, npm, shell helpers, or local server is required.** Requires Apple Silicon and macOS 13+.
+
+## Quick start
+
+Install Xcode and select its developer tools, then run:
+
+```bash
+git clone https://github.com/Papersboys/card-generator.git
+cd card-generator
+./build.sh
+open dist/LinkCard.app
+```
+
+To run the offline tests:
+
+```bash
+./test.sh
+```
+
+Build output is excluded from Git. To keep the app installed, move `dist/LinkCard.app` to your Applications folder.
 
 ## Login
 
@@ -30,3 +51,11 @@ The app has a local ad-hoc signature, not an Apple notarized distribution signat
 Build on Apple Silicon with Xcode using `./build.sh`. Run `./test.sh` for offline tests of the native API transport, authentication refresh, and device authorization. Tests use a mocked URLSession and do not read real login credentials or send network requests.
 
 API/auth protocol references: [Stripe Link SDK and CLI](https://github.com/stripe/link-cli). Stripe's MIT notice is included in `STRIPE-LICENSE.txt` and the app bundle.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE), copyright © 2026 Yuanxi Li.
+
+The Link API and authentication implementation follows Stripe's open-source Link SDK and CLI. Stripe's original MIT copyright and permission notice is preserved in [STRIPE-LICENSE.txt](STRIPE-LICENSE.txt) and included in the app bundle.
+
+This is an independent project and is not an official Stripe or Link application.
