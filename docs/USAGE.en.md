@@ -32,9 +32,19 @@ Closing the window leaves the app in the menu bar. Reopen it from the icon. The 
 
 Use **中文 / English** at the top of the window. Controls, menu-bar items, confirmations, card field labels, and existing status messages update immediately. Your choice survives restarts. Merchant names, purchase context, IDs, and card data are preserved.
 
+### Resize the window and edit fields
+
+These screenshots show **v2.5.1**. Drag a window edge to resize it: narrow windows use one form column and wider windows arrange fields into multiple columns. Scroll down to reach expiry, generated context, and the create button. Check the version in the footer; if the old form still appears, quit the old app before replacing it with the latest build.
+
+| Narrow single-column form | Scroll to the bottom |
+| --- | --- |
+| ![Chinese form at 540-point window width](images/responsive-narrow-zh.jpg) | ![Expiry, generated context, and create button remain accessible by scrolling](images/responsive-narrow-bottom-zh.jpg) |
+
+All text input fields support **⌘C Copy, ⌘V Paste, ⌘X Cut, ⌘A Select All, ⌘Z Undo, and ⇧⌘Z Redo**, also available through the macOS Edit menu. Click a field first; use ⌘A followed by paste to replace its contents. The payment-method ID can be pasted or edited after selecting a method. Context is generated automatically and can be selected and copied; it needs no manual entry.
+
 ## 2. Log in to Link
 
-1. Click **Log in to Link** at the top right.
+1. Click **Log in to Link** below the title.
 2. Click **Open Link authorization ↗** to open the official Link website.
 3. Sign in to your account and enter the app's authorization phrase if requested.
 4. Return to the app. The login button is replaced by **Logged in** and the name/email returned by Link.
@@ -91,6 +101,10 @@ The selected Valid until is included in the review dialog and sent as request `e
 2. Review and personally approve the request on the official Link page.
 3. Keep the app window open. The app checks every two seconds for up to ten minutes and retrieves card details once approved.
 4. If the display does not update, click **Refresh after approval**, or select the request and click **Show card details**.
+
+![Approve tab showing an earlier pending request, purchase context, and Link approval link; Chinese interface](images/approve-zh.jpg)
+
+**Return to an earlier request:** Open Approve, click Refresh list, and select a request to review its merchant URL, requested amount, and context. Use Get approval link if none is shown. Review request reloads its status and starts waiting for approval. Approved requests leave the pending list after refresh; use Requests / History to view their card details. An empty-state message appears when no requests need approval.
 
 The app does not approve purchases for you. Reaching the ten-minute polling limit only stops automatic checks; it does not cancel the request.
 
@@ -151,7 +165,7 @@ This is **spend-request history**. Row amounts are request amounts, not a dedica
 | --- | --- |
 | No active requests | Enable Include history or create a request |
 | No payment methods | Check the account, click Load, and follow any account/payment-method instructions returned by Link |
-| Create button is disabled | Check required fields, the 100-character context minimum, and whether another action is running |
+| Create button is disabled | Check required fields, whether another action is running |
 | Invalid amount or URL | Use positive integer minor units and a complete `http://` or `https://` URL |
 | `pending_approval`, with no card number | Open that request's approval link, approve it, then refresh |
 | Expired login or HTTP 401 | Use Log in to Link, then refresh |
