@@ -8,7 +8,46 @@ Link Card is a macOS menu-bar app for creating Link spend requests, retrieving a
 
 For first-time setup, follow the [installation guide](INSTALL.en.md).
 
-## 1. Launch and menu bar
+## 1. Core feature: view and copy Visa virtual card details
+
+**After approval, see the card number, CVC/CVV, expiration date, and billing address, ready to copy into the merchant's checkout.** The example shows a Visa virtual card; the actual network and available fields depend on Link's response.
+
+![Card details shown in Chinese with a fictional number, CVC, expiration, billing address, and validity time](images/card-details-zh.jpg)
+
+*Every account and card field shown is fictional, not a real payment credential.*
+
+Missing fields display as `—`:
+
+| Field | Meaning |
+| --- | --- |
+| Card number | Virtual card number returned by Link |
+| CVC | Virtual card security code, also called CVV |
+| Expiration | Card expiration month/year |
+| Billing address | Billing address returned by Link |
+| Brand | Card network |
+| Valid until | The actual credential deadline returned by Link; missing values display as `—`. This is separate from request expiry and card expiration |
+| Request expiry | The request expiry returned by Link |
+| Spend request ID | The request ID, typically starting with `lsrq_` |
+| Status | Current request status |
+| Merchant / Merchant URL | Merchant information supplied when creating the request |
+| Context | Purchase purpose |
+| Created at | Request creation time |
+
+### Already have an approved request?
+
+1. Select **Requests / History**.
+2. Click **Refresh list**.
+3. Select the request.
+4. Click **Show card details**.
+
+Select text and press **⌘C** to copy it to your own checkout form. The app does not automatically copy or fill merchant forms. Full card numbers and CVCs appear directly in the window.
+
+Click **Clear card details** to clear the display. Closing the window also clears it and stops approval checks, without canceling the server-side request. Card responses use an ephemeral network session and are not written to credential JSON files.
+
+
+First time here? Continue with launch, login, creation, and approval below. Pending requests do not expose full card details.
+
+## 2. Launch and menu bar
 
 Open the installed **LinkCard.app** from Applications. If you prefer trying a source build directly:
 
@@ -50,7 +89,7 @@ Use Check for Updates… and the Automatically check for updates toggle in the f
 
 ![Successful check of the public signed feed: already up to date](images/update-check-en.jpg)
 
-## 2. Log in to Link
+## 3. Log in to Link
 
 1. Click **Log in to Link** below the title.
 2. Click **Open Link authorization ↗** to open the official Link website.
@@ -73,7 +112,7 @@ After signing in, click **Log out** beside the account information. This removes
 
 This signs out of this app only. It does not modify CLI configuration, sign out of Link in your browser, or cancel existing requests. Manage connections in Link if you want to revoke the server-side authorization.
 
-## 3. Create a spend request
+## 4. Create a spend request
 
 First confirm the item and final checkout total on the merchant's website. Then:
 
@@ -112,7 +151,7 @@ Interpret the amount together with its currency: `10000` in `usd` means $100.00,
 
 This client does not support custom request expiry. Creation omits `expires_at`; card expiration and credential validity are determined by Link.
 
-## 4. Approve and automatically show card details
+## 5. Approve and automatically show card details
 
 1. After creation, the **Approve** tab opens. Click **Approve in Link ↗**. You can also select earlier pending requests here to review their merchant, amount, and generated context. If no link is available yet, click **Get approval link**.
 2. Review and personally approve the request on the official Link page.
@@ -124,38 +163,6 @@ This client does not support custom request expiry. Creation omits `expires_at`;
 **Return to an earlier request:** Open Approve, click Refresh list, and select a request to review its merchant URL, requested amount, and context. Use Get approval link if none is shown. Review request reloads its status and starts waiting for approval. Approved requests leave the pending list after refresh; use Requests / History to view their card details. An empty-state message appears when no requests need approval.
 
 The app does not approve purchases for you. Reaching the ten-minute polling limit only stops automatic checks; it does not cancel the request.
-
-## 5. View or copy card details
-
-1. Select **Requests / History**.
-2. Click **Refresh list**.
-3. Select the request.
-4. Click **Show card details**.
-
-![Card details shown in Chinese with a fictional number, CVC, expiration, billing address, and validity time](images/card-details-zh.jpg)
-
-*Every account and card field shown is fictional, not a real payment credential.*
-
-Missing fields display as `—`:
-
-| Field | Meaning |
-| --- | --- |
-| Spend request ID | The request ID, typically starting with `lsrq_` |
-| Status | Current request status |
-| Merchant / Merchant URL | Merchant information supplied when creating the request |
-| Context | Purchase purpose |
-| Created at | Request creation time |
-| Card number | Virtual card number returned by Link |
-| CVC | Virtual card security code, also called CVV |
-| Brand | Card network |
-| Expiration | Card expiration month/year |
-| Billing address | Billing address returned by Link |
-| Request expiry | The request expiry returned by Link |
-| Valid until | The actual credential deadline returned by Link; missing values display as `—`. This is separate from request expiry and card expiration |
-
-Select text and press **⌘C** to copy it to your own checkout form. The app does not automatically copy or fill merchant forms. Full card numbers and CVCs appear directly in the window.
-
-Click **Clear card details** to clear the display. Closing the window also clears it and stops approval checks, without canceling the server-side request. Card responses use an ephemeral network session and are not written to credential JSON files.
 
 ## 6. Cancel a request
 

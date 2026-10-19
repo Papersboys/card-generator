@@ -12,6 +12,14 @@
 
 **无需安装 link-cli、Node.js、npm、Shell helper 或本地服务。** 需要 Apple Silicon 和 macOS 13 或更新版本。
 
+## 核心功能：显示 Visa 虚拟卡信息
+
+**批准后直接查看并复制卡号、CVC／CVV、有效期和账单地址，用于商家结账。** 无需从终端 JSON 中寻找字段；也可以选中已有的批准请求，随时重新读取卡信息。实际卡组织和字段以 Link 返回为准。
+
+![Visa 虚拟卡的卡号、CVC、有效期和账单地址；均为演示数据](docs/images/card-details-zh.jpg)
+
+图中为虚构演示数据，不能用于付款。[从查看卡信息开始阅读教程](docs/USAGE.zh-CN.md#1-核心功能显示与复制-visa-虚拟卡)。
+
 ## 文档
 
 | 文档 | 简体中文 | English |

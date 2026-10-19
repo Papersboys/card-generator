@@ -12,6 +12,14 @@ Download the ZIP, extract it, and drag **LinkCard.app** into Applications. Open 
 
 **No link-cli binary, Node.js, npm, shell helpers, or local server is required.** Requires Apple Silicon and macOS 13+.
 
+## Core feature: view Visa virtual card details
+
+**After approval, view and copy the card number, CVC/CVV, expiration date, and billing address for merchant checkout.** No terminal JSON to search through. Select an existing approved request to retrieve its card details again. The actual network and available fields depend on Link's response.
+
+![Visa card number, CVC, expiration, and billing address; fictional demonstration data](docs/images/card-details-zh.jpg)
+
+All card details shown are fictional and cannot be used for payment. [Start the guide with card details](docs/USAGE.en.md#1-core-feature-view-and-copy-visa-virtual-card-details).
+
 ## Documentation
 
 | Guide | English | 简体中文 |
