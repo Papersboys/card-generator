@@ -6,6 +6,11 @@ struct RequestItem: Identifiable {
     var id:String { str(raw,"id") }
     var merchant:String { str(raw,"merchant_name") }
     var status:String { str(raw,"status") }
+    var isActive:Bool {
+        if ["canceled","cancelled","expired","completed","failed","rejected","declined","revoked"].contains(status) {return false}
+        if let expiry=Double(str(raw,"expires_at")),expiry<=Date().timeIntervalSince1970 {return false}
+        return true
+    }
     var needsApproval:Bool { status == "pending_approval" }
     var approvalLink:URL? {
         guard needsApproval, let url=URL(string:str(raw,"approval_url")), url.scheme == "https", url.host == "app.link.com" else {return nil}
@@ -38,7 +43,7 @@ struct RequestItem: Identifiable {
     }
     func handle(_ error:Error) {
         if (error as? LinkError)?.requiresLogin == true {
-            isSignedIn=false;account=nil;detail=[];methods=[];requests=[]
+            isSignedIn=false;account=nil;detail=[];methods=[];requests=[];createdIDs=[]
             approvalWatch?.cancel();pendingID="";approvalURL=""
         }
         message=error.localizedDescription
@@ -50,7 +55,7 @@ struct RequestItem: Identifiable {
     func login() {
         guard !loggingIn else { return }
         loggingIn=true;message="";loginURL=nil;loginPhrase=""
-        approvalWatch?.cancel();detail=[];requests=[];approvalURL="";pendingID=""
+        approvalWatch?.cancel();detail=[];requests=[];createdIDs=[];approvalURL="";pendingID=""
         loginTask=Task {
             defer { self.loggingIn=false }
             do {
@@ -83,6 +88,7 @@ struct RequestItem: Identifiable {
     @Published var pendingID = ""
     @Published var lastCreatedID:String?
     private var canceledIDs=Set<String>()
+    private var createdIDs=Set<String>()
     var approvalWatch: Task<Void,Never>?
     func watchApproval(_ id:String) {
         approvalWatch?.cancel()
@@ -116,7 +122,20 @@ struct RequestItem: Identifiable {
     func load() { perform {
         let result = try await self.api.list(history:self.history)
         var seen = Set<String>()
-        self.requests = objects(result).filter { str($0,"id").hasPrefix("lsrq_") && seen.insert(str($0,"id")).inserted }.map { RequestItem(raw:$0) }
+        var loaded=objects(result).filter { str($0,"id").hasPrefix("lsrq_") && seen.insert(str($0,"id")).inserted }.map { RequestItem(raw:$0) }
+        // A newly created request can be readable by ID before it appears in the list.
+        // Reconcile against the individual resource rather than dropping it on refresh.
+        for id in self.createdIDs.sorted() where !seen.contains(id) {
+            guard let existing=self.requests.first(where:{$0.id==id}), !self.canceledIDs.contains(id) else {continue}
+            let response=try await self.api.retrieve(id)
+            guard let fresh=objects(response).first(where:{str($0,"id")==id}) else {throw LinkError(message:"无法确认新请求状态，请稍后刷新。")}
+            var merged=existing.raw
+            for (key,value) in fresh {merged[key]=value}
+            let item=RequestItem(raw:merged)
+            if self.history || item.isActive {loaded.insert(item,at:0)}
+        }
+        self.requests=loaded
+
         if self.requests.isEmpty { self.message = self.history ? "没有历史请求。" : "没有活跃请求；可打开包含历史，或创建新请求。" }
     } }
     func loadMethods() { perform {
@@ -176,11 +195,18 @@ struct RequestItem: Identifiable {
         let result = try await self.api.create(body)
         guard let request = objects(result).first(where:{str($0,"id").hasPrefix("lsrq_")}) else { throw LinkError(message:"未返回 spend request ID") }
         let id = str(request,"id")
+        self.createdIDs.insert(id)
+        self.requests.removeAll{$0.id==id}
         self.requests.insert(RequestItem(raw:request),at:0)
         self.approvalURL=str(request,"approval_url")
         self.pendingID=str(request,"status")=="pending_approval" ? id : ""
         self.lastCreatedID=id
-        try await self.retrieve(id,fallback:request)
-        if !self.pendingID.isEmpty { self.watchApproval(id) }
+        if !self.pendingID.isEmpty {
+            self.detail=[]
+            self.message="请求已创建，请在 Link 中批准。"
+            self.watchApproval(id)
+        } else {
+            try await self.retrieve(id,fallback:request)
+        }
     } }
 }

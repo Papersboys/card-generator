@@ -2,6 +2,8 @@ import Foundation
 
 final class MockProtocol:URLProtocol {
     static var calls:[URLRequest]=[]
+    static var emptyList=false
+    static var requestStatus="approved"
     static var force401=false
     static var pollCount=0
     static var profileUnavailable=false
@@ -36,9 +38,9 @@ final class MockProtocol:URLProtocol {
                         while true {let length=stream.read(&buffer,maxLength:buffer.count);if length<=0 {break};body.append(contentsOf:buffer.prefix(length))}
                     }
                     Self.lastCreateBody=(try? JSONSerialization.jsonObject(with:body)) as? [String:Any] ?? [:]
-                    payload=["id":"lsrq_mock","status":"pending_approval","approval_url":"https://app.link.com/activity/approve/lsrq_mock"]}
-                else {payload=["data":[["id":"lsrq_mock","status":"approved"]]]}
-            case "/spend_requests/lsrq_mock":payload=["id":"lsrq_mock","status":"approved","card":["number":"MOCK_NUMBER","cvc":"MOCK_CVC","exp_month":12,"exp_year":2030]]
+                    payload=["id":"lsrq_mock","status":Self.requestStatus,"approval_url":"https://app.link.com/activity/approve/lsrq_mock"]}
+                else {payload=["data":Self.emptyList ? [] : [["id":"lsrq_mock","status":"approved"]]]}
+            case "/spend_requests/lsrq_mock":payload=["id":"lsrq_mock","status":Self.requestStatus,"card":["number":"MOCK_NUMBER","cvc":"MOCK_CVC","exp_month":12,"exp_year":2030]]
             case "/spend_requests/lsrq_mock/cancel":payload=["id":"lsrq_mock","status":Self.rejectCancel ? "approved" : "canceled"]
             default:status=404;payload=["message":"Not found"]
             }
@@ -126,6 +128,24 @@ final class MockProtocol:URLProtocol {
         fresh.cancel(fresh.requests[0]);try await idle(fresh)
         precondition(fresh.requests.isEmpty && fresh.detail.isEmpty)
         precondition(!RequestItem(raw:["status":"expired"]).canCancel)
+        let delayed=Model(api:api)
+        MockProtocol.emptyList=true;MockProtocol.requestStatus="pending_approval"
+        delayed.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)
+        try await idle(delayed)
+        precondition(delayed.requests.count==1 && delayed.requests[0].needsApproval && !delayed.approvalURL.isEmpty)
+        precondition(delayed.message=="请求已创建，请在 Link 中批准。")
+        delayed.approvalWatch?.cancel()
+        delayed.load();try await idle(delayed)
+        precondition(delayed.requests.count==1 && delayed.requests[0].needsApproval && delayed.requests[0].approvalLink != nil)
+        precondition(!delayed.message.contains("没有活跃"))
+        MockProtocol.requestStatus="approved"
+        delayed.load();try await idle(delayed)
+        precondition(delayed.requests.count==1 && delayed.requests[0].status=="approved")
+        MockProtocol.requestStatus="expired"
+        delayed.load();try await idle(delayed)
+        precondition(delayed.requests.isEmpty)
+        MockProtocol.emptyList=false;MockProtocol.requestStatus="approved"
+        print("PASS: newly created requests survive list delay, preserve approval links, and reconcile terminal status")
         print("PASS: custom/default expiry seconds, past-date rejection, server-confirmed cancellation, credential cleanup, and active/history list behavior")
         let fallback=SignedInAccount(["first_name":"Example","last_name":"User"])
         precondition(fallback.name=="Example User" && fallback.email.isEmpty)
