@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+import json,subprocess,sys
+
+def run(args):
+ p=subprocess.run(['link-cli','spend-request',*args,'--format','json'],capture_output=True,text=True)
+ if p.returncode:raise RuntimeError(p.stderr.strip() or p.stdout.strip() or 'Link CLI failed')
+ data=json.loads(p.stdout)
+ if isinstance(data,dict) and data.get('code') and data.get('message'):raise RuntimeError(data['message'])
+ return data
+
+def walk(data):
+ if isinstance(data,dict):
+  yield data
+  for value in data.values():yield from walk(value)
+ elif isinstance(data,list):
+  for value in data:yield from walk(value)
+
+def main():
+ if len(sys.argv)>2:raise RuntimeError('Usage: link-card cancel [spend-request-id]')
+ if len(sys.argv)==2 and sys.argv[1] in ('--help','-h'):
+  print('Usage: link-card cancel [spend-request-id]');return
+ if len(sys.argv)==2:ident=sys.argv[1]
+ else:
+  seen=set();requests=[]
+  for obj in walk(run(['list'])):
+   ident=obj.get('id')
+   if isinstance(ident,str) and ident.startswith('lsrq_') and ident not in seen:
+    seen.add(ident);requests.append(obj)
+  if not requests:print('No active spend requests.');return
+  for i,r in enumerate(requests,1):
+   print(f"{i}. {r.get('merchant_name','Unknown merchant')} | {r.get('amount','?')} {r.get('currency','')} minor units | {r.get('status','unknown')} | {r['id']}")
+  while True:
+   choice=input('Select request number (q to quit): ').strip()
+   if choice.lower()=='q':return
+   if choice.isdigit() and 1<=int(choice)<=len(requests):ident=requests[int(choice)-1]['id'];break
+   print('Enter a listed number.')
+ if not ident.startswith('lsrq_'):raise RuntimeError('Expected a spend-request ID beginning with lsrq_.')
+ if input(f'Cancel {ident}? Type yes to confirm: ').strip().lower()!='yes':print('Cancelled locally; request unchanged.');return
+ print(json.dumps(run(['cancel',ident]),indent=2))
+
+try:main()
+except (KeyboardInterrupt,EOFError):print('\nStopped; no further action taken.',file=sys.stderr);sys.exit(130)
+except Exception as e:print(f'Error: {e}',file=sys.stderr);sys.exit(1)

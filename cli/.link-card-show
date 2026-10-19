@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+
+usage() {
+  cat <<'EOF'
+Usage: link-card show [--path] [--delete] <spend-request-id>
+
+Retrieve a Link spend-request card response into a mode-600 JSON file.
+Print the complete response, including full card number and CVC.
+
+Options:
+  --path     Print the saved JSON file path after retrieval.
+  --delete   Delete the saved JSON file after printing the response.
+  -h, --help Show this help message.
+
+Full card details will be visible in terminal scrollback.
+EOF
+}
+
+show_path=false
+delete_after=false
+request_id=""
+
+while (($#)); do
+  case "$1" in
+    --path) show_path=true ;;
+    --delete) delete_after=true ;;
+    -h|--help) usage; exit 0 ;;
+    --) shift; break ;;
+    -*) printf 'Unknown option: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
+    *)
+      if [[ -n "$request_id" ]]; then
+        printf 'Only one spend-request ID may be supplied.\n\n' >&2
+        usage >&2
+        exit 2
+      fi
+      request_id="$1"
+      ;;
+  esac
+  shift
+done
+
+if (($#)); then
+  if [[ -n "$request_id" || $# -ne 1 ]]; then
+    printf 'Only one spend-request ID may be supplied.\n\n' >&2
+    usage >&2
+    exit 2
+  fi
+  request_id="$1"
+fi
+
+if [[ -z "$request_id" ]]; then
+  usage >&2
+  exit 2
+fi
+
+if ! command -v link-cli >/dev/null 2>&1; then
+  printf 'Error: link-cli is not installed or is not on PATH.\n' >&2
+  exit 127
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  printf 'Error: jq is required to display the card response.\n' >&2
+  exit 127
+fi
+
+safe_id=${request_id//[^A-Za-z0-9._-]/_}
+output_dir="${TMPDIR:-/tmp}/link-card"
+output_file="${output_dir}/${safe_id}.json"
+
+umask 077
+mkdir -p "$output_dir"
+chmod 700 "$output_dir"
+
+cli_output=$(mktemp "$output_dir/cli-output.XXXXXX")
+trap 'rm -f -- "$cli_output"' EXIT
+
+if link-cli spend-request retrieve "$request_id" \
+  --include card \
+  --output-file "$output_file" \
+  --force \
+  --format json >"$cli_output" 2>&1; then
+  :
+else
+  status=$?
+  printf 'Card retrieval failed (exit %s):\n' "$status" >&2
+  cat "$cli_output" >&2
+  exit "$status"
+fi
+
+if [[ ! -s "$output_file" ]]; then
+  printf 'No card credentials were saved. Link CLI returned:\n' >&2
+  cat "$cli_output" >&2
+  printf '\nUse the spend-request ID from creation, and confirm approval completed.\n' >&2
+  exit 1
+fi
+chmod 600 "$output_file"
+if ! jq -e 'type == "object" or type == "array"' "$output_file" >/dev/null; then
+  printf 'Saved response is empty or invalid JSON.\n' >&2
+  exit 1
+fi
+python3 "$(dirname "$0")/_link_card_display.py" "$output_file" "$cli_output" "$request_id"
+
+if [[ "$show_path" == true ]]; then
+  printf 'Saved to: %s\n' "$output_file"
+fi
+
+if [[ "$delete_after" == true ]]; then
+  rm -f -- "$output_file"
+  printf 'Deleted saved response.\n'
+fi

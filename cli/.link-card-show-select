@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+import argparse,json,os,subprocess,sys
+from pathlib import Path
+
+def walk(value):
+    if isinstance(value,dict):
+        yield value
+        for child in value.values():yield from walk(child)
+    elif isinstance(value,list):
+        for child in value:yield from walk(child)
+
+def main():
+    parser=argparse.ArgumentParser(prog='link-card show',description='Select a spend request and print full card details, including CVC and expiration.')
+    parser.add_argument('--history',action='store_true',help='Include past and expired requests')
+    parser.add_argument('--path',action='store_true',help='Print saved response path')
+    parser.add_argument('--delete',action='store_true',help='Delete saved response after printing')
+    parser.add_argument('request_id',nargs='?')
+    args=parser.parse_args()
+    ident=args.request_id
+    history=args.history
+    while not ident:
+        command=['link-cli','spend-request','list','--format','json']
+        if history:command.append('--include-history')
+        result=subprocess.run(command,capture_output=True,text=True)
+        if result.returncode:raise RuntimeError(result.stderr.strip() or result.stdout.strip() or 'Could not list requests')
+        data=json.loads(result.stdout)
+        if isinstance(data,dict) and data.get('code') and data.get('message'):raise RuntimeError(data['message'])
+        seen=set();requests=[]
+        for obj in walk(data):
+            key=obj.get('id')
+            if isinstance(key,str) and key.startswith('lsrq_') and key not in seen:
+                seen.add(key);requests.append(obj)
+        print('\n'+('All' if history else 'Active')+' spend requests:')
+        if not requests:print('No requests found.')
+        for i,r in enumerate(requests,1):
+            print(f"{i}. {r.get('merchant_name','Unknown merchant')} | {r.get('amount','?')} {r.get('currency','')} minor units | {r.get('status','unknown')} | {r['id']}")
+        while True:
+            choice=input('Select number, h for history, or q to quit: ').strip().lower()
+            if choice=='q':return
+            if choice=='h':history=True;break
+            if choice.isdigit() and 1<=int(choice)<=len(requests):
+                ident=requests[int(choice)-1]['id'];break
+            print('Enter a listed number, h, or q.')
+    forwarded=[]
+    if args.path:forwarded.append('--path')
+    if args.delete:forwarded.append('--delete')
+    script=Path(__file__).resolve().with_name('.link-card-show')
+    # Run as a child so the selection prompt and shell retrieval share stdin.
+    raise SystemExit(subprocess.call(['bash',str(script),*forwarded,ident]))
+
+if __name__=='__main__':
+    try:main()
+    except (KeyboardInterrupt,EOFError):print('\nStopped.',file=sys.stderr);sys.exit(130)
+    except Exception as e:print(f'Error: {e}',file=sys.stderr);sys.exit(1)

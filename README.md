@@ -133,3 +133,7 @@ The Link API and authentication implementation follows Stripe's open-source Link
 This is an independent project and is not an official Stripe or Link application.
 
 Automatic updates use [Sparkle](https://sparkle-project.org/); its license is preserved in [ThirdParty/Sparkle-LICENSE.txt](ThirdParty/Sparkle-LICENSE.txt). See [update publishing](docs/UPDATES.md) for maintainers.
+
+## link-card CLI
+
+Terminal helper: download `link-card-cli.tar.gz` from [Releases](https://github.com/Papersboys/card-generator/releases/latest/download/link-card-cli.tar.gz). See [CLI installation and commands](cli/README.md). Requires `link-cli`, Python 3, and jq; packaged separately from the app.

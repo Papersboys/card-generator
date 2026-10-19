@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+import json, os, shutil, subprocess, sys, tempfile
+from _link_card_display import render
+
+def ask(label, default=None):
+    while True:
+        v=input(label + (f' [{default}]' if default is not None else '') + ': ').strip()
+        if not v and default is not None: return str(default)
+        if v: return v
+
+def run(args):
+    p=subprocess.run(['link-cli',*args,'--format','json'],capture_output=True,text=True)
+    if p.returncode:
+        raise RuntimeError(p.stderr.strip() or p.stdout.strip() or f'CLI exited {p.returncode}')
+    try: return json.loads(p.stdout)
+    except ValueError: raise RuntimeError('CLI returned invalid JSON: '+p.stdout)
+
+def objects(x):
+    if isinstance(x,dict):
+        yield x
+        for v in x.values(): yield from objects(v)
+    elif isinstance(x,list):
+        for v in x: yield from objects(v)
+
+def main():
+    if not shutil.which('link-cli'): raise RuntimeError('link-cli is not on PATH.')
+    methods=[]
+    try:
+        data=run(['payment-methods','list'])
+        if isinstance(data,dict) and data.get('code') and data.get('message'): raise RuntimeError(data['message'])
+        seen=set()
+        for obj in objects(data):
+            ident=obj.get('id') or obj.get('payment_method_id')
+            if isinstance(ident,str) and ident not in seen and (ident.startswith(('pm_','csmrpd_')) or 'card' in obj or 'last4' in obj):
+                methods.append((ident,obj)); seen.add(ident)
+    except RuntimeError as e: print('Could not list payment methods:',e,file=sys.stderr)
+    if methods:
+        print('\nPayment methods:')
+        for i,(ident,obj) in enumerate(methods,1):
+            card=next((o for o in objects(obj) if 'last4' in o),{})
+            print(f"  {i}. {card.get('brand',obj.get('type','card'))} …{card.get('last4','????')} ({ident})")
+        while True:
+            choice=ask('Choose payment method number')
+            if choice.isdigit() and 1<=int(choice)<=len(methods):
+                payment=methods[int(choice)-1][0];break
+            print('Enter a listed number.')
+    else: payment=ask('Payment-method ID (from link-cli payment-methods list)')
+    merchant=ask('Merchant name','Costco')
+    while True:
+        url=ask('Merchant URL','https://www.costco.com')
+        if url.startswith(('https://','http://')): break
+        print('Enter a complete http(s) URL.')
+    currency=ask('Currency','usd').lower()
+    print('Enter amounts in minor units: USD $500 = 50000 cents.')
+    while True:
+        amount=ask('Final checkout total in minor units','50000')
+        if amount.isdigit() and int(amount)>0: break
+        print('Enter a positive whole number.')
+    item=ask('Item description','Costco Shop Card')
+    while True:
+        quantity=ask('Quantity','1')
+        if quantity.isdigit() and int(quantity)>0: break
+    while True:
+        unit=ask('Unit price in minor units',str(int(amount)//int(quantity)))
+        if unit.isdigit() and int(unit)>0: break
+    default_context=f'Buying {quantity} {item} from {url} for personal use, funded by my selected payment method saved in Link. Final checkout total is {amount} minor units in {currency.upper()}.'
+    while True:
+        context=ask('Purchase context (at least 100 characters)',default_context)
+        if len(context)>=100:break
+        print('Please provide at least 100 characters.')
+    print(f'\nMerchant: {merchant}\nURL: {url}\nPayment method: {payment}\nItems: {quantity} × {item}, unit price {unit}\nTotal: {amount} {currency.upper()} minor units\nContext: {context}')
+    if ask('Create this spend request and request approval? (yes/no)','no').lower()!='yes':
+        print('Cancelled.');return
+    # Restrict credentials to a private temporary directory and delete after display.
+    os.umask(0o077)
+    with tempfile.TemporaryDirectory(prefix='link-create-') as folder:
+        path=os.path.join(folder,'card.json')
+        args=['spend-request','create','--payment-method-id',payment,'--credential-type','card','--merchant-name',merchant,'--merchant-url',url,'--currency',currency,'--context',context,'--amount',amount,'--line-item',f'name:{item},unit_amount:{unit},quantity:{quantity}','--total',f'type:total,display_text:Total,amount:{amount}','--request-approval','--output-file',path]
+        print('\nCreating request. Complete Link approval when prompted; waiting for the CLI…',flush=True)
+        result=run(args)
+        requests=[o for o in objects(result) if isinstance(o.get('id'),str) and o['id'].startswith('lsrq_')]
+        request=requests[0] if requests else {}
+        request_id=request.get('id')
+        if request_id: print('Spend-request ID:',request_id,flush=True)
+        approval=request.get('approval_url')
+        if approval: print('Approve this request in Link: '+approval,flush=True)
+        if request_id:
+            print('Waiting for approval and retrieving card credentials…',flush=True)
+            result=run(['spend-request','retrieve',request_id,'--interval','2','--max-attempts','300','--include','card','--output-file',path,'--force'])
+
+        if not os.path.isfile(path) or not os.path.getsize(path):
+            render(result,request_id=request_id)
+            print('\nNo card credentials were returned.');return
+        with open(path) as f:card=json.load(f)
+        print('\nFull card details (visible in terminal scrollback):')
+        render(result,card,request_id)
+
+if __name__=='__main__':
+    try: main()
+    except (KeyboardInterrupt,EOFError): print('\nCancelled.',file=sys.stderr);sys.exit(130)
+    except Exception as e: print(f'Error: {e}',file=sys.stderr);sys.exit(1)

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+bin_dir=$(cd -- "$(dirname -- "$0")" && pwd)
+usage() {
+  cat <<'EOF'
+Usage:
+  link-card create
+  link-card show [--path] [--delete] [spend-request-id]
+  link-card cancel [spend-request-id]
+  link-card history [--path] [--delete]
+
+create  Select a payment method, enter purchase details, and request approval.
+show    Select a request and print full card details, including CVC and expiration.
+cancel  Select an active request or supply its ID to cancel it.
+history List all requests, including past ones, and select one to show.
+
+Full card details will be visible in terminal scrollback.
+EOF
+}
+case "${1:-}" in
+  create)
+    shift
+    if (($#)); then printf 'Usage: link-card create\n' >&2; exit 2; fi
+    exec python3 "$bin_dir/.link-card-create" ;;
+  show) shift; exec python3 "$bin_dir/.link-card-show-select" "$@" ;;
+  history) shift; exec python3 "$bin_dir/.link-card-show-select" --history "$@" ;;
+  cancel) shift; exec python3 "$bin_dir/link-card-cancel" "$@" ;;
+  ''|-h|--help) usage ;;
+  *) printf 'Unknown command: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
+esac

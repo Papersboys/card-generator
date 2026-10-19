@@ -133,3 +133,7 @@ API 和授权实现参考 Stripe 的开源 Link SDK 与 CLI；原始 MIT 版权�
 这是独立项目，不是 Stripe 或 Link 官方 App。
 
 自动更新采用 [Sparkle](https://sparkle-project.org/)，许可声明保留在 [ThirdParty/Sparkle-LICENSE.txt](ThirdParty/Sparkle-LICENSE.txt)。维护者发布流程见[更新发布说明](docs/UPDATES.md)。
+
+## link-card CLI
+
+终端工具：从 [Release 下载 link-card CLI](https://github.com/Papersboys/card-generator/releases/latest/download/link-card-cli.tar.gz)，详见 [CLI 安装与使用](cli/README.md#中文)。需要 `link-cli`、Python 3 和 jq，与免 CLI 依赖的 macOS App 分开打包。
