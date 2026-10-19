@@ -103,7 +103,7 @@ API 和授权协议参考 [Stripe Link SDK 与 CLI](https://github.com/stripe/li
 
 ## 许可证
 
-项目采用 [MIT License](LICENSE)，版权 © 2026 Yuanxi Li。
+项目采用 [Apache License 2.0](LICENSE)，版权 © 2026 Yuanxi Li。
 
 API 和授权实现参考 Stripe 的开源 Link SDK 与 CLI；原始 MIT 版权及许可声明保存在 [STRIPE-LICENSE.txt](STRIPE-LICENSE.txt)，并包含在 App 中。
 

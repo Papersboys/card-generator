@@ -103,7 +103,7 @@ The source icon is in `Assets/AppIcon.png`. The build script uses macOS `sips` a
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE), copyright © 2026 Yuanxi Li.
+This project is licensed under the [Apache License 2.0](LICENSE), copyright © 2026 Yuanxi Li.
 
 The Link API and authentication implementation follows Stripe's open-source Link SDK and CLI. Stripe's original MIT copyright and permission notice is preserved in [STRIPE-LICENSE.txt](STRIPE-LICENSE.txt) and included in the app bundle.
 
