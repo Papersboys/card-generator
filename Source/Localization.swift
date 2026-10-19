@@ -8,6 +8,7 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "无法创建付款请求":"Unable to create spend request",
         "无法确认新请求状态，请稍后刷新。":"Unable to confirm the new request status. Refresh again shortly.",
         "请求已创建，请在 Link 中批准。":"Request created. Please approve it in Link.",
         "编辑":"Edit", "撤销":"Undo", "重做":"Redo", "剪切":"Cut", "复制":"Copy", "粘贴":"Paste", "全选":"Select All",

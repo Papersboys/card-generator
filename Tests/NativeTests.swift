@@ -2,6 +2,7 @@ import Foundation
 
 final class MockProtocol:URLProtocol {
     static var calls:[URLRequest]=[]
+    static var rejectCreate=false
     static var emptyList=false
     static var requestStatus="approved"
     static var force401=false
@@ -38,7 +39,8 @@ final class MockProtocol:URLProtocol {
                         while true {let length=stream.read(&buffer,maxLength:buffer.count);if length<=0 {break};body.append(contentsOf:buffer.prefix(length))}
                     }
                     Self.lastCreateBody=(try? JSONSerialization.jsonObject(with:body)) as? [String:Any] ?? [:]
-                    payload=["id":"lsrq_mock","status":Self.requestStatus,"approval_url":"https://app.link.com/activity/approve/lsrq_mock"]}
+                    if Self.rejectCreate {status=400;payload=["error":["message":"Mock creation rejected"]]}
+                    else {payload=["id":"lsrq_mock","status":Self.requestStatus,"approval_url":"https://app.link.com/activity/approve/lsrq_mock"]}}
                 else {payload=["data":Self.emptyList ? [] : [["id":"lsrq_mock","status":"approved"]]]}
             case "/spend_requests/lsrq_mock":payload=["id":"lsrq_mock","status":Self.requestStatus,"card":["number":"MOCK_NUMBER","cvc":"MOCK_CVC","exp_month":12,"exp_year":2030]]
             case "/spend_requests/lsrq_mock/cancel":payload=["id":"lsrq_mock","status":Self.rejectCancel ? "approved" : "canceled"]
@@ -128,6 +130,14 @@ final class MockProtocol:URLProtocol {
         fresh.cancel(fresh.requests[0]);try await idle(fresh)
         precondition(fresh.requests.isEmpty && fresh.detail.isEmpty)
         precondition(!RequestItem(raw:["status":"expired"]).canCancel)
+        let rejected=Model(api:api)
+        MockProtocol.rejectCreate=true
+        rejected.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)
+        try await idle(rejected)
+        precondition(rejected.lastCreatedID==nil && rejected.requests.isEmpty && rejected.approvalURL.isEmpty)
+        precondition(rejected.creationError?.contains("Mock creation rejected")==true)
+        MockProtocol.rejectCreate=false
+        print("PASS: failed creation exposes server error and never signals a successful request")
         let delayed=Model(api:api)
         MockProtocol.emptyList=true;MockProtocol.requestStatus="pending_approval"
         delayed.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)

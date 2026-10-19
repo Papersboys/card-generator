@@ -123,7 +123,10 @@ struct ContentView: View {
         .onChange(of:model.lastCreatedID) {selected=$0;tab=2}
         .onChange(of:tab) { value in if value == 2 {model.load()} }
         .environment(\.locale,model.language.locale)
-        .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context,validUntil:validUntil); tab=2 } } message: { Text(createSummary) }
+        .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context,validUntil:validUntil) } } message: { Text(createSummary) }
+        .alert(t("无法创建付款请求"),isPresented:Binding(get:{model.creationError != nil},set:{if !$0 {model.creationError=nil}})) {
+            Button(t("返回"),role:.cancel) {model.creationError=nil}
+        } message: {Text(t(model.creationError ?? ""))}
         .alert(t("取消这个请求？"),isPresented:Binding(get:{toCancel != nil},set:{if !$0 {toCancel=nil}})) { Button(t("返回"),role:.cancel){toCancel=nil}; Button(t("取消请求"),role:.destructive){if let r=toCancel {model.cancel(r)};toCancel=nil} } message:{Text("\(toCancel?.merchant ?? "")\n\(toCancel?.id ?? "")\n\(t("这不会撤销已完成的付款。"))")}
     }
     var expiryPicker:some View {
