@@ -65,7 +65,7 @@ struct ContentView: View {
                 } }.padding(10) }.frame(minHeight:200).background(.quaternary.opacity(0.3)).clipShape(RoundedRectangle(cornerRadius:8))
             }
             if !model.message.isEmpty { ScrollView { Text(t(model.message)).font(.caption).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading) }.frame(maxHeight:90) }
-            Text(t("原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭窗口会清除显示。取消请求不等于退款。")).font(.caption2).foregroundStyle(.secondary)
+            Text(t("原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭窗口会清除显示。")).font(.caption2).foregroundStyle(.secondary)
         }.padding(18).frame(minWidth:820,minHeight:650)
         .onChange(of:model.lastCreatedID) {selected=$0}
         .environment(\.locale,model.language.locale)

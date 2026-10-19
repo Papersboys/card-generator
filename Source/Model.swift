@@ -127,7 +127,7 @@ struct RequestItem: Identifiable {
         self.canceledIDs.insert(item.id)
         if self.pendingID == item.id { self.approvalWatch?.cancel(); self.pendingID=""; self.approvalURL="" }
         if self.detail.contains(where:{$0.0=="Spend request ID" && $0.1==item.id}) {self.detail=[];self.approvalURL=""}
-        self.message = "已取消请求 \(item.id)。取消请求不等于退款。"
+        self.message = "已取消请求 \(item.id)。"
         self.requests = self.requests.compactMap { r in
             guard r.id==item.id else {return r}
             if !self.history {return nil}

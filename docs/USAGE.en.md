@@ -143,7 +143,7 @@ Click **Clear card details** to clear the display. Closing the window also clear
 
 *Review the merchant and ID before confirming. No cancellation was submitted for this screenshot.*
 
-**Canceling a request does not issue a refund or automatically reverse completed merchant payments.** Contact the merchant or Link support as appropriate for an actual payment. The server can reject cancellation in some states; the app displays the error.
+The server can reject cancellation in some states; the app displays the error.
 
 ## 7. History
 
@@ -163,7 +163,6 @@ This is **spend-request history**. Row amounts are request amounts, not a dedica
 | Expired login or HTTP 401 | Use Log in to Link, then refresh |
 | Card number, address, or CVC is `—` | The response did not include that field; check approval/status rather than inferring its value |
 | Details disappeared after closing | Reopen from the menu bar, select the request, and show details again |
-| A canceled request still has a charge | Cancellation is not a refund; check merchant and funding-account records |
 | Creation returned an error | Refresh active requests and history before retrying, to avoid duplicate submissions |
 
 ## Current scope

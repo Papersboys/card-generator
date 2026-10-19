@@ -32,7 +32,7 @@ enum L10n {
         "创建后仍需要在 Link 中批准。":"You will still need to approve this request in Link.",
         "这不会撤销已完成的付款。":"This does not reverse completed payments.",
         "打开 Link Card":"Open Link Card", "退出":"Quit",
-        "原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭窗口会清除显示。取消请求不等于退款。":"Connects directly to Link; no CLI required. Login is stored in Keychain; card details stay in memory. Closing the window clears the display. Canceling a request does not issue a refund.",
+        "原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭窗口会清除显示。":"Connects directly to Link; no CLI required. Login is stored in Keychain; card details stay in memory. Closing the window clears the display.",
         "打开登录链接，在 Link 中输入授权短语。":"Open the authorization link and enter the phrase in Link.",
         "Link 登录成功。":"Logged in to Link.", "登录链接已过期，请重新登录。":"The login link expired. Please log in again.",
         "已停止等待登录。":"Stopped waiting for login.", "自动等待已结束；可手动刷新卡信息。":"Automatic approval checks ended. You can refresh card details manually.",
@@ -69,9 +69,9 @@ enum L10n {
         if let translated=english[value] {return translated}
         if value.hasPrefix("请求状态：") {return "Request status: "+status(String(value.dropFirst("请求状态：".count)),language:lang)}
         if value.hasPrefix("自动刷新停止：") {return "Automatic refresh stopped: "+text(String(value.dropFirst("自动刷新停止：".count)),language:lang)}
-        if value.hasPrefix("已取消请求 "),value.hasSuffix("。取消请求不等于退款。") {
-            let id=value.dropFirst("已取消请求 ".count).dropLast("。取消请求不等于退款。".count)
-            return "Canceled request \(id). Canceling a request does not issue a refund."
+        if value.hasPrefix("已取消请求 "),value.hasSuffix("。") {
+            let id=value.dropFirst("已取消请求 ".count).dropLast(1)
+            return "Canceled request \(id)."
         }
         for (prefix,translation) in [("无法读取 Keychain 登录凭证（","Unable to read Keychain credentials ("),("无法保存 Keychain 登录凭证（","Unable to save Keychain credentials (")] {
             if value.hasPrefix(prefix) {return translation+value.dropFirst(prefix.count).replacingOccurrences(of:"）",with:")")}
