@@ -8,6 +8,7 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "已登录":"Logged in", "正在检查登录…":"Checking login…", "已登录，暂时无法加载账户信息。":"Logged in. Account details are temporarily unavailable.", "账户信息响应无效。":"Invalid account details response.",
         "登录 Link":"Log in to Link", "清除卡信息":"Clear card details",
         "请求 / 历史":"Requests / History", "创建 Generate":"Create",
         "包含历史":"Include history", "刷新列表":"Refresh list",

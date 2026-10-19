@@ -70,12 +70,12 @@ actor NativeLink {
                 tokens=imported; return imported
             }
         }
-        throw LinkError(message:"请点击「登录 Link」在浏览器授权，无需安装 CLI。")
+        throw LinkError(message:"请点击「登录 Link」在浏览器授权，无需安装 CLI。",requiresLogin:true)
     }
     private func accessToken(force:Bool=false) async throws -> String {
         let current=try readTokens()
         if !force && (current.expires_at ?? 0)>Date().timeIntervalSince1970*1000+60000 { return current.access_token }
-        guard let refresh=current.refresh_token else { throw LinkError(message:"现有登录已过期。请点击「登录 Link」建立独立 App 登录。") }
+        guard let refresh=current.refresh_token else { throw LinkError(message:"现有登录已过期。请点击「登录 Link」建立独立 App 登录。",requiresLogin:true) }
         if let task=refreshTask { return try await task.value.access_token }
         let task=Task<LinkTokens,Error> {
             let (status,data)=try await self.form("/device/token",["grant_type":"refresh_token","refresh_token":refresh,"client_id":self.clientID])
@@ -96,7 +96,8 @@ actor NativeLink {
     private func error(_ status:Int,_ data:[String:Any]) -> LinkError {
         let nested=data["error"] as? [String:Any] ?? [:]
         let message=data["error_description"] as? String ?? nested["message"] as? String ?? data["message"] as? String ?? data["error"] as? String ?? "请求失败"
-        return LinkError(message:"Link HTTP \(status): \(message)")
+        let code=data["error"] as? String ?? nested["code"] as? String ?? ""
+        return LinkError(message:"Link HTTP \(status): \(message)",requiresLogin:status==401 || ["invalid_grant","invalid_token","expired_token"].contains(code))
     }
     private func form(_ path:String,_ fields:[String:String]) async throws -> (Int,[String:Any]) {
         var request=URLRequest(url:URL(string:"https://login.link.com"+path)!)
@@ -136,6 +137,11 @@ actor NativeLink {
         let json=(try? JSONSerialization.jsonObject(with:data)) ?? [:]
         guard (200..<300).contains(http.statusCode) else { throw error(http.statusCode,json as? [String:Any] ?? [:]) }
         return json
+    }
+    func hasSession()->Bool { (try? readTokens()) != nil }
+    func userInfo() async throws -> [String:Any] {
+        guard let profile=try await request("/userinfo") as? [String:Any] else {throw LinkError(message:"账户信息响应无效。")}
+        return profile
     }
     func list(history:Bool) async throws -> Any { try await request("/spend_requests"+(history ? "?include_history=true" : "")) }
     func methods() async throws -> Any { try await request("/payment-details") }

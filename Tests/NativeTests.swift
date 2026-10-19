@@ -4,11 +4,15 @@ final class MockProtocol:URLProtocol {
     static var calls:[URLRequest]=[]
     static var force401=false
     static var pollCount=0
+    static var profileUnavailable=false
     override class func canInit(with request:URLRequest)->Bool {true}
     override class func canonicalRequest(for request:URLRequest)->URLRequest {request}
     override func startLoading() {
         Self.calls.append(request)
         let path=request.url!.path
+        if path=="/userinfo" && Self.profileUnavailable {
+            client?.urlProtocol(self,didFailWithError:NSError(domain:NSURLErrorDomain,code:NSURLErrorNotConnectedToInternet));return
+        }
         var status=200
         var payload:[String:Any]=[:]
         if path=="/device/code" {
@@ -20,6 +24,7 @@ final class MockProtocol:URLProtocol {
         } else {
             precondition(request.value(forHTTPHeaderField:"Authorization")?.hasPrefix("Bearer MOCK_")==true)
             switch path {
+            case "/userinfo":payload=["name":"Example User","email":"example@example.com"]
             case "/payment-details": payload=["payment_details":[["id":"csmrpd_mock","card_details":["brand":"visa","last4":"4242"]]]]
             case "/spend_requests":
                 if request.httpMethod=="POST" {payload=["id":"lsrq_mock","status":"pending_approval","approval_url":"https://app.link.com/activity/approve/lsrq_mock"]}
@@ -36,7 +41,7 @@ final class MockProtocol:URLProtocol {
     override func stopLoading() {}
 }
 @main struct Tests {
-    static func main() async throws {
+    @MainActor static func main() async throws {
         let config=URLSessionConfiguration.ephemeral;config.protocolClasses=[MockProtocol.self]
         let api=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_OLD",refresh_token:"MOCK_REFRESH",expires_at:Date().timeIntervalSince1970*1000+600000),persistTokens:false)
         let list=try await api.list(history:true)
@@ -59,6 +64,28 @@ final class MockProtocol:URLProtocol {
         let login=try await api.beginLogin()
         precondition(login.phrase=="MOCK PHRASE")
         let loggedIn=try await api.finishLogin(login);precondition(loggedIn)
+        let model=Model(api:api)
+        await model.refreshAccount()
+        precondition(model.isSignedIn && !model.checkingAccount)
+        precondition(model.account?.name=="Example User" && model.account?.email=="example@example.com")
+        // A temporary network error must not turn an existing session into a logged-out UI.
+        MockProtocol.profileUnavailable=true
+        await model.refreshAccount()
+        precondition(model.isSignedIn && model.account?.email=="example@example.com")
+        MockProtocol.profileUnavailable=false
+        let expiredAPI=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_OLD",refresh_token:nil,expires_at:Date().timeIntervalSince1970*1000+600000),persistTokens:false)
+        let expiredModel=Model(api:expiredAPI)
+        await expiredModel.refreshAccount()
+        precondition(!expiredModel.isSignedIn && expiredModel.account==nil && !expiredModel.checkingAccount)
+        // Successful device authorization loads the verified profile immediately.
+        model.login()
+        await model.loginTask?.value
+        while model.busy { try await Task.sleep(nanoseconds:10_000_000) }
+        precondition(model.isSignedIn && model.account?.email=="example@example.com" && !model.loggingIn)
+        let fallback=SignedInAccount(["first_name":"Example","last_name":"User"])
+        precondition(fallback.name=="Example User" && fallback.email.isEmpty)
+        precondition(L10n.text("已登录",language:.english)=="Logged in")
+        print("PASS: verified account profile, offline session retention, expired login recovery, and post-login account loading")
         // Existing messages must re-render when the language changes, preserving request IDs.
         precondition(L10n.text("请求 / 历史",language:.english)=="Requests / History")
         precondition(L10n.text("Card number",language:.chinese)=="卡号")

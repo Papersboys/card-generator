@@ -13,4 +13,14 @@ func find(_ value: Any, _ keys: [String]) -> String {
     for d in objects(value) { for key in keys { let s = str(d,key); if !s.isEmpty { return s } } }
     return ""
 }
-struct LinkError: LocalizedError { let message: String; var errorDescription: String? { message } }
+struct LinkError: LocalizedError { let message: String; var requiresLogin=false; var errorDescription: String? { message } }
+
+struct SignedInAccount {
+    let name:String
+    let email:String
+    init(_ data:[String:Any]) {
+        let fullName=str(data,"name").trimmingCharacters(in:.whitespacesAndNewlines)
+        name=fullName.isEmpty ? [str(data,"first_name"),str(data,"last_name")].filter{!$0.isEmpty}.joined(separator:" ") : fullName
+        email=str(data,"email")
+    }
+}

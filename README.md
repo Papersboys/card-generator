@@ -33,6 +33,8 @@ Use the **中文 / English** selector at the top of the window. Changes apply im
 
 ## Login
 
+Once signed in, the login button is replaced with a **Logged in** indicator and the name/email returned by Link. The app restores account details on launch. If authentication expires and cannot be refreshed, the login button returns; a temporary network error does not sign you out.
+
 Click **登录 Link**, open the official Link authorization link, and complete authorization in your browser using the phrase displayed in the app. The app waits for approval and stores its independent login in macOS Keychain, with automatic token refresh.
 
 For convenience, an existing unexpired Link CLI access token can be reused read-only from its standard preferences file. The app never writes that file or uses its refresh token. When that temporary session expires, use the app's Login button; thereafter no CLI installation or configuration is needed.
