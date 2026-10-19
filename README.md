@@ -87,6 +87,19 @@ This personal app uses the public device-flow client and API protocol from Strip
 
 The app has a local ad-hoc signature, not an Apple notarized distribution signature. No startup/login-item setting is changed. No real purchase or cancellation was used in development tests. Live checks used only history and payment-method reads.
 
+## Supported currencies
+
+The app defaults to **USD (`usd`)**. Its Currency field accepts a three-letter ISO currency code and sends it to Link; actual availability is determined by Link for the request.
+
+| Currency | Code | Amount example | Status |
+| --- | --- | --- | --- |
+| US dollar | `usd` | `1500` = $15.00; minimum `50` = $0.50 | App default; USD requests have been used with this project |
+| Japanese yen | `jpy` | `100` = ¥100, not ¥1 | Minor-unit example in Link's official documentation; not verified with this app/account |
+
+[Link's official documentation](https://github.com/stripe/link-cli#spend-request-lifecycle) allows supported three-letter currency codes but does **not enumerate a complete supported-currency list**. Other codes are not guaranteed merely because the app accepts text input. Stripe's general payment-acceptance currency list is not a verified list for Link virtual-card requests.
+
+Use the merchant checkout currency and its correct minor units. The app performs no currency conversion. A USD minimum must not be assumed for another currency. The current app explicitly sends the Currency field (default `usd`); it does not automatically use the account's default currency.
+
 ## Source and build
 
 `Source/Support.swift` contains shared data helpers, `Source/Model.swift` manages accounts and requests, and `Source/Localization.swift` provides bilingual copy. `Source/LinkCard.swift` contains the interface; `Source/NativeLink.swift` contains native URLSession API calls, browser device authorization, token refresh, and Keychain storage. No child processes are launched by the app.
