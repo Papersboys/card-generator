@@ -1,9 +1,11 @@
 import AppKit
 import SwiftUI
 import Combine
+import Sparkle
 
 struct ContentView: View {
     @ObservedObject var model:Model
+    @ObservedObject var updates=UpdateManager.shared
     @State var tab = 0
     @State var selected:String?
     @State var payment = ""
@@ -125,7 +127,10 @@ struct ContentView: View {
                         NSWorkspace.shared.open(licenseURL)
                     }
                 }.buttonStyle(.link).help(t("查看完整许可证"))
+                Spacer()
+                Button(t("检查更新…")) {updates.check()}.disabled(!updates.canCheck)
             }.font(.caption2)
+            Toggle(t("自动检查更新"),isOn:Binding(get:{updates.automaticChecks},set:{updates.setAutomaticChecks($0)})).toggleStyle(.checkbox).font(.caption)
 
         }.frame(width:min(1000,max(0,geometry.size.width-48))).padding(24).frame(maxWidth:.infinity) }
         }
@@ -193,14 +198,18 @@ struct ContentView: View {
         status.button?.image=NSImage(systemSymbolName:"creditcard",accessibilityDescription:"Link Card")
         languageObserver=model.$language.sink { [weak self] language in self?.updateMenu(language) }
         window=NSWindow(contentRect:NSRect(x:0,y:0,width:900,height:820),styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
-        window.minSize=NSSize(width:540,height:520);window.title="Link Card";window.isReleasedWhenClosed=false;window.delegate=self;window.contentView=NSHostingView(rootView:ContentView(model:model));window.center();openWindow();model.start()
+        window.minSize=NSSize(width:540,height:520);window.title="Link Card";window.isReleasedWhenClosed=false;window.delegate=self;window.contentView=NSHostingView(rootView:ContentView(model:model));window.center();openWindow();model.start();UpdateManager.shared.start()
     }
     func updateMenu(_ language:AppLanguage) {
         installMainMenu(language:language)
         let menu=NSMenu()
         menu.addItem(withTitle:L10n.text("打开 Link Card",language:language),action:#selector(openWindow),keyEquivalent:"")
         menu.addItem(withTitle:L10n.text("退出",language:language),action:#selector(quit),keyEquivalent:"q")
-        for item in menu.items {item.target=self};status.menu=menu
+        for item in menu.items {item.target=self}
+        let updateItem=NSMenuItem(title:L10n.text("检查更新…",language:language),action:#selector(SPUStandardUpdaterController.checkForUpdates(_:)),keyEquivalent:"")
+        updateItem.target=UpdateManager.shared.controller
+        menu.insertItem(updateItem,at:1)
+        status.menu=menu
     }
     @objc func openWindow(){window.makeKeyAndOrderFront(nil);NSApp.activate(ignoringOtherApps:true)}
     @objc func quit(){NSApp.terminate(nil)}

@@ -9,9 +9,9 @@
 	<key>CFBundleName</key>
 	<string>Link Card</string>
 	<key>CFBundleVersion</key>
-	<string>18</string>
+	<string>19</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.5.8</string>
+	<string>2.6.0</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
@@ -20,5 +20,19 @@
 	<true/>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
+	<key>SUFeedURL</key>
+	<string>https://github.com/Papersboys/card-generator/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>UzxAKnjmk7YkxgZk14ZxUctiVLihqJOSzimljdw6PKg=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<false/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
+	<key>SURequireSignedFeed</key>
+	<true/>
 </dict>
 </plist>

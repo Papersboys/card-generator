@@ -56,7 +56,7 @@ ditto dist/LinkCard.app "$HOME/Applications/LinkCard.app"
 open "$HOME/Applications/LinkCard.app"
 ```
 
-更新时先退出 App，保存本地源码修改，再执行 `git pull --ff-only` 和 `./build.sh`，最后替换安装的 App。当前没有自动更新功能，也不会自动设置开机启动。构建使用本地 ad-hoc 签名，未经过 Apple 公证。详细步骤见[安装指南](docs/INSTALL.zh-CN.md)。
+从 **v2.6.0** 起支持 App 内更新：默认每天自动检查，可在底部关闭「自动检查更新」；也可点击底部或菜单栏的「检查更新…」。发现新版后确认下载、安装并重启。更新清单和更新包使用 Sparkle Ed25519 签名验证。旧版本需要先手动下载一次 v2.6.0 或更新版本。源码构建仍可执行 `git pull --ff-only` 和 `./build.sh`。不自动设置开机启动；构建仍使用 ad-hoc 签名，未经过 Apple 公证。
 
 ## 语言
 
@@ -106,7 +106,7 @@ App 默认使用 **美元 USD（`usd`）**。币种输入框接受三位 ISO 币
 - `Source/LinkCard.swift`：SwiftUI 界面和菜单栏入口。
 - `Source/NativeLink.swift`：URLSession API、浏览器授权、凭证刷新和 Keychain 存储。
 
-App 不启动子进程。使用 Xcode 在 Apple Silicon 上运行 `./build.sh` 构建，运行 `./test.sh` 执行离线模拟测试；测试不读取真实登录凭证，也不发送网络请求。
+付款和登录不调用 CLI；Sparkle 使用随 App 打包的辅助程序安装更新。使用 Xcode 在 Apple Silicon 上运行 `./build.sh` 构建，运行 `./test.sh` 执行离线模拟测试；测试不读取真实登录凭证，也不发送网络请求。
 
 API 和授权协议参考 [Stripe Link SDK 与 CLI](https://github.com/stripe/link-cli)。Stripe 的 MIT 声明保留在 `STRIPE-LICENSE.txt`，并随 App 打包。
 
@@ -123,3 +123,5 @@ API 和授权协议参考 [Stripe Link SDK 与 CLI](https://github.com/stripe/li
 API 和授权实现参考 Stripe 的开源 Link SDK 与 CLI；原始 MIT 版权及许可声明保存在 [STRIPE-LICENSE.txt](STRIPE-LICENSE.txt)，并包含在 App 中。
 
 这是独立项目，不是 Stripe 或 Link 官方 App。
+
+自动更新采用 [Sparkle](https://sparkle-project.org/)，许可声明保留在 [ThirdParty/Sparkle-LICENSE.txt](ThirdParty/Sparkle-LICENSE.txt)。维护者发布流程见[更新发布说明](docs/UPDATES.md)。

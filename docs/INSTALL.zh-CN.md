@@ -156,7 +156,7 @@ open "$HOME/Applications/LinkCard.app"
 
 替换 App 不会主动删除 Keychain 登录或语言偏好。签名或系统访问权限发生变化时，可能需要重新确认 Keychain 访问或在 App 中重新登录。
 
-使用打包版本时，从[最新 Release](https://github.com/Papersboys/card-generator/releases/latest) 下载新 ZIP，退出旧 App，再替换原来的 `.app`；当前 App 没有自动更新功能。
+v2.6.0 起，点击 App 底部或菜单栏的「检查更新…」，按提示下载、安装并重启。默认每天自动检查，可在底部关闭；更新包及清单均经过签名校验。更早的版本需要先从[最新 Release](https://github.com/Papersboys/card-generator/releases/latest) 手动下载并替换一次。
 
 ## 常见安装问题
 

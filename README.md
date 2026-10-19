@@ -58,7 +58,7 @@ ditto dist/LinkCard.app "$HOME/Applications/LinkCard.app"
 open "$HOME/Applications/LinkCard.app"
 ```
 
-For updates, quit the app, save any local source changes, run `git pull --ff-only` and `./build.sh`, then replace the installed app. There is no automatic updater or automatic login-item setup. Current builds use an ad-hoc signature and are not notarized.
+From **v2.6.0**, the app checks for updates daily by default. Turn this off with Automatically check for updates, or use Check for Updates… in the footer or menu bar. Confirm the offered update to download, install, and relaunch. Sparkle verifies Ed25519 signatures on both the feed and archive. Older versions require one manual download of v2.6.0 or later. Source builds can still use `git pull --ff-only` and `./build.sh`. No login-item setup is changed; builds remain ad-hoc signed and not Apple notarized.
 
 ## Language
 
@@ -104,7 +104,7 @@ Use the merchant checkout currency and its correct minor units. The app performs
 
 ## Source and build
 
-`Source/Support.swift` contains shared data helpers, `Source/Model.swift` manages accounts and requests, and `Source/Localization.swift` provides bilingual copy. `Source/LinkCard.swift` contains the interface; `Source/NativeLink.swift` contains native URLSession API calls, browser device authorization, token refresh, and Keychain storage. No child processes are launched by the app.
+`Source/Support.swift` contains shared data helpers, `Source/Model.swift` manages accounts and requests, and `Source/Localization.swift` provides bilingual copy. `Source/LinkCard.swift` contains the interface; `Source/NativeLink.swift` contains native URLSession API calls, browser device authorization, token refresh, and Keychain storage. Payment and login calls do not invoke a CLI; Sparkle uses its bundled helpers to install app updates.
 
 Build on Apple Silicon with Xcode using `./build.sh`. Run `./test.sh` for offline tests of the native API transport, authentication refresh, and device authorization. Tests use a mocked URLSession and do not read real login credentials or send network requests.
 
@@ -123,3 +123,5 @@ This project is licensed under the [Apache License 2.0](LICENSE), copyright © 2
 The Link API and authentication implementation follows Stripe's open-source Link SDK and CLI. Stripe's original MIT copyright and permission notice is preserved in [STRIPE-LICENSE.txt](STRIPE-LICENSE.txt) and included in the app bundle.
 
 This is an independent project and is not an official Stripe or Link application.
+
+Automatic updates use [Sparkle](https://sparkle-project.org/); its license is preserved in [ThirdParty/Sparkle-LICENSE.txt](ThirdParty/Sparkle-LICENSE.txt). See [update publishing](docs/UPDATES.md) for maintainers.

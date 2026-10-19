@@ -8,6 +8,7 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "检查更新…":"Check for Updates…", "自动检查更新":"Automatically check for updates",
         "退出登录":"Log out", "已退出登录。":"Logged out.",
         "Link 登录授权已失效，请重新登录。":"Your Link authorization is no longer valid. Please log in again.",
         "选择付款方式，或粘贴 ID":"Select a payment method or paste its ID",

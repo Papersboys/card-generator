@@ -154,7 +154,7 @@ open "$HOME/Applications/LinkCard.app"
 
 Replacing the bundle does not intentionally remove Keychain credentials or language preferences. Signature or access-permission changes may require confirming Keychain access or logging in again.
 
-For a packaged installation, download the new ZIP from [the latest release](https://github.com/Papersboys/card-generator/releases/latest), quit the old app, and replace the bundle. There is no automatic updater.
+From v2.6.0, use Check for Updates… in the footer or menu bar to download, install, and relaunch. Daily automatic checks are enabled by default and can be disabled in the footer. The feed and archive are signature-verified. Earlier versions need one manual download from [the latest release](https://github.com/Papersboys/card-generator/releases/latest).
 
 ## Troubleshooting
 

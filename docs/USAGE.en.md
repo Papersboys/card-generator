@@ -42,6 +42,10 @@ These screenshots show **v2.5.6**. Drag a window edge to resize it: narrow windo
 
 All text input fields support **⌘C Copy, ⌘V Paste, ⌘X Cut, ⌘A Select All, ⌘Z Undo, and ⇧⌘Z Redo**, also available through the macOS Edit menu. Click a field first; use ⌘A followed by paste to replace its contents. The payment-method ID can be pasted or edited after selecting a method. Context is generated automatically and can be selected and copied; it needs no manual entry.
 
+### Automatic updates (v2.6.0 onward)
+
+Use Check for Updates… and the Automatically check for updates toggle in the footer. A check command is also available in the menu bar. Automatic checks run daily by default; manual checks remain available when disabled. Follow Sparkle's update dialog to download, install, and relaunch; finish current work before installing. Both the feed and archive are signature-verified. Older builds need one manual download to gain this feature.
+
 ## 2. Log in to Link
 
 1. Click **Log in to Link** below the title.
