@@ -27,6 +27,10 @@ To run the offline tests:
 
 Build output is excluded from Git. To keep the app installed, move `dist/LinkCard.app` to your Applications folder.
 
+## Language
+
+Use the **中文 / English** selector at the top of the window. Changes apply immediately to the interface, menu-bar menu, confirmations, card field labels, statuses, and app-authored messages. Your choice is remembered after restarting. Merchant names, purchase context, IDs, and card data are preserved.
+
 ## Login
 
 Click **登录 Link**, open the official Link authorization link, and complete authorization in your browser using the phrase displayed in the app. The app waits for approval and stores its independent login in macOS Keychain, with automatic token refresh.

@@ -59,6 +59,18 @@ final class MockProtocol:URLProtocol {
         let login=try await api.beginLogin()
         precondition(login.phrase=="MOCK PHRASE")
         let loggedIn=try await api.finishLogin(login);precondition(loggedIn)
+        // Existing messages must re-render when the language changes, preserving request IDs.
+        precondition(L10n.text("请求 / 历史",language:.english)=="Requests / History")
+        precondition(L10n.text("Card number",language:.chinese)=="卡号")
+        precondition(L10n.status("pending_approval",language:.english)=="Pending approval")
+        precondition(L10n.status("pending_approval",language:.chinese)=="等待批准")
+        let notice="已取消请求 lsrq_mock。取消请求不等于退款。"
+        precondition(L10n.text(notice,language:.english)=="Canceled request lsrq_mock. Canceling a request does not issue a refund.")
+        precondition(L10n.text(notice,language:.chinese)==notice)
+        precondition(L10n.text("自动刷新停止：现有登录已过期。请点击「登录 Link」建立独立 App 登录。",language:.english).contains("Your existing login expired"))
+        precondition(L10n.text("无法读取 Keychain 登录凭证（-1）",language:.english)=="Unable to read Keychain credentials (-1)")
+        precondition(L10n.text("merchant supplied context",language:.english)=="merchant supplied context")
+        print("PASS: English/Chinese controls, card labels, statuses, dynamic messages, and error localization")
         print("PASS: native list/history, methods, card retrieval, create/cancel routing, ID validation, 401 refresh, device login; no CLI and no real writes")
     }
 }
