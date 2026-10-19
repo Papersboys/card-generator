@@ -1,5 +1,7 @@
 # Link Card
 
+<img src="Assets/AppIcon.png" alt="Link Card app icon" width="128" />
+
 A native macOS menu-bar app to create Link spend requests, approve them in Link, display virtual card details, and cancel unused requests. Built with SwiftUI, AppKit, and URLSession.
 
 Run `./build.sh`, then open **dist/LinkCard.app**. Use the credit-card icon in the macOS menu bar to open the window or quit. You can move the app to Applications.
@@ -53,6 +55,10 @@ The app has a local ad-hoc signature, not an Apple notarized distribution signat
 Build on Apple Silicon with Xcode using `./build.sh`. Run `./test.sh` for offline tests of the native API transport, authentication refresh, and device authorization. Tests use a mocked URLSession and do not read real login credentials or send network requests.
 
 API/auth protocol references: [Stripe Link SDK and CLI](https://github.com/stripe/link-cli). Stripe's MIT notice is included in `STRIPE-LICENSE.txt` and the app bundle.
+
+## App icon
+
+The source icon is in `Assets/AppIcon.png`. The build script uses macOS `sips` and `iconutil` to generate a multi-resolution `.icns` file and embed it in the app. The original image-generation prompt is in `Assets/AppIcon.prompt.txt`.
 
 ## License
 
