@@ -4,9 +4,7 @@
 
 Link Card is a macOS menu-bar app for creating Link spend requests, retrieving approved virtual card details, and canceling requests. It does not place merchant orders or submit merchant checkout forms for you.
 
-> Screenshots predate v2.5.6; the expiry picker visible in older screenshots has been removed.
-
-> Screenshots come from an offline demo using the actual interface code. Accounts, authorization phrases, requests, merchants, and card details are fictional and cannot be used for payment. Screenshots show both available interface languages; the English button names below correspond to their Chinese counterparts.
+> Screenshots come from an offline demo using the actual interface code. Accounts, authorization phrases, requests, and card details are fictional; Costco is shown as the default example merchant and cannot be used for payment. Screenshots show both available interface languages; the English button names below correspond to their Chinese counterparts.
 
 For first-time setup, follow the [installation guide](INSTALL.en.md).
 
@@ -36,11 +34,11 @@ Use **中文 / English** at the top of the window. Controls, menu-bar items, con
 
 ### Resize the window and edit fields
 
-These screenshots show **v2.5.1**. Drag a window edge to resize it: narrow windows use one form column and wider windows arrange fields into multiple columns. Scroll down to reach expiry, generated context, and the create button. Check the version in the footer; if the old form still appears, quit the old app before replacing it with the latest build.
+These screenshots show **v2.5.6**. Drag a window edge to resize it: narrow windows use one form column and wider windows arrange fields into multiple columns. Scroll down to reach generated context and the create button. Check the version in the footer; if the old form still appears, quit the old app before replacing it with the latest build.
 
 | Narrow single-column form | Scroll to the bottom |
 | --- | --- |
-| ![Chinese form at 540-point window width](images/responsive-narrow-zh.jpg) | ![Expiry, generated context, and create button remain accessible by scrolling](images/responsive-narrow-bottom-zh.jpg) |
+| ![Chinese form at 540-point window width](images/responsive-narrow-zh.jpg) | ![Generated context and create button remain accessible by scrolling](images/responsive-narrow-bottom-zh.jpg) |
 
 All text input fields support **⌘C Copy, ⌘V Paste, ⌘X Cut, ⌘A Select All, ⌘Z Undo, and ⇧⌘Z Redo**, also available through the macOS Edit menu. Click a field first; use ⌘A followed by paste to replace its contents. The payment-method ID can be pasted or edited after selecting a method. Context is generated automatically and can be selected and copied; it needs no manual entry.
 
@@ -68,7 +66,11 @@ First confirm the item and final checkout total on the merchant's website. Then:
 1. Select **Create**.
 2. Click **Load** beside Payment method.
 3. Select a method from the dropdown. Its ID fills automatically; you can also enter an existing payment-method ID manually.
-4. Complete the form.
+4. Complete the form. Merchant name and URL default to **Costco** and **https://www.costco.com**, and remain editable. Amount and item examples are placeholders; enter the actual checkout amount and item.
+
+![Editable Costco merchant defaults and amount/item placeholders; Chinese interface](images/create-defaults-zh.jpg)
+
+USD amounts use cents: the minimum is `50` ($0.50); `1500` = $15.00 and `50000` = $500.00. Placeholder examples are not submitted values. Generated context updates as you edit the purchase fields.
 
 ![English creation form with a fictional payment method, merchant, amount, and purchase context](images/create-en.jpg)
 
@@ -77,8 +79,8 @@ First confirm the item and final checkout total on the merchant's website. Then:
 | Field | What to enter | Example |
 | --- | --- | --- |
 | Payment method ID | The Link funding method, not a spend-request ID | Select from the dropdown |
-| Merchant name | The actual merchant receiving payment | Example Store |
-| Merchant URL | A complete HTTP/HTTPS URL | `https://example.com` |
+| Merchant name | Actual merchant; defaults to Costco and is editable | Costco |
+| Merchant URL | Complete HTTP/HTTPS URL; editable Costco default | `https://www.costco.com` |
 | Amount | A positive integer in the currency's minor units | For USD $15.00, enter `1500` |
 | Currency | Three-letter currency code | `usd` |
 | Item | Purchase description; quantity is currently fixed at 1 and commas are not allowed in the name | Meal credit |
@@ -162,9 +164,13 @@ This is **spend-request history**. Row amounts are request amounts, not a dedica
 
 ## Troubleshooting
 
+![Persistent error banner with Copy error and Dismiss controls; Chinese interface](images/error-banner-zh.jpg)
+
 Errors appear in a persistent red banner at the top of the window. It keeps the specific Link error through tab changes, refreshes, and scrolling. Use Copy error to copy the text, or × to dismiss it. Failed creation preserves the form and does not switch to Approve.
 
 
+
+For `amount must be at least $0.50 usd`, enter at least `50` for USD. A rejected creation does not produce a request to approve. If an older build reports `expires_at is not supported for this client`, quit and update to v2.5.6 or later; custom expiry has been removed from creation.
 
 | Situation | What to do |
 | --- | --- |

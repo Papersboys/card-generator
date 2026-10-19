@@ -25,7 +25,7 @@ Download the ZIP, extract it, and drag **LinkCard.app** into Applications. Open 
 | --- | --- |
 | ![Chinese request history with a fictional signed-in account](docs/images/overview-zh.jpg) | ![English creation form with fictional purchase details](docs/images/create-en.jpg) |
 
-Screenshots show v2.5.1 with fictional demo data. The [illustrated usage guide](docs/USAGE.en.md) also covers approval review, narrow-window layouts, editing shortcuts, login, card details, and confirmations.
+Screenshots show v2.5.6 with fictional demo data. The [illustrated usage guide](docs/USAGE.en.md) also covers approval review, narrow-window layouts, editing shortcuts, login, card details, and confirmations.
 
 ## Installation
 
