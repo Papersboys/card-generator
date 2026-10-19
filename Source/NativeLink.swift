@@ -108,7 +108,7 @@ actor NativeLink {
         return (http.statusCode,json)
     }
     func beginLogin() async throws -> DeviceLogin {
-        let (status,data)=try await form("/device/code",["client_id":clientID,"scope":"userinfo:read payment_methods.agentic","connection_label":"Link Card on "+(Host.current().localizedName ?? "Mac"),"client_hint":"Link Card"])
+        let (status,data)=try await form("/device/code",["client_id":clientID,"scope":"userinfo:read payment_methods.agentic","connection_label":"Link Card","client_hint":"Link Card"])
         guard (200..<300).contains(status) else { throw error(status,data) }
         guard let code=data["device_code"] as? String,let phrase=data["user_code"] as? String,let value=(data["verification_uri_complete"] ?? data["verification_uri"]) as? String,let url=URL(string:value),url.scheme=="https",["app.link.com","login.link.com","link.com"].contains(url.host ?? "") else { throw LinkError(message:"Link 授权信息无效") }
         return DeviceLogin(deviceCode:code,phrase:phrase,url:url,interval:max(1,data["interval"] as? Double ?? 5),expires:Date().addingTimeInterval(data["expires_in"] as? Double ?? 600))
