@@ -1,5 +1,7 @@
 # Link Card 安装指南
 
+[English](INSTALL.en.md) | [简体中文](INSTALL.zh-CN.md)
+
 安装后，从 macOS 顶部菜单栏的信用卡图标打开 App。Link Card 直接连接 Link API，不需要安装 `link-cli`、Node.js 或 npm。
 
 ## 选择安装方式

@@ -1,5 +1,7 @@
 # Link Card
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 <img src="Assets/AppIcon.png" alt="Link Card app icon" width="128" />
 
 A native macOS menu-bar app to create Link spend requests, approve them in Link, display virtual card details, and cancel unused requests. Built with SwiftUI, AppKit, and URLSession.
@@ -8,17 +10,24 @@ Run `./build.sh`, then open **dist/LinkCard.app**. Use the credit-card icon in t
 
 **No link-cli binary, Node.js, npm, shell helpers, or local server is required.** Requires Apple Silicon and macOS 13+.
 
+## Documentation
+
+| Guide | English | 简体中文 |
+| --- | --- | --- |
+| Installation | [Requirements, setup, and updates](docs/INSTALL.en.md) | [安装指南](docs/INSTALL.zh-CN.md) |
+| Usage | [Illustrated usage guide](docs/USAGE.en.md) | [带截图的使用说明](docs/USAGE.zh-CN.md) |
+
 ## Screenshots
 
 | Requests and history · 中文 | Create a request · English |
 | --- | --- |
 | ![Chinese request history with a fictional signed-in account](docs/images/overview-zh.jpg) | ![English creation form with fictional purchase details](docs/images/create-en.jpg) |
 
-Screenshots use fictional demo data. See the [illustrated usage guide](docs/USAGE.zh-CN.md) for login, card details, and creation/cancellation confirmations.
+Screenshots use fictional demo data. See the [illustrated usage guide](docs/USAGE.en.md) for login, card details, and creation/cancellation confirmations.
 
 ## Installation
 
-**[中文安装指南](docs/INSTALL.zh-CN.md)** covers packaged-app installation, Xcode setup, source builds, installation into Applications, first login, updates, and troubleshooting.
+The **[installation guide](docs/INSTALL.en.md)** ([简体中文](docs/INSTALL.zh-CN.md)) covers packaged-app installation, Xcode setup, source builds, installation into Applications, first login, updates, and troubleshooting.
 
 A packaged `.app` requires Apple Silicon and macOS 13+, without Xcode or CLI dependencies. Building from source requires Xcode and its macOS SDK. The repository does not include binary downloads; use a trusted app package or build from source.
 
@@ -65,7 +74,7 @@ This personal app uses the public device-flow client and API protocol from Strip
 
 ## Usage
 
-📖 **[详细中文使用说明](docs/USAGE.zh-CN.md)** — step-by-step login, creation, approval, card display, cancellation, history, and troubleshooting.
+📖 **[Usage guide](docs/USAGE.en.md)** · **[中文使用说明](docs/USAGE.zh-CN.md)** — step-by-step login, creation, approval, card display, cancellation, history, and troubleshooting.
 
 - **Requests / History:** refresh, include history, select a request, show card details, or cancel with confirmation.
 - **Create:** load a payment method; enter merchant, URL, amount in minor units (USD $15 = 1500), item, and at least 100 characters of context. Review and confirm creation.
@@ -78,7 +87,7 @@ The app has a local ad-hoc signature, not an Apple notarized distribution signat
 
 ## Source and build
 
-`Source/Support.swift` contains shared data helpers. `Source/LinkCard.swift` contains the interface; `Source/NativeLink.swift` contains native URLSession API calls, browser device authorization, token refresh, and Keychain storage. No child processes are launched by the app.
+`Source/Support.swift` contains shared data helpers, `Source/Model.swift` manages accounts and requests, and `Source/Localization.swift` provides bilingual copy. `Source/LinkCard.swift` contains the interface; `Source/NativeLink.swift` contains native URLSession API calls, browser device authorization, token refresh, and Keychain storage. No child processes are launched by the app.
 
 Build on Apple Silicon with Xcode using `./build.sh`. Run `./test.sh` for offline tests of the native API transport, authentication refresh, and device authorization. Tests use a mocked URLSession and do not read real login credentials or send network requests.
 
