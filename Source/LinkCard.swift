@@ -94,8 +94,6 @@ struct ContentView: View {
             if !model.message.isEmpty { ScrollView { Text(t(model.message)).font(.caption).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading) }.frame(maxHeight:90) }
             Text(t("原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭窗口会清除显示。")).font(.caption2).foregroundStyle(.secondary)
             HStack(spacing:6) {
-                Text("© 2026 Yuanxi Li").foregroundStyle(.secondary)
-                Text("·").foregroundStyle(.tertiary)
                 Button("Apache License 2.0") {
                     if let licenseURL=Bundle.main.url(forResource:"LICENSE",withExtension:nil) {
                         NSWorkspace.shared.open(licenseURL)
