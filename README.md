@@ -16,7 +16,13 @@ Run `./build.sh`, then open **dist/LinkCard.app**. Use the credit-card icon in t
 
 Screenshots use fictional demo data. See the [illustrated usage guide](docs/USAGE.zh-CN.md) for login, card details, and creation/cancellation confirmations.
 
-## Quick start
+## Installation
+
+**[中文安装指南](docs/INSTALL.zh-CN.md)** covers packaged-app installation, Xcode setup, source builds, installation into Applications, first login, updates, and troubleshooting.
+
+A packaged `.app` requires Apple Silicon and macOS 13+, without Xcode or CLI dependencies. Building from source requires Xcode and its macOS SDK. The repository does not include binary downloads; use a trusted app package or build from source.
+
+### Quick start from source
 
 Install Xcode and select its developer tools, then run:
 
@@ -33,7 +39,15 @@ To run the offline tests:
 ./test.sh
 ```
 
-Build output is excluded from Git. To keep the app installed, move `dist/LinkCard.app` to your Applications folder.
+Build output is excluded from Git. Quit any running copy, then install into your personal Applications folder:
+
+```bash
+mkdir -p "$HOME/Applications"
+ditto dist/LinkCard.app "$HOME/Applications/LinkCard.app"
+open "$HOME/Applications/LinkCard.app"
+```
+
+For updates, quit the app, save any local source changes, run `git pull --ff-only` and `./build.sh`, then replace the installed app. There is no automatic updater or automatic login-item setup. Current builds use an ad-hoc signature and are not notarized.
 
 ## Language
 
