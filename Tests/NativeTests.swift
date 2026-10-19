@@ -103,15 +103,10 @@ final class MockProtocol:URLProtocol {
         precondition(model.isSignedIn && model.account?.email=="example@example.com" && !model.loggingIn)
         func idle(_ model:Model) async throws {while model.busy {try await Task.sleep(nanoseconds:10_000_000)}}
         let context=String(repeating:"Mock purchase details. ",count:8)
-        let customExpiry=Date().addingTimeInterval(7200)
-        model.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context,validUntil:customExpiry)
+        model.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)
         try await idle(model)
-        precondition(MockProtocol.lastCreateBody["expires_at"] as? Int==Int(customExpiry.timeIntervalSince1970))
+        precondition(MockProtocol.lastCreateBody["expires_at"]==nil)
         precondition(model.lastCreatedID=="lsrq_mock" && !model.detail.isEmpty)
-        let beforeInvalid=MockProtocol.calls.count
-        model.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context,validUntil:Date().addingTimeInterval(-60))
-        try await idle(model)
-        precondition(MockProtocol.calls.count==beforeInvalid)
         model.history=true
         MockProtocol.rejectCancel=true
         model.cancel(model.requests[0]);try await idle(model)
@@ -122,11 +117,9 @@ final class MockProtocol:URLProtocol {
         model.show("lsrq_mock");try await idle(model)
         precondition(model.detail.isEmpty)
         let fresh=Model(api:api)
-        let beforeDefault=Date().timeIntervalSince1970
         fresh.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)
         try await idle(fresh)
-        let defaultExpiry=MockProtocol.lastCreateBody["expires_at"] as! Int
-        precondition(abs(Double(defaultExpiry)-beforeDefault-86400)<2)
+        precondition(MockProtocol.lastCreateBody["expires_at"]==nil)
         fresh.cancel(fresh.requests[0]);try await idle(fresh)
         precondition(fresh.requests.isEmpty && fresh.detail.isEmpty)
         precondition(!RequestItem(raw:["status":"expired"]).canCancel)
@@ -163,7 +156,7 @@ final class MockProtocol:URLProtocol {
         precondition(delayed.requests.isEmpty)
         MockProtocol.emptyList=false;MockProtocol.requestStatus="approved"
         print("PASS: newly created requests survive list delay, preserve approval links, and reconcile terminal status")
-        print("PASS: custom/default expiry seconds, past-date rejection, server-confirmed cancellation, credential cleanup, and active/history list behavior")
+        print("PASS: creation omits unsupported expires_at, server-confirmed cancellation, credential cleanup, and active/history list behavior")
         let fallback=SignedInAccount(["first_name":"Example","last_name":"User"])
         precondition(fallback.name=="Example User" && fallback.email.isEmpty)
         precondition(L10n.text("已登录",language:.english)=="Logged in")

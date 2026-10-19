@@ -4,6 +4,8 @@
 
 Link Card is a macOS menu-bar app for creating Link spend requests, retrieving approved virtual card details, and canceling requests. It does not place merchant orders or submit merchant checkout forms for you.
 
+> Screenshots predate v2.5.6; the expiry picker visible in older screenshots has been removed.
+
 > Screenshots come from an offline demo using the actual interface code. Accounts, authorization phrases, requests, merchants, and card details are fictional and cannot be used for payment. Screenshots show both available interface languages; the English button names below correspond to their Chinese counterparts.
 
 For first-time setup, follow the [installation guide](INSTALL.en.md).
@@ -79,7 +81,6 @@ First confirm the item and final checkout total on the merchant's website. Then:
 | Merchant URL | A complete HTTP/HTTPS URL | `https://example.com` |
 | Amount | A positive integer in the currency's minor units | For USD $15.00, enter `1500` |
 | Currency | Three-letter currency code | `usd` |
-| Valid until | Request expiry in local date/time; defaults to 24 hours from opening the form. Use One day from now to reset it | Tomorrow at the current time |
 | Item | Purchase description; quantity is currently fixed at 1 and commas are not allowed in the name | Meal credit |
 | Context | Generated automatically from merchant, URL, item, amount, and currency; no typing required | Review before creation |
 
@@ -93,7 +94,7 @@ First confirm the item and final checkout total on the merchant's website. Then:
 
 Interpret the amount together with its currency: `10000` in `usd` means $100.00, not $10,000. Request amounts and statuses are not necessarily the merchant's final settlement amount.
 
-The selected Valid until is included in the review dialog and sent as request `expires_at` in Unix seconds. It must be in the future. This sets the requested expiry, not a guaranteed card lifetime: [Stripe currently documents a 12-hour card credential lifetime](https://github.com/stripe/link-cli#spend-request-lifecycle). The actual card deadline is whatever Link returns.
+This client does not support custom request expiry. Creation omits `expires_at`; card expiration and credential validity are determined by Link.
 
 ## 4. Approve and automatically show card details
 

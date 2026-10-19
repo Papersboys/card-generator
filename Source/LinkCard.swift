@@ -13,7 +13,6 @@ struct ContentView: View {
 @State var currency = "usd"
 @State var item = ""
     var context:String { Model.purchaseContext(merchant:merchant,url:url,amount:amount,currency:currency,item:item) }
-    @State var validUntil=Date().addingTimeInterval(86400)
     @State var confirmCreate = false
     @State var toCancel:RequestItem?
     var body: some View {
@@ -95,14 +94,6 @@ struct ContentView: View {
                     }
                     field("商品（数量 1）",text:$item)
                     Divider()
-                    VStack(alignment:.leading,spacing:10) {
-                        Text(t("可用截止时间")).font(.subheadline.weight(.medium))
-                        ViewThatFits(in:.horizontal) {
-                            HStack { expiryPicker; Button(t("一天以后")) {validUntil=Date().addingTimeInterval(86400)} }
-                            VStack(alignment:.leading,spacing:10) { expiryPicker; Button(t("一天以后")) {validUntil=Date().addingTimeInterval(86400)} }
-                        }
-                        Text(t("默认一天以后；这是请求到期时间，卡片实际可用时间以 Link 返回为准。")).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)
-                    }
                     VStack(alignment:.leading,spacing:8) {
                         Text(t("用途说明（自动生成）")).font(.subheadline.weight(.medium))
                         Text(context).font(.callout).foregroundStyle(.secondary).textSelection(.enabled).fixedSize(horizontal:false,vertical:true)
@@ -141,11 +132,8 @@ struct ContentView: View {
         .onChange(of:model.lastCreatedID) {selected=$0;tab=2}
         .onChange(of:tab) { value in if value == 2 {model.load()} }
         .environment(\.locale,model.language.locale)
-        .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context,validUntil:validUntil) } } message: { Text(createSummary) }
+        .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context) } } message: { Text(createSummary) }
         .alert(t("取消这个请求？"),isPresented:Binding(get:{toCancel != nil},set:{if !$0 {toCancel=nil}})) { Button(t("返回"),role:.cancel){toCancel=nil}; Button(t("取消请求"),role:.destructive){if let r=toCancel {model.cancel(r)};toCancel=nil} } message:{Text("\(toCancel?.merchant ?? "")\n\(toCancel?.id ?? "")\n\(t("这不会撤销已完成的付款。"))")}
-    }
-    var expiryPicker:some View {
-        DatePicker(t("可用截止时间"),selection:$validUntil,in:Date()...,displayedComponents:[.date,.hourAndMinute]).labelsHidden()
     }
     func placeholder(_ title:String)->String {
         switch title {
@@ -168,7 +156,7 @@ struct ContentView: View {
         }.frame(maxWidth:.infinity,alignment:.leading)
     }
     func t(_ key:String)->String { L10n.text(key,language:model.language) }
-    var createSummary:String { "\(merchant)\n\(url)\n\(t("金额")): \(amount) \(currency.uppercased()) \(t("最小单位"))\n\(t("商品")): \(item)\n\(t("可用截止时间")): \(validUntil.formatted(Date.FormatStyle(date:.abbreviated,time:.shortened).locale(model.language.locale)))\n\(context)\n\(t("创建后仍需要在 Link 中批准。"))" }
+    var createSummary:String { "\(merchant)\n\(url)\n\(t("金额")): \(amount) \(currency.uppercased()) \(t("最小单位"))\n\(t("商品")): \(item)\n\(context)\n\(t("创建后仍需要在 Link 中批准。"))" }
     func display(_ s:String)->String { if s.isEmpty {return "—"}; if let timestamp=Double(s),timestamp>1_000_000_000,timestamp<10_000_000_000 { return Date(timeIntervalSince1970:timestamp).formatted(Date.FormatStyle(date:.abbreviated,time:.standard).locale(model.language.locale)) }; return s }
 }
 @MainActor func installMainMenu(language:AppLanguage) {

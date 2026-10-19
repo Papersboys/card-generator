@@ -191,13 +191,12 @@ struct RequestItem: Identifiable {
     static func purchaseContext(merchant:String,url:String,amount:String,currency:String,item:String)->String {
         "Purchase of 1 unit of \(item) from \(merchant) at \(url). The requested checkout total is \(amount) minor units in \(currency.uppercased()), funded by the selected payment method saved in Link. The user will review and approve this spend request in Link before payment credentials are issued."
     }
-    func create(payment:String,merchant:String,url:String,amount:String,currency:String,item:String,context:String,validUntil:Date=Date().addingTimeInterval(86400)) {
+    func create(payment:String,merchant:String,url:String,amount:String,currency:String,item:String,context:String) {
         guard !busy else {return}
         creationError=nil
         perform(onFailure:{self.creationError=$0.localizedDescription}) {
         guard let cents = Int(amount), cents > 0, context.count >= 100, let u = URL(string:url), ["http","https"].contains(u.scheme ?? ""), !merchant.isEmpty, !payment.isEmpty, !item.contains(",") else { throw LinkError(message:"检查付款方式、商家 URL、正整数金额和至少 100 字符的用途；商品名不能包含逗号。") }
-        guard validUntil.timeIntervalSinceNow>0 else {throw LinkError(message:"可用截止时间必须晚于当前时间。") }
-        let body:[String:Any] = ["expires_at":Int(validUntil.timeIntervalSince1970),"idempotency_key":UUID().uuidString,"payment_details":payment,"credential_type":"card","merchant_name":merchant,"merchant_url":url,"amount":cents,"currency":currency,"context":context,"line_items":[["name":item,"unit_amount":cents,"quantity":1]],"totals":[["type":"total","display_text":"Total","amount":cents]],"request_approval":true]
+        let body:[String:Any] = ["idempotency_key":UUID().uuidString,"payment_details":payment,"credential_type":"card","merchant_name":merchant,"merchant_url":url,"amount":cents,"currency":currency,"context":context,"line_items":[["name":item,"unit_amount":cents,"quantity":1]],"totals":[["type":"total","display_text":"Total","amount":cents]],"request_approval":true]
         let result = try await self.api.create(body)
         guard let request = objects(result).first(where:{str($0,"id").hasPrefix("lsrq_")}) else { throw LinkError(message:"未返回 spend request ID") }
         let id = str(request,"id")

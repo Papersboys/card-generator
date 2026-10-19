@@ -79,7 +79,7 @@ This personal app uses the public device-flow client and API protocol from Strip
 📖 **[Usage guide](docs/USAGE.en.md)** · **[中文使用说明](docs/USAGE.zh-CN.md)** — step-by-step login, creation, approval, card display, cancellation, history, and troubleshooting.
 
 - **Requests / History:** refresh, include history, select a request, show card details, or cancel from its row with confirmation. Successful cancellation clears that request's displayed card details.
-- **Create:** load a payment method; enter merchant, URL, amount in minor units (USD $15 = 1500), item, and at least 100 characters of context. Choose Valid until (default: one day from now), then review and confirm creation. This submits request expiry; actual card validity is determined by Link.
+- **Create:** load a payment method; enter merchant, URL, amount in minor units (USD $15 = 1500), and item. Context is generated automatically. Review and confirm. Custom request expiry is not supported; Link determines card validity.
 - Approve the purchase yourself in Link. The app checks approval every two seconds for up to ten minutes, then automatically retrieves full card details. Manual refresh is also available.
 - Full card details are selectable; missing fields show `—`. Card responses are handled in memory with an ephemeral network session, without credential JSON files.
 - Closing the window clears displayed card data and stops approval checks.
