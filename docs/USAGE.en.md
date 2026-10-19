@@ -46,6 +46,10 @@ All text input fields support **⌘C Copy, ⌘V Paste, ⌘X Cut, ⌘A Select All
 
 Use Check for Updates… and the Automatically check for updates toggle in the footer. A check command is also available in the menu bar. Automatic checks run daily by default; manual checks remain available when disabled. Follow Sparkle's update dialog to download, install, and relaunch; finish current work before installing. Both the feed and archive are signature-verified. Older builds need one manual download to gain this feature.
 
+![Automatic-check toggle and manual check button; Chinese interface](images/update-controls-zh.jpg)
+
+![Successful check of the public signed feed: already up to date](images/update-check-en.jpg)
+
 ## 2. Log in to Link
 
 1. Click **Log in to Link** below the title.

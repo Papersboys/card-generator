@@ -19,3 +19,8 @@ All accounts, request IDs, authorization phrases, addresses, and card details in
 - `error-banner-zh.jpg`: simulated minimum-USD-amount error with copy/dismiss controls.
 
 Costco is the real merchant name used as an editable default, shown only as an example. Screenshots do not represent a real Costco purchase. No custom expiry picker is present in v2.5.6.
+
+Update screenshots from v2.6.0 use the same mock account model; only Sparkle contacts the public GitHub update feed. They do not access Link credentials.
+
+- `update-controls-zh.jpg`: daily automatic-check toggle and manual check button.
+- `update-check-en.jpg`: successful public-feed check showing the current version is up to date. No app installation was triggered.
