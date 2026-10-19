@@ -139,6 +139,30 @@ struct ContentView: View {
     var createSummary:String { "\(merchant)\n\(url)\n\(t("金额")): \(amount) \(currency.uppercased()) \(t("最小单位"))\n\(t("商品")): \(item)\n\(t("可用截止时间")): \(validUntil.formatted(Date.FormatStyle(date:.abbreviated,time:.shortened).locale(model.language.locale)))\n\(context)\n\(t("创建后仍需要在 Link 中批准。"))" }
     func display(_ s:String)->String { if s.isEmpty {return "—"}; if let timestamp=Double(s),timestamp>1_000_000_000,timestamp<10_000_000_000 { return Date(timeIntervalSince1970:timestamp).formatted(Date.FormatStyle(date:.abbreviated,time:.standard).locale(model.language.locale)) }; return s }
 }
+@MainActor func installMainMenu(language:AppLanguage) {
+    let main=NSMenu()
+    let application=NSMenuItem()
+    let applicationMenu=NSMenu(title:"Link Card")
+    applicationMenu.addItem(withTitle:L10n.text("退出",language:language),action:#selector(NSApplication.terminate(_:)),keyEquivalent:"q")
+    application.submenu=applicationMenu
+    main.addItem(application)
+    let editItem=NSMenuItem()
+    let edit=NSMenu(title:L10n.text("编辑",language:language))
+    for (title,action,key,shift) in [
+        ("撤销","undo:","z",false), ("重做","redo:","z",true),
+        ("剪切","cut:","x",false), ("复制","copy:","c",false),
+        ("粘贴","paste:","v",false), ("全选","selectAll:","a",false)
+    ] {
+        let item=NSMenuItem(title:L10n.text(title,language:language),action:Selector(action),keyEquivalent:key)
+        item.keyEquivalentModifierMask=shift ? [.command,.shift] : [.command]
+        // A nil target routes commands to the focused native field editor.
+        item.target=nil
+        edit.addItem(item)
+    }
+    editItem.submenu=edit
+    main.addItem(editItem)
+    NSApp.mainMenu=main
+}
 @MainActor final class AppDelegate:NSObject,NSApplicationDelegate,NSWindowDelegate {
     let model=Model(); var status:NSStatusItem!; var window:NSWindow!
     var languageObserver:AnyCancellable?
@@ -151,6 +175,7 @@ struct ContentView: View {
         window.minSize=NSSize(width:540,height:520);window.title="Link Card";window.isReleasedWhenClosed=false;window.delegate=self;window.contentView=NSHostingView(rootView:ContentView(model:model));window.center();openWindow();model.start()
     }
     func updateMenu(_ language:AppLanguage) {
+        installMainMenu(language:language)
         let menu=NSMenu()
         menu.addItem(withTitle:L10n.text("打开 Link Card",language:language),action:#selector(openWindow),keyEquivalent:"")
         menu.addItem(withTitle:L10n.text("退出",language:language),action:#selector(quit),keyEquivalent:"q")
