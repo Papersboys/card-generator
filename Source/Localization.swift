@@ -8,6 +8,11 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "选择付款方式，或粘贴 ID":"Select a payment method or paste its ID",
+        "例如 1500（$15.00 USD）":"e.g. 1500 ($15.00 USD)",
+        "填写该币种的最小单位金额":"Enter an amount in this currency's minor units",
+        "例如 Costco Shop Card":"e.g. Costco Shop Card",
+        "USD 以美分填写：50 = $0.50（最低），1500 = $15.00。":"Enter USD in cents: 50 = $0.50 (minimum), 1500 = $15.00.",
         "操作失败":"Action failed", "复制错误":"Copy error", "关闭错误提示":"Dismiss error",
         "无法创建付款请求":"Unable to create spend request",
         "无法确认新请求状态，请稍后刷新。":"Unable to confirm the new request status. Refresh again shortly.",

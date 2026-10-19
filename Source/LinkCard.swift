@@ -7,8 +7,8 @@ struct ContentView: View {
     @State var tab = 0
     @State var selected:String?
     @State var payment = ""
-@State var merchant = ""
-@State var url = ""
+@State var merchant = "Costco"
+@State var url = "https://www.costco.com"
 @State var amount = ""
 @State var currency = "usd"
 @State var item = ""
@@ -147,10 +147,24 @@ struct ContentView: View {
     var expiryPicker:some View {
         DatePicker(t("可用截止时间"),selection:$validUntil,in:Date()...,displayedComponents:[.date,.hourAndMinute]).labelsHidden()
     }
+    func placeholder(_ title:String)->String {
+        switch title {
+        case "付款方式 ID":return t("选择付款方式，或粘贴 ID")
+        case "商家名称":return "Costco"
+        case "商家 URL":return "https://www.costco.com"
+        case "金额（最小单位，如 $15 = 1500）":return currency.lowercased()=="usd" ? t("例如 1500（$15.00 USD）") : t("填写该币种的最小单位金额")
+        case "币种":return "usd"
+        case "商品（数量 1）":return t("例如 Costco Shop Card")
+        default:return ""
+        }
+    }
     func field(_ title:String,text:Binding<String>)->some View {
         VStack(alignment:.leading,spacing:7) {
             Text(t(title)).font(.subheadline.weight(.medium)).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)
-            TextField("",text:text).textFieldStyle(.roundedBorder).controlSize(.large).frame(maxWidth:.infinity).accessibilityLabel(t(title))
+            TextField(placeholder(title),text:text).textFieldStyle(.roundedBorder).controlSize(.large).frame(maxWidth:.infinity).accessibilityLabel(t(title))
+            if title == "金额（最小单位，如 $15 = 1500）",currency.lowercased()=="usd" {
+                Text(t("USD 以美分填写：50 = $0.50（最低），1500 = $15.00。")).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)
+            }
         }.frame(maxWidth:.infinity,alignment:.leading)
     }
     func t(_ key:String)->String { L10n.text(key,language:model.language) }
