@@ -161,6 +161,10 @@ This is **spend-request history**. Row amounts are request amounts, not a dedica
 
 ## Troubleshooting
 
+Errors appear in a persistent red banner at the top of the window. It keeps the specific Link error through tab changes, refreshes, and scrolling. Use Copy error to copy the text, or × to dismiss it. Failed creation preserves the form and does not switch to Approve.
+
+
+
 | Situation | What to do |
 | --- | --- |
 | No active requests | Enable Include history or create a request |

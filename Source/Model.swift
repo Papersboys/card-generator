@@ -41,7 +41,9 @@ struct RequestItem: Identifiable {
             if isSignedIn { message="已登录，暂时无法加载账户信息。" }
         }
     }
+    @Published var lastError=""
     func handle(_ error:Error) {
+        lastError=error.localizedDescription
         if (error as? LinkError)?.requiresLogin == true {
             isSignedIn=false;account=nil;detail=[];methods=[];requests=[];createdIDs=[]
             approvalWatch?.cancel();pendingID="";approvalURL=""

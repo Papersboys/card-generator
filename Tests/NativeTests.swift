@@ -136,7 +136,14 @@ final class MockProtocol:URLProtocol {
         try await idle(rejected)
         precondition(rejected.lastCreatedID==nil && rejected.requests.isEmpty && rejected.approvalURL.isEmpty)
         precondition(rejected.creationError?.contains("Mock creation rejected")==true)
+        precondition(rejected.lastError.contains("Mock creation rejected"))
+        let savedError=rejected.lastError
+        rejected.load();try await idle(rejected)
+        precondition(rejected.lastError==savedError)
+        rejected.lastError=""
+        precondition(rejected.lastError.isEmpty)
         MockProtocol.rejectCreate=false
+        print("PASS: error banner state persists across refresh and can be dismissed")
         print("PASS: failed creation exposes server error and never signals a successful request")
         let delayed=Model(api:api)
         MockProtocol.emptyList=true;MockProtocol.requestStatus="pending_approval"

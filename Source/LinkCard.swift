@@ -18,6 +18,23 @@ struct ContentView: View {
     @State var toCancel:RequestItem?
     var body: some View {
         GeometryReader { geometry in
+        VStack(spacing:0) {
+        if !model.lastError.isEmpty {
+            VStack(alignment:.leading,spacing:8) {
+                HStack {
+                    Label(t("操作失败"),systemImage:"exclamationmark.triangle.fill").foregroundStyle(.red).font(.headline)
+                    Spacer()
+                    Button(t("复制错误")) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(t(model.lastError),forType:.string)
+                    }
+                    Button {model.lastError="";model.creationError=nil} label: {Image(systemName:"xmark")}.buttonStyle(.plain).help(t("关闭错误提示"))
+                }
+                ScrollView {
+                    Text(t(model.lastError)).font(.callout).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading).fixedSize(horizontal:false,vertical:true)
+                }.frame(maxHeight:80)
+            }.padding(14).background(Color.red.opacity(0.08)).overlay(RoundedRectangle(cornerRadius:10).stroke(Color.red.opacity(0.25))).clipShape(RoundedRectangle(cornerRadius:10)).padding(.horizontal,24).padding(.top,16)
+        }
         ScrollView { VStack(alignment:.leading,spacing:20) {
             HStack(spacing:12) { Image(systemName:"creditcard.fill").foregroundStyle(.cyan); Text("Link Card").font(.title2.bold()); Spacer(); Picker("Language / 语言",selection:$model.language) { Text("中文").tag(AppLanguage.chinese); Text("English").tag(AppLanguage.english) }.pickerStyle(.segmented).labelsHidden().frame(width:145) }
             HStack(spacing:12) { if model.busy { ProgressView().controlSize(.small) }; if model.checkingAccount {
@@ -119,14 +136,12 @@ struct ContentView: View {
             }.font(.caption2)
 
         }.frame(width:min(1000,max(0,geometry.size.width-48))).padding(24).frame(maxWidth:.infinity) }
+        }
         }.background(Color(nsColor:.windowBackgroundColor)).frame(minWidth:520,minHeight:480)
         .onChange(of:model.lastCreatedID) {selected=$0;tab=2}
         .onChange(of:tab) { value in if value == 2 {model.load()} }
         .environment(\.locale,model.language.locale)
         .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context,validUntil:validUntil) } } message: { Text(createSummary) }
-        .alert(t("无法创建付款请求"),isPresented:Binding(get:{model.creationError != nil},set:{if !$0 {model.creationError=nil}})) {
-            Button(t("返回"),role:.cancel) {model.creationError=nil}
-        } message: {Text(t(model.creationError ?? ""))}
         .alert(t("取消这个请求？"),isPresented:Binding(get:{toCancel != nil},set:{if !$0 {toCancel=nil}})) { Button(t("返回"),role:.cancel){toCancel=nil}; Button(t("取消请求"),role:.destructive){if let r=toCancel {model.cancel(r)};toCancel=nil} } message:{Text("\(toCancel?.merchant ?? "")\n\(toCancel?.id ?? "")\n\(t("这不会撤销已完成的付款。"))")}
     }
     var expiryPicker:some View {
