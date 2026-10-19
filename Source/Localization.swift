@@ -8,6 +8,7 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "已复制":"Copied", "请求已批准，打开菜单栏面板查看卡信息。":"Request approved. Open the menu bar panel to view card details.",
         "检查更新…":"Check for Updates…", "自动检查更新":"Automatically check for updates",
         "退出登录":"Log out", "已退出登录。":"Logged out.",
         "Link 登录授权已失效，请重新登录。":"Your Link authorization is no longer valid. Please log in again.",
@@ -49,7 +50,7 @@ enum L10n {
         "创建后仍需要在 Link 中批准。":"You will still need to approve this request in Link.",
         "这不会撤销已完成的付款。":"This does not reverse completed payments.",
         "打开 Link Card":"Open Link Card", "退出":"Quit",
-        "原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭窗口会清除显示。":"Connects directly to Link; no CLI required. Login is stored in Keychain; card details stay in memory. Closing the window clears the display.",
+        "原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭面板会清除显示。":"Connects directly to Link; no CLI required. Login is stored in Keychain; card details stay in memory. Closing the panel clears the display.",
         "打开登录链接，在 Link 中输入授权短语。":"Open the authorization link and enter the phrase in Link.",
         "Link 登录成功。":"Logged in to Link.", "登录链接已过期，请重新登录。":"The login link expired. Please log in again.",
         "已停止等待登录。":"Stopped waiting for login.", "自动等待已结束；可手动刷新卡信息。":"Automatic approval checks ended. You can refresh card details manually.",

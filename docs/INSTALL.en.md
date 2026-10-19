@@ -127,8 +127,8 @@ Continue with the [illustrated usage guide](USAGE.en.md) for creation, approval,
 
 ## Menu bar and quitting
 
-- Click the credit-card icon → **Open Link Card** to reopen the window.
-- Closing the window does not quit the app or cancel server-side requests.
+- Click the credit-card menu-bar icon to expand the dropdown panel.
+- Closing the panel does not quit the app or cancel server-side requests.
 - Choose **Quit** from the menu-bar menu to exit completely.
 - Installation does not automatically enable launch at login.
 
@@ -167,7 +167,7 @@ From v2.6.0, use Check for Updates… in the footer or menu bar to download, ins
 | No permission to install | Use `$HOME/Applications`, or authorize the Finder copy when prompted |
 | A downloaded app will not open | Check its source, extraction, and the system message; consider a source build rather than disabling security protections |
 | No Dock icon appears | This is a menu-bar app; look for the credit-card icon at the top of the screen |
-| The window disappeared | Choose **Open Link Card** from the menu-bar icon |
+| The window disappeared | Click the menu-bar icon to expand the panel |
 | Multiple copies appear | Quit old copies and consistently open the installed bundle instead of also launching `dist/` |
 | Login expired or account information is unavailable | Follow the app's network/login prompts and the usage guide |
 | App will not run on Intel | The current script only builds for Apple Silicon; Intel requires separate adaptation and verification |

@@ -132,6 +132,16 @@ final class MockProtocol:URLProtocol {
         logoutModel.login();await logoutModel.loginTask?.value;try await idle(logoutModel)
         precondition(logoutModel.isSignedIn)
         print("PASS: logout clears local session and sensitive state without API mutations; fresh login works")
+        let closedPanel=Model(api:api)
+        closedPanel.requests=[RequestItem(raw:["id":"lsrq_mock","status":"approved"])]
+        closedPanel.show("lsrq_mock");closedPanel.displayCredentials=false
+        try await idle(closedPanel)
+        precondition(closedPanel.detail.isEmpty && closedPanel.requests[0].raw["card"]==nil)
+        closedPanel.displayCredentials=true
+        closedPanel.show("lsrq_mock");try await idle(closedPanel)
+        precondition(closedPanel.detail.contains{$0.0=="CVC" && $0.1=="MOCK_CVC"})
+        precondition(closedPanel.requests[0].raw["card"]==nil)
+        print("PASS: closed panel discards in-flight credentials, metadata stays card-free, reopening permits explicit retrieval")
         let context=String(repeating:"Mock purchase details. ",count:8)
         model.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)
         try await idle(model)

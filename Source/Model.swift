@@ -3,6 +3,7 @@ import Combine
 
 struct RequestItem: Identifiable {
     let raw: [String:Any]
+    init(raw:[String:Any]) {var metadata=raw;metadata.removeValue(forKey:"card");self.raw=metadata}
     var id:String { str(raw,"id") }
     var merchant:String { str(raw,"merchant_name") }
     var status:String { str(raw,"status") }
@@ -104,6 +105,7 @@ struct RequestItem: Identifiable {
     @Published var message = ""
     @Published var history = false
     @Published var detail:[(String,String)] = []
+    var displayCredentials=true
     @Published var approvalURL = ""
     @Published var pendingID = ""
     @Published var lastCreatedID:String?
@@ -125,7 +127,17 @@ struct RequestItem: Identifiable {
                     if status == "approved" {
                         while self.busy { try await Task.sleep(nanoseconds:200_000_000) }
                         guard !Task.isCancelled else { return }
-                        self.show(id); return
+                        if self.displayCredentials {self.show(id)}
+                        else {
+                            if let index=self.requests.firstIndex(where:{$0.id==id}) {
+                                var metadata=self.requests[index].raw
+                                for (key,value) in request {metadata[key]=value}
+                                self.requests[index]=RequestItem(raw:metadata)
+                            }
+                            self.pendingID="";self.approvalURL=""
+                            self.message="请求已批准，打开菜单栏面板查看卡信息。"
+                        }
+                        return
                     }
                     if !["created","pending_approval","requires_action"].contains(status) {
                         self.pendingID=""; self.message="请求状态："+status; return
@@ -193,6 +205,7 @@ struct RequestItem: Identifiable {
             for (key,value) in request {merged[key]=value}
             self.requests[index]=RequestItem(raw:merged)
         }
+        guard displayCredentials else {detail=[];return}
         let card:Any = request["card"] ?? [:]
         let month = find(card,["exp_month","expiry_month","expiration_month"])
         let year = find(card,["exp_year","expiry_year","expiration_year"])

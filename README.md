@@ -8,7 +8,7 @@ A native macOS menu-bar app to create Link spend requests, approve them in Link,
 
 [Product website](https://papersboys.github.io/card-generator/?lang=en) · [Download for Apple Silicon](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip) · [All releases and checksums](https://github.com/Papersboys/card-generator/releases)
 
-Download the ZIP, extract it, and drag **LinkCard.app** into Applications. Open the installed app and use the menu-bar credit-card icon. No compilation is required.
+Download the ZIP, extract it, and drag **LinkCard.app** into Applications. Open the installed app and click the menu-bar credit-card icon to expand the panel; no separate main window is opened. No compilation is required.
 
 **No link-cli binary, Node.js, npm, shell helpers, or local server is required.** Requires Apple Silicon and macOS 13+.
 
@@ -91,8 +91,8 @@ Use **Log out** beside your account to clear this app's local credentials and di
 - **Requests / History:** refresh, include history, select a request, show card details, or cancel from its row with confirmation. Successful cancellation clears that request's displayed card details.
 - **Create:** load a payment method; enter merchant, URL, amount in minor units (USD $15 = 1500), and item. Context is generated automatically. Review and confirm. Custom request expiry is not supported; Link determines card validity.
 - Approve the purchase yourself in Link. The app checks approval every two seconds for up to ten minutes, then automatically retrieves full card details. Manual refresh is also available.
-- Full card details are selectable; missing fields show `—`. Card responses are handled in memory with an ephemeral network session, without credential JSON files.
-- Closing the window clears displayed card data and stops approval checks.
+- Card number, CVC/CVV, and Expiration have individual Copy buttons; other fields are selectable; missing fields show `—`. Card responses are handled in memory with an ephemeral network session, without credential JSON files.
+- Closing the panel clears displayed card data; pending approval checks can continue.
 - History is spend-request history, not merchant settlement history.
 
 The app has a local ad-hoc signature, not an Apple notarized distribution signature. No startup/login-item setting is changed. No real purchase or cancellation was used in development tests. Live checks used only history and payment-method reads.

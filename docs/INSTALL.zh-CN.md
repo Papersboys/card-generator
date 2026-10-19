@@ -130,7 +130,7 @@ open "$HOME/Applications/LinkCard.app"
 ## 菜单栏与退出
 
 - 点击菜单栏信用卡图标 → **打开 Link Card / Open Link Card**，重新显示窗口。
-- 关闭窗口不会退出 App，也不会取消服务端请求。
+- 收起面板不会退出 App，也不会取消服务端请求。
 - 点击菜单栏图标 → **退出 / Quit**，完全退出。
 - 安装不会自动设置登录启动。
 

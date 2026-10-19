@@ -8,7 +8,7 @@
 
 [产品主页](https://papersboys.github.io/card-generator/) · [下载 Apple Silicon 版](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip) · [全部版本与校验文件](https://github.com/Papersboys/card-generator/releases)
 
-下载 ZIP 并解压，将 **LinkCard.app** 拖入 Applications 后打开即可，**无需编译**。通过菜单栏信用卡图标打开窗口或退出。
+下载 ZIP 并解压，将 **LinkCard.app** 拖入 Applications 后打开即可，**无需编译**。点击菜单栏信用卡图标直接展开下拉面板，无需打开独立窗口；面板底部可退出。
 
 **无需安装 link-cli、Node.js、npm、Shell helper 或本地服务。** 需要 Apple Silicon 和 macOS 13 或更新版本。
 
@@ -87,8 +87,8 @@ open "$HOME/Applications/LinkCard.app"
 - **请求 / 历史**：刷新、包含历史、选择请求、显示卡信息或在请求行确认取消；取消成功后清除该请求的卡信息。
 - **创建**：加载付款方式，填写商家、URL、最小单位金额（USD $15 = 1500）和商品；用途自动生成，核对后提交。不设置自定义请求到期时间，卡片有效期以 Link 返回为准。
 - 在 Link 中亲自批准购买。App 每两秒检查一次，最多等待十分钟，然后自动读取卡信息；也可手动刷新。
-- 卡信息可以选中复制；缺失字段显示 `—`。响应仅在内存和临时网络会话中处理，不写成卡信息 JSON 文件。
-- 关闭窗口会清除显示并停止批准检查。
+- 卡号、CVC／CVV 和有效期旁提供独立复制按钮，其他卡信息也可选中复制；缺失字段显示 `—`。响应仅在内存和临时网络会话中处理，不写成卡信息 JSON 文件。
+- 收起面板会清除卡信息显示；等待批准可以继续。
 - 历史页展示付款请求，不是商家最终结算流水。
 
 完整操作和常见问题见[中文使用说明](docs/USAGE.zh-CN.md)。开发测试未执行真实购买或取消；真实账户验证仅进行了历史和付款方式的只读查询。

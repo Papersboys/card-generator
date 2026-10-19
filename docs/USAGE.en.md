@@ -40,40 +40,29 @@ Missing fields display as `—`:
 3. Select the request.
 4. Click **Show card details**.
 
-Select text and press **⌘C** to copy it to your own checkout form. The app does not automatically copy or fill merchant forms. Full card numbers and CVCs appear directly in the window.
+Use the separate **Copy** buttons beside Card number, CVC/CVV, and Expiration. Each shows Copied after copying its value for checkout. Missing values cannot be copied. You can also select text and press **⌘C**. The app does not automatically copy or fill merchant forms. Full card numbers and CVCs appear directly in the panel.
 
-Click **Clear card details** to clear the display. Closing the window also clears it and stops approval checks, without canceling the server-side request. Card responses use an ephemeral network session and are not written to credential JSON files.
+Click **Clear card details** to clear the display. Closing the panel also clears displayed card details; pending approval checks can continue, without canceling the server-side request. Card responses use an ephemeral network session and are not written to credential JSON files.
 
 
 First time here? Continue with launch, login, creation, and approval below. Pending requests do not expose full card details.
 
-## 2. Launch and menu bar
+## 2. Menu bar dropdown panel
 
-Open the installed **LinkCard.app** from Applications. If you prefer trying a source build directly:
+Launch **LinkCard.app**, then click the credit-card icon in the macOS menu bar to expand the panel. From v2.7.0, the app no longer opens a separate main window.
 
-```bash
-./build.sh
-open dist/LinkCard.app
-```
-
-A credit-card icon appears in the macOS menu bar:
-
-- **Open Link Card** shows the main window.
-- **Quit** exits the app.
-
-Closing the window leaves the app in the menu bar. Reopen it from the icon. The app does not automatically enable launch at login.
-
-![Chinese request history showing a fictional signed-in account and request statuses](images/overview-zh.jpg)
-
-*The header shows the account; rows show request IDs, amounts, and statuses.*
+- Click the icon again, click outside the panel, or press Esc to close it.
+- View, create, approve, log out, and check for updates in the panel. Scroll to reach more content.
+- Right-click the icon for shortcuts including Check for Updates… and Quit. Quit is also available at the bottom of the panel.
+- Closing the panel clears displayed card details and keeps existing requests in Link. Approval checks can continue; reopen the panel after approval to retrieve card details.
 
 ### Change language
 
-Use **中文 / English** at the top of the window. Controls, menu-bar items, confirmations, card field labels, and existing status messages update immediately. Your choice survives restarts. Merchant names, purchase context, IDs, and card data are preserved.
+Use **中文 / English** at the top of the panel. Controls, menu-bar items, confirmations, card field labels, and existing status messages update immediately. Your choice survives restarts. Merchant names, purchase context, IDs, and card data are preserved.
 
-### Resize the window and edit fields
+### Panel layout and editing shortcuts
 
-These screenshots show **v2.5.6**. Drag a window edge to resize it: narrow windows use one form column and wider windows arrange fields into multiple columns. Scroll down to reach generated context and the create button. Check the version in the footer; if the old form still appears, quit the old app before replacing it with the latest build.
+The panel fits the available screen area and scrolls vertically. Older screenshots below illustrate field content; from v2.7.0 the actual interface is a menu bar dropdown panel.
 
 | Narrow single-column form | Scroll to the bottom |
 | --- | --- |
@@ -155,7 +144,7 @@ This client does not support custom request expiry. Creation omits `expires_at`;
 
 1. After creation, the **Approve** tab opens. Click **Approve in Link ↗**. You can also select earlier pending requests here to review their merchant, amount, and generated context. If no link is available yet, click **Get approval link**.
 2. Review and personally approve the request on the official Link page.
-3. Keep the app window open. The app checks every two seconds for up to ten minutes and retrieves card details once approved.
+3. The app can continue checking while the panel is closed. The app checks every two seconds for up to ten minutes and retrieves card details after approval when the panel is open; otherwise, reopen the panel to retrieve them.
 4. If the display does not update, click **Refresh after approval**, or select the request and click **Show card details**.
 
 ![Approve tab showing an earlier pending request, purchase context, and Link approval link; Chinese interface](images/approve-zh.jpg)
@@ -187,7 +176,7 @@ This is **spend-request history**. Row amounts are request amounts, not a dedica
 
 ![Persistent error banner with Copy error and Dismiss controls; Chinese interface](images/error-banner-zh.jpg)
 
-Errors appear in a persistent red banner at the top of the window. It keeps the specific Link error through tab changes, refreshes, and scrolling. Use Copy error to copy the text, or × to dismiss it. Failed creation preserves the form and does not switch to Approve.
+Errors appear in a persistent red banner at the top of the panel. It keeps the specific Link error through tab changes, refreshes, and scrolling. Use Copy error to copy the text, or × to dismiss it. Failed creation preserves the form and does not switch to Approve.
 
 
 
@@ -202,7 +191,7 @@ For `amount must be at least $0.50 usd`, enter at least `50` for USD. A rejected
 | `pending_approval`, with no card number | Open that request's approval link, approve it, then refresh |
 | Expired login or HTTP 401 | Use Log in to Link, then refresh |
 | Card number, address, or CVC is `—` | The response did not include that field; check approval/status rather than inferring its value |
-| Details disappeared after closing | Reopen from the menu bar, select the request, and show details again |
+| Details disappeared after closing the panel | Reopen from the menu bar, select the request, and show details again |
 | Creation returned an error | Refresh active requests and history before retrying, to avoid duplicate submissions |
 
 ## Current scope

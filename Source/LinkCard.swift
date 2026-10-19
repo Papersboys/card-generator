@@ -17,6 +17,7 @@ struct ContentView: View {
     var context:String { Model.purchaseContext(merchant:merchant,url:url,amount:amount,currency:currency,item:item) }
     @State var confirmCreate = false
     @State var toCancel:RequestItem?
+    @State var copiedField:String?
     var body: some View {
         GeometryReader { geometry in
         VStack(spacing:0) {
@@ -111,12 +112,26 @@ struct ContentView: View {
                 HStack { Link(t("在 Link 中批准请求 ↗"),destination:u).buttonStyle(.borderedProminent); if !model.pendingID.isEmpty { Button(t("已批准，刷新卡信息")) { model.show(model.pendingID) }.disabled(model.busy) } }
             }
             if !model.detail.isEmpty {
-                ScrollView { Grid(alignment:.leading,horizontalSpacing:16,verticalSpacing:9) { ForEach(model.detail.indices,id:\.self) { i in
-                    GridRow { Text(t(model.detail[i].0)).foregroundStyle(.cyan).frame(width:145,alignment:.leading); Text(model.detail[i].0 == "Status" ? L10n.status(model.detail[i].1,language:model.language) : display(model.detail[i].1)).font(.system(.body,design:.monospaced)).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading) }; Divider()
-                } }.padding(10) }.frame(height:300).background(.quaternary.opacity(0.3)).clipShape(RoundedRectangle(cornerRadius:8))
+                ScrollView { Grid(alignment:.leading,horizontalSpacing:12,verticalSpacing:10) { ForEach(displayedDetails.indices,id:\.self) { i in
+                    let field=displayedDetails[i]
+                    GridRow {
+                        Text(t(field.0)).foregroundStyle(.cyan).frame(width:112,alignment:.leading)
+                        Text(field.0 == "Status" ? L10n.status(field.1,language:model.language) : display(field.1)).font(.system(.body,design:.monospaced)).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading).fixedSize(horizontal:false,vertical:true)
+                        if ["Card number","CVC","Expiration"].contains(field.0) {
+                            Button {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(field.1,forType:.string)
+                                copiedField=field.0
+                                Task {try? await Task.sleep(nanoseconds:2_000_000_000);if copiedField==field.0 {copiedField=nil}}
+                            } label: {Label(t(copiedField==field.0 ? "已复制" : "复制"),systemImage:copiedField==field.0 ? "checkmark" : "doc.on.doc")}
+                            .controlSize(.small).disabled(field.1.isEmpty || field.1=="—")
+                            .accessibilityLabel(t("复制")+" "+t(field.0))
+                        } else {Color.clear.frame(width:1,height:1)}
+                    }; Divider()
+                } }.padding(12) }.frame(height:300).background(.quaternary.opacity(0.3)).clipShape(RoundedRectangle(cornerRadius:8))
             }
             if !model.message.isEmpty { ScrollView { Text(t(model.message)).font(.caption).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading) }.frame(maxHeight:90) }
-            Text(t("原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭窗口会清除显示。")).font(.caption2).foregroundStyle(.secondary)
+            Text(t("原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭面板会清除显示。")).font(.caption2).foregroundStyle(.secondary)
             HStack(spacing:6) {
                 Text("Link Card \(Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "")").foregroundStyle(.secondary)
                 Text("·").foregroundStyle(.tertiary)
@@ -130,16 +145,25 @@ struct ContentView: View {
                 Spacer()
                 Button(t("检查更新…")) {updates.check()}.disabled(!updates.canCheck)
             }.font(.caption2)
-            Toggle(t("自动检查更新"),isOn:Binding(get:{updates.automaticChecks},set:{updates.setAutomaticChecks($0)})).toggleStyle(.checkbox).font(.caption)
+            HStack {
+                Toggle(t("自动检查更新"),isOn:Binding(get:{updates.automaticChecks},set:{updates.setAutomaticChecks($0)})).toggleStyle(.checkbox).font(.caption)
+                Spacer()
+                Button(t("退出")) {NSApp.terminate(nil)}.buttonStyle(.link).font(.caption)
+            }
 
         }.frame(width:min(1000,max(0,geometry.size.width-48))).padding(24).frame(maxWidth:.infinity) }
         }
         }.background(Color(nsColor:.windowBackgroundColor)).frame(minWidth:520,minHeight:480)
         .onChange(of:model.lastCreatedID) {selected=$0;tab=2}
+        .onChange(of:model.detail.first(where:{$0.0=="Card number"})?.1) {_ in copiedField=nil}
         .onChange(of:tab) { value in if value == 2 {model.load()} }
         .environment(\.locale,model.language.locale)
         .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context) } } message: { Text(createSummary) }
         .alert(t("取消这个请求？"),isPresented:Binding(get:{toCancel != nil},set:{if !$0 {toCancel=nil}})) { Button(t("返回"),role:.cancel){toCancel=nil}; Button(t("取消请求"),role:.destructive){if let r=toCancel {model.cancel(r)};toCancel=nil} } message:{Text("\(toCancel?.merchant ?? "")\n\(toCancel?.id ?? "")\n\(t("这不会撤销已完成的付款。"))")}
+    }
+    var displayedDetails:[(String,String)] {
+        let priority=["Card number","CVC","Expiration","Billing address","Brand","Valid until"]
+        return priority.compactMap {key in model.detail.first{$0.0==key}} + model.detail.filter{!priority.contains($0.0)}
     }
     func placeholder(_ title:String)->String {
         switch title {
@@ -189,31 +213,67 @@ struct ContentView: View {
     main.addItem(editItem)
     NSApp.mainMenu=main
 }
-@MainActor final class AppDelegate:NSObject,NSApplicationDelegate,NSWindowDelegate {
-    let model=Model(); var status:NSStatusItem!; var window:NSWindow!
+@MainActor final class AppDelegate:NSObject,NSApplicationDelegate,NSPopoverDelegate {
+    let model:Model
+    let startServices:Bool
+    var status:NSStatusItem!
+    let popover=NSPopover()
+    var contextMenu=NSMenu()
     var languageObserver:AnyCancellable?
+    init(model:Model?=nil,startServices:Bool=true) {
+        self.model=model ?? Model();self.startServices=startServices;super.init()
+    }
     func applicationDidFinishLaunching(_ notification:Notification) {
         NSApp.setActivationPolicy(.accessory)
         status=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
         status.button?.image=NSImage(systemSymbolName:"creditcard",accessibilityDescription:"Link Card")
-        languageObserver=model.$language.sink { [weak self] language in self?.updateMenu(language) }
-        window=NSWindow(contentRect:NSRect(x:0,y:0,width:900,height:820),styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
-        window.minSize=NSSize(width:540,height:520);window.title="Link Card";window.isReleasedWhenClosed=false;window.delegate=self;window.contentView=NSHostingView(rootView:ContentView(model:model));window.center();openWindow();model.start();UpdateManager.shared.start()
+        status.button?.target=self;status.button?.action=#selector(togglePopover(_:))
+        status.button?.sendAction(on:[.leftMouseUp,.rightMouseUp])
+        popover.behavior = .transient
+        popover.delegate=self
+        popover.contentViewController=NSHostingController(rootView:ContentView(model:model))
+        languageObserver=model.$language.sink {[weak self] language in self?.updateMenu(language)}
+        model.displayCredentials=false
+        if startServices {model.start();UpdateManager.shared.start()}
+        else {openPopover()}
     }
     func updateMenu(_ language:AppLanguage) {
         installMainMenu(language:language)
         let menu=NSMenu()
-        menu.addItem(withTitle:L10n.text("打开 Link Card",language:language),action:#selector(openWindow),keyEquivalent:"")
-        menu.addItem(withTitle:L10n.text("退出",language:language),action:#selector(quit),keyEquivalent:"q")
-        for item in menu.items {item.target=self}
-        let updateItem=NSMenuItem(title:L10n.text("检查更新…",language:language),action:#selector(SPUStandardUpdaterController.checkForUpdates(_:)),keyEquivalent:"")
-        updateItem.target=UpdateManager.shared.controller
-        menu.insertItem(updateItem,at:1)
-        status.menu=menu
+        let open=NSMenuItem(title:L10n.text("打开 Link Card",language:language),action:#selector(openFromMenu),keyEquivalent:"")
+        open.target=self;menu.addItem(open)
+        let update=NSMenuItem(title:L10n.text("检查更新…",language:language),action:#selector(SPUStandardUpdaterController.checkForUpdates(_:)),keyEquivalent:"")
+        update.target=UpdateManager.shared.controller;menu.addItem(update)
+        let quit=NSMenuItem(title:L10n.text("退出",language:language),action:#selector(quit),keyEquivalent:"q")
+        quit.target=self;menu.addItem(quit)
+        contextMenu=menu
     }
-    @objc func openWindow(){window.makeKeyAndOrderFront(nil);NSApp.activate(ignoringOtherApps:true)}
-    @objc func quit(){NSApp.terminate(nil)}
-    func windowWillClose(_ notification:Notification){model.approvalWatch?.cancel();model.detail=[];model.approvalURL=""}
+    @objc func togglePopover(_ sender:Any?) {
+        if NSApp.currentEvent?.type == .rightMouseUp,let button=status.button {
+            contextMenu.popUp(positioning:nil,at:NSPoint(x:0,y:button.bounds.minY),in:button)
+        } else if popover.isShown {popover.performClose(sender)}
+        else {openPopover()}
+    }
+    func applicationShouldHandleReopen(_ sender:NSApplication,hasVisibleWindows:Bool)->Bool {
+        openPopover();return false
+    }
+    @objc func openFromMenu() {openPopover()}
+    func openPopover() {
+        guard let button=status.button else {return}
+        let available=button.window?.screen?.visibleFrame.size ?? NSSize(width:900,height:800)
+        popover.contentSize=NSSize(width:min(640,available.width-24),height:min(760,available.height-36))
+        model.displayCredentials=true
+        popover.show(relativeTo:button.bounds,of:button,preferredEdge:.minY)
+        NSApp.activate(ignoringOtherApps:true)
+        popover.contentViewController?.view.window?.makeKey()
+        if let id=model.lastCreatedID,model.requests.contains(where:{$0.id==id && $0.status=="approved"}),model.detail.isEmpty,!model.busy {
+            model.show(id)
+        }
+    }
+    func popoverDidClose(_ notification:Notification) {
+        model.displayCredentials=false;model.detail=[]
+    }
+    @objc func quit() {NSApp.terminate(nil)}
 }
 @main struct LinkCardApp {
     @MainActor static func main() {
