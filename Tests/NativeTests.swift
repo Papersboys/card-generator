@@ -5,6 +5,8 @@ final class MockProtocol:URLProtocol {
     static var force401=false
     static var pollCount=0
     static var profileUnavailable=false
+    static var rejectCancel=false
+    static var lastCreateBody:[String:Any]=[:]
     override class func canInit(with request:URLRequest)->Bool {true}
     override class func canonicalRequest(for request:URLRequest)->URLRequest {request}
     override func startLoading() {
@@ -27,10 +29,17 @@ final class MockProtocol:URLProtocol {
             case "/userinfo":payload=["name":"Example User","email":"example@example.com"]
             case "/payment-details": payload=["payment_details":[["id":"csmrpd_mock","card_details":["brand":"visa","last4":"4242"]]]]
             case "/spend_requests":
-                if request.httpMethod=="POST" {payload=["id":"lsrq_mock","status":"pending_approval","approval_url":"https://app.link.com/activity/approve/lsrq_mock"]}
+                if request.httpMethod=="POST" {
+                    var body=request.httpBody ?? Data()
+                    if body.isEmpty,let stream=request.httpBodyStream {
+                        stream.open();defer{stream.close()};var buffer=[UInt8](repeating:0,count:4096)
+                        while true {let length=stream.read(&buffer,maxLength:buffer.count);if length<=0 {break};body.append(contentsOf:buffer.prefix(length))}
+                    }
+                    Self.lastCreateBody=(try? JSONSerialization.jsonObject(with:body)) as? [String:Any] ?? [:]
+                    payload=["id":"lsrq_mock","status":"pending_approval","approval_url":"https://app.link.com/activity/approve/lsrq_mock"]}
                 else {payload=["data":[["id":"lsrq_mock","status":"approved"]]]}
             case "/spend_requests/lsrq_mock":payload=["id":"lsrq_mock","status":"approved","card":["number":"MOCK_NUMBER","cvc":"MOCK_CVC","exp_month":12,"exp_year":2030]]
-            case "/spend_requests/lsrq_mock/cancel":payload=["id":"lsrq_mock","status":"canceled"]
+            case "/spend_requests/lsrq_mock/cancel":payload=["id":"lsrq_mock","status":Self.rejectCancel ? "approved" : "canceled"]
             default:status=404;payload=["message":"Not found"]
             }
         }
@@ -82,6 +91,36 @@ final class MockProtocol:URLProtocol {
         await model.loginTask?.value
         while model.busy { try await Task.sleep(nanoseconds:10_000_000) }
         precondition(model.isSignedIn && model.account?.email=="example@example.com" && !model.loggingIn)
+        func idle(_ model:Model) async throws {while model.busy {try await Task.sleep(nanoseconds:10_000_000)}}
+        let context=String(repeating:"Mock purchase details. ",count:8)
+        let customExpiry=Date().addingTimeInterval(7200)
+        model.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context,validUntil:customExpiry)
+        try await idle(model)
+        precondition(MockProtocol.lastCreateBody["expires_at"] as? Int==Int(customExpiry.timeIntervalSince1970))
+        precondition(model.lastCreatedID=="lsrq_mock" && !model.detail.isEmpty)
+        let beforeInvalid=MockProtocol.calls.count
+        model.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context,validUntil:Date().addingTimeInterval(-60))
+        try await idle(model)
+        precondition(MockProtocol.calls.count==beforeInvalid)
+        model.history=true
+        MockProtocol.rejectCancel=true
+        model.cancel(model.requests[0]);try await idle(model)
+        precondition(model.requests[0].status != "canceled" && !model.detail.isEmpty)
+        MockProtocol.rejectCancel=false
+        model.cancel(model.requests[0]);try await idle(model)
+        precondition(model.requests[0].status=="canceled" && model.detail.isEmpty)
+        model.show("lsrq_mock");try await idle(model)
+        precondition(model.detail.isEmpty)
+        let fresh=Model(api:api)
+        let beforeDefault=Date().timeIntervalSince1970
+        fresh.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)
+        try await idle(fresh)
+        let defaultExpiry=MockProtocol.lastCreateBody["expires_at"] as! Int
+        precondition(abs(Double(defaultExpiry)-beforeDefault-86400)<2)
+        fresh.cancel(fresh.requests[0]);try await idle(fresh)
+        precondition(fresh.requests.isEmpty && fresh.detail.isEmpty)
+        precondition(!RequestItem(raw:["status":"expired"]).canCancel)
+        print("PASS: custom/default expiry seconds, past-date rejection, server-confirmed cancellation, credential cleanup, and active/history list behavior")
         let fallback=SignedInAccount(["first_name":"Example","last_name":"User"])
         precondition(fallback.name=="Example User" && fallback.email.isEmpty)
         precondition(L10n.text("已登录",language:.english)=="Logged in")

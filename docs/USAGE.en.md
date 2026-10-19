@@ -69,6 +69,7 @@ First confirm the item and final checkout total on the merchant's website. Then:
 | Merchant URL | A complete HTTP/HTTPS URL | `https://example.com` |
 | Amount | A positive integer in the currency's minor units | For USD $15.00, enter `1500` |
 | Currency | Three-letter currency code | `usd` |
+| Valid until | Request expiry in local date/time; defaults to 24 hours from opening the form. Use One day from now to reset it | Tomorrow at the current time |
 | Item | Purchase description; quantity is currently fixed at 1 and commas are not allowed in the name | Meal credit |
 | Context | At least 100 characters describing the purchase, merchant, amount, and purpose | See below |
 
@@ -87,6 +88,8 @@ Requesting approval to purchase 15 USD of meal credit from Example Store at http
 *Choose Back to return and edit the form.*
 
 Interpret the amount together with its currency: `10000` in `usd` means $100.00, not $10,000. Request amounts and statuses are not necessarily the merchant's final settlement amount.
+
+The selected Valid until is included in the review dialog and sent as request `expires_at` in Unix seconds. It must be in the future. This sets the requested expiry, not a guaranteed card lifetime: [Stripe currently documents a 12-hour card credential lifetime](https://github.com/stripe/link-cli#spend-request-lifecycle). The actual card deadline is whatever Link returns.
 
 ## 4. Approve and automatically show card details
 
@@ -122,7 +125,8 @@ Missing fields display as `—`:
 | Brand | Card network |
 | Expiration | Card expiration month/year |
 | Billing address | Billing address returned by Link |
-| Valid until | Credential validity deadline; if absent, the UI uses request expiry, which is not necessarily the card's printed expiration |
+| Request expiry | The request expiry returned by Link |
+| Valid until | The actual credential deadline returned by Link; missing values display as `—`. This is separate from request expiry and card expiration |
 
 Select text and press **⌘C** to copy it to your own checkout form. The app does not automatically copy or fill merchant forms. Full card numbers and CVCs appear directly in the window.
 
@@ -131,9 +135,9 @@ Click **Clear card details** to clear the display. Closing the window also clear
 ## 6. Cancel a request
 
 1. Select the request in **Requests / History**.
-2. Click **Cancel request**.
+2. Click **Cancel request** in that row, or use the button below the list. Only created, pending-approval, or approved requests can be canceled.
 3. Verify the merchant and request ID, then confirm **Cancel request**.
-4. Click **Refresh list** to check the status. You may need **Include history** to see the canceled request.
+4. After Link confirms cancellation, the app clears the corresponding card display and stops approval polling. Canceled requests leave the active list; enable **Include history** to view them. Refresh to reload server state.
 
 ![Cancellation confirmation in Chinese explaining that completed payments are not reversed](images/cancel-confirmation-zh.jpg)
 

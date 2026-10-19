@@ -8,6 +8,12 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "可用截止时间":"Valid until", "一天以后":"One day from now",
+        "默认一天以后；这是请求到期时间，卡片实际可用时间以 Link 返回为准。":"Defaults to one day from now. This sets request expiry; actual card validity is determined by Link.",
+        "可用截止时间必须晚于当前时间。":"Valid until must be later than the current time.",
+        "当前状态无法取消该请求。":"This request cannot be canceled in its current state.",
+        "Link 尚未确认取消，请刷新列表检查状态。":"Link has not confirmed cancellation. Refresh the list to check its status.",
+        "该请求已取消，卡信息已清除。":"This request was canceled. Card details have been cleared.",
         "已登录":"Logged in", "正在检查登录…":"Checking login…", "已登录，暂时无法加载账户信息。":"Logged in. Account details are temporarily unavailable.", "账户信息响应无效。":"Invalid account details response.",
         "登录 Link":"Log in to Link", "清除卡信息":"Clear card details",
         "请求 / 历史":"Requests / History", "创建 Generate":"Create",
@@ -42,7 +48,7 @@ enum L10n {
         "Link 返回无效响应":"Link returned an invalid response.", "无效的 spend request ID":"Invalid spend request ID."
     ]
     static let chineseFields:[String:String] = [
-        "Spend request ID":"请求 ID", "Status":"状态", "Merchant":"商家名称", "Merchant URL":"商家 URL",
+        "Request expiry":"请求到期时间", "Spend request ID":"请求 ID", "Status":"状态", "Merchant":"商家名称", "Merchant URL":"商家 URL",
         "Context":"用途", "Created at":"创建时间", "Card number":"卡号", "CVC":"CVC / 安全码",
         "Brand":"卡组织", "Expiration":"卡面有效期", "Billing address":"账单地址", "Valid until":"可用截止时间",
         "Unknown merchant":"未知商家"

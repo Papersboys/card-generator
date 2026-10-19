@@ -6,6 +6,7 @@ struct RequestItem: Identifiable {
     var id:String { str(raw,"id") }
     var merchant:String { str(raw,"merchant_name") }
     var status:String { str(raw,"status") }
+    var canCancel:Bool { ["created","pending_approval","approved"].contains(status) }
 }
 @MainActor final class Model: ObservableObject {
     let api:NativeLink
@@ -75,6 +76,8 @@ struct RequestItem: Identifiable {
     @Published var detail:[(String,String)] = []
     @Published var approvalURL = ""
     @Published var pendingID = ""
+    @Published var lastCreatedID:String?
+    private var canceledIDs=Set<String>()
     var approvalWatch: Task<Void,Never>?
     func watchApproval(_ id:String) {
         approvalWatch?.cancel()
@@ -118,14 +121,24 @@ struct RequestItem: Identifiable {
         if self.methods.isEmpty { self.message = "没有找到付款方式；可手动填写付款方式 ID。" }
     } }
     func cancel(_ item:RequestItem) { perform {
-        _ = try await self.api.cancel(item.id)
+        guard item.canCancel else {throw LinkError(message:"当前状态无法取消该请求。")}
+        let result=try await self.api.cancel(item.id)
+        guard let updated=objects(result).first(where:{str($0,"id")==item.id}), ["canceled","cancelled"].contains(str(updated,"status")) else {throw LinkError(message:"Link 尚未确认取消，请刷新列表检查状态。")}
+        self.canceledIDs.insert(item.id)
         if self.pendingID == item.id { self.approvalWatch?.cancel(); self.pendingID=""; self.approvalURL="" }
+        if self.detail.contains(where:{$0.0=="Spend request ID" && $0.1==item.id}) {self.detail=[];self.approvalURL=""}
         self.message = "已取消请求 \(item.id)。取消请求不等于退款。"
-        self.requests = self.requests.map { r in if r.id == item.id { var d = r.raw; d["status"] = "canceled"; return RequestItem(raw:d) }; return r }
+        self.requests = self.requests.compactMap { r in
+            guard r.id==item.id else {return r}
+            if !self.history {return nil}
+            var data=r.raw;for (key,value) in updated {data[key]=value};return RequestItem(raw:data)
+        }
     } }
     func show(_ id:String, fallback:[String:Any] = [:]) { perform { try await self.retrieve(id,fallback:fallback) } }
     func retrieve(_ id:String, fallback:[String:Any] = [:]) async throws {
+        guard !canceledIDs.contains(id) else {detail=[];message="该请求已取消，卡信息已清除。";return}
         let result = try await self.api.retrieve(id,card:true)
+        guard !canceledIDs.contains(id) else {detail=[];message="该请求已取消，卡信息已清除。";return}
         let request = objects(result).first(where:{str($0,"id")==id}) ?? fallback
         let card:Any = request["card"] ?? [:]
         let month = find(card,["exp_month","expiry_month","expiration_month"])
@@ -134,18 +147,20 @@ struct RequestItem: Identifiable {
         let billing:String
         if let d = address as? [String:Any] { billing = ["name","line1","line_1","line2","line_2","city","locality","state","administrative_area","postal_code","country"].compactMap { d[$0] as? String }.filter{ !$0.isEmpty }.joined(separator:", ") }
         else { billing = address.map{String(describing:$0)} ?? "" }
-        self.detail = [("Spend request ID",id),("Status",str(request,"status")),("Merchant",str(request,"merchant_name")),("Merchant URL",str(request,"merchant_url")),("Context",str(request,"context")),("Created at",str(request,"created_at")),("Card number",find(card,["number","card_number","pan"])),("CVC",find(card,["cvc","cvv","security_code"])),("Brand",find(card,["brand","network"]).isEmpty ? str(request,"card_brand") : find(card,["brand","network"])),("Expiration",month.isEmpty ? find(card,["expiration_date","expiry"]) : month+"/"+year),("Billing address",billing),("Valid until",find(card,["valid_until","expires_at"]).isEmpty ? str(request,"expires_at") : find(card,["valid_until","expires_at"]))]
+        self.detail = [("Spend request ID",id),("Status",str(request,"status")),("Merchant",str(request,"merchant_name")),("Merchant URL",str(request,"merchant_url")),("Context",str(request,"context")),("Created at",str(request,"created_at")),("Card number",find(card,["number","card_number","pan"])),("CVC",find(card,["cvc","cvv","security_code"])),("Brand",find(card,["brand","network"]).isEmpty ? str(request,"card_brand") : find(card,["brand","network"])),("Expiration",month.isEmpty ? find(card,["expiration_date","expiry"]) : month+"/"+year),("Billing address",billing),("Request expiry",str(request,"expires_at")),("Valid until",find(card,["valid_until","expires_at"]))]
         self.approvalURL = str(request,"approval_url")
         self.pendingID = ["pending_approval","created","requires_action"].contains(str(request,"status")) ? id : ""
         if find(card,["number","card_number","pan"]).isEmpty { self.message = "暂无完整卡信息。若等待批准，请打开 Link 批准后点击刷新卡信息。" }
     }
-    func create(payment:String,merchant:String,url:String,amount:String,currency:String,item:String,context:String) { perform {
+    func create(payment:String,merchant:String,url:String,amount:String,currency:String,item:String,context:String,validUntil:Date=Date().addingTimeInterval(86400)) { perform {
         guard let cents = Int(amount), cents > 0, context.count >= 100, let u = URL(string:url), ["http","https"].contains(u.scheme ?? ""), !merchant.isEmpty, !payment.isEmpty, !item.contains(",") else { throw LinkError(message:"检查付款方式、商家 URL、正整数金额和至少 100 字符的用途；商品名不能包含逗号。") }
-        let body:[String:Any] = ["idempotency_key":UUID().uuidString,"payment_details":payment,"credential_type":"card","merchant_name":merchant,"merchant_url":url,"amount":cents,"currency":currency,"context":context,"line_items":[["name":item,"unit_amount":cents,"quantity":1]],"totals":[["type":"total","display_text":"Total","amount":cents]],"request_approval":true]
+        guard validUntil.timeIntervalSinceNow>0 else {throw LinkError(message:"可用截止时间必须晚于当前时间。") }
+        let body:[String:Any] = ["expires_at":Int(validUntil.timeIntervalSince1970),"idempotency_key":UUID().uuidString,"payment_details":payment,"credential_type":"card","merchant_name":merchant,"merchant_url":url,"amount":cents,"currency":currency,"context":context,"line_items":[["name":item,"unit_amount":cents,"quantity":1]],"totals":[["type":"total","display_text":"Total","amount":cents]],"request_approval":true]
         let result = try await self.api.create(body)
         guard let request = objects(result).first(where:{str($0,"id").hasPrefix("lsrq_")}) else { throw LinkError(message:"未返回 spend request ID") }
         let id = str(request,"id")
         self.requests.insert(RequestItem(raw:request),at:0)
+        self.lastCreatedID=id
         try await self.retrieve(id,fallback:request)
         if !self.pendingID.isEmpty { self.watchApproval(id) }
     } }
