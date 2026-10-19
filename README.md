@@ -35,6 +35,8 @@ This personal app uses the public device-flow client and API protocol from Strip
 
 ## Usage
 
+📖 **[详细中文使用说明](docs/USAGE.zh-CN.md)** — step-by-step login, creation, approval, card display, cancellation, history, and troubleshooting.
+
 - **Requests / History:** refresh, include history, select a request, show card details, or cancel with confirmation.
 - **Create:** load a payment method; enter merchant, URL, amount in minor units (USD $15 = 1500), item, and at least 100 characters of context. Review and confirm creation.
 - Approve the purchase yourself in Link. The app checks approval every two seconds for up to ten minutes, then automatically retrieves full card details. Manual refresh is also available.
