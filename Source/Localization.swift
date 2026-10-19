@@ -8,6 +8,9 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "查看请求":"Review request", "待批准":"Approve", "用途说明（自动生成）":"Context (generated automatically)",
+        "选择请求查看详情，批准操作将在 Link 中完成。":"Review a request here, then approve it in Link.",
+        "没有待批准的请求。":"No requests awaiting approval.", "获取批准链接":"Get approval link",
         "查看完整许可证":"View full license",
         "可用截止时间":"Valid until", "一天以后":"One day from now",
         "默认一天以后；这是请求到期时间，卡片实际可用时间以 Link 返回为准。":"Defaults to one day from now. This sets request expiry; actual card validity is determined by Link.",

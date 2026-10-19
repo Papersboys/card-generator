@@ -12,7 +12,7 @@ struct ContentView: View {
 @State var amount = ""
 @State var currency = "usd"
 @State var item = ""
-@State var context = ""
+    var context:String { Model.purchaseContext(merchant:merchant,url:url,amount:amount,currency:currency,item:item) }
     @State var validUntil=Date().addingTimeInterval(86400)
     @State var confirmCreate = false
     @State var toCancel:RequestItem?
@@ -33,13 +33,25 @@ struct ContentView: View {
                     }
                 }.frame(maxWidth:200,alignment:.leading).help([model.account?.name,model.account?.email].compactMap{$0}.filter{!$0.isEmpty}.joined(separator:"\n"))
             } else { Button(t("登录 Link")) { model.login() }.disabled(model.loggingIn) }; Spacer(); Button(t("清除卡信息")) { model.detail=[] }.disabled(model.detail.isEmpty) }
-            Picker("",selection:$tab) { Text(t("请求 / 历史")).tag(0); Text(t("创建 Generate")).tag(1) }.pickerStyle(.segmented)
-            if tab == 0 {
-                HStack { Toggle(t("包含历史"),isOn:$model.history).onChange(of:model.history) { _ in model.load() }; Spacer(); Button(t("刷新列表")) { model.load() } }.disabled(model.busy)
-                List(selection:$selected) { ForEach(model.requests) { r in
+            Picker("",selection:$tab) { Text(t("请求 / 历史")).tag(0); Text(t("创建 Generate")).tag(1); Text(t("待批准")).tag(2) }.pickerStyle(.segmented)
+            if tab == 0 || tab == 2 {
+                HStack { if tab == 0 { Toggle(t("包含历史"),isOn:$model.history).onChange(of:model.history) { _ in model.load() } }; Spacer(); Button(t("刷新列表")) { model.load() } }.disabled(model.busy)
+                List(selection:$selected) { ForEach(tab == 2 ? model.requests.filter(\.needsApproval) : model.requests) { r in
                     HStack { VStack(alignment:.leading) { Text(r.merchant.isEmpty ? t("Unknown merchant") : r.merchant).font(.headline); Text(r.id).font(.system(.caption,design:.monospaced)).lineLimit(1).truncationMode(.middle); Text("\(str(r.raw,"amount")) \(str(r.raw,"currency").uppercased()) \(t("最小单位"))").font(.caption) }; Spacer(); Text(L10n.status(r.status,language:model.language)).foregroundStyle(r.status == "approved" ? .green : .secondary); Button(t("取消请求"),role:.destructive) {toCancel=r}.buttonStyle(.borderless).disabled(model.busy || !r.canCancel) }.tag(r.id)
                 } }.frame(minHeight:145,maxHeight:220)
-                HStack { Button(t("显示卡信息 Show")) { if let id=selected { model.show(id) } }; Button(t("取消请求 Cancel"),role:.destructive) { toCancel=model.requests.first{$0.id==selected} }.disabled(model.requests.first{$0.id==selected}?.canCancel != true) }.disabled(selected == nil || model.busy)
+                if tab == 2 {
+                    Text(t("选择请求查看详情，批准操作将在 Link 中完成。")).font(.caption).foregroundStyle(.secondary)
+                    if model.requests.filter(\.needsApproval).isEmpty {Text(t("没有待批准的请求。")).foregroundStyle(.secondary)}
+                    if let request=model.requests.first(where:{$0.id==selected}),request.needsApproval {
+                        VStack(alignment:.leading,spacing:8) {
+                            Text(str(request.raw,"merchant_url")).textSelection(.enabled)
+                            Text(str(request.raw,"context")).font(.callout).textSelection(.enabled)
+                            if let link=request.approvalLink {Link(t("在 Link 中批准请求 ↗"),destination:link).buttonStyle(.borderedProminent)}
+                            else {Button(t("获取批准链接")) {model.show(request.id)}}
+                        }.padding().frame(maxWidth:.infinity,alignment:.leading).background(.quaternary.opacity(0.3)).clipShape(RoundedRectangle(cornerRadius:10))
+                    }
+                }
+                HStack { Button(t(tab == 2 ? "查看请求" : "显示卡信息 Show")) { if let id=selected { model.show(id) } }; Button(t("取消请求 Cancel"),role:.destructive) { toCancel=model.requests.first{$0.id==selected} }.disabled(model.requests.first{$0.id==selected}?.canCancel != true) }.disabled(selected == nil || model.busy)
             } else {
                 VStack(alignment:.leading,spacing:20) {
                     HStack {
@@ -74,17 +86,17 @@ struct ContentView: View {
                         Text(t("默认一天以后；这是请求到期时间，卡片实际可用时间以 Link 返回为准。")).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)
                     }
                     VStack(alignment:.leading,spacing:8) {
-                        HStack {Text(t("用途 Context（至少 100 字符）")).font(.subheadline.weight(.medium)); Spacer(); Text("\(context.count)/100").font(.caption.monospacedDigit()).foregroundStyle(.secondary)}
-                        TextEditor(text:$context).font(.body).frame(height:90).padding(6).background(Color(nsColor:.textBackgroundColor)).clipShape(RoundedRectangle(cornerRadius:8)).overlay(RoundedRectangle(cornerRadius:8).stroke(Color.primary.opacity(0.12)))
+                        Text(t("用途说明（自动生成）")).font(.subheadline.weight(.medium))
+                        Text(context).font(.callout).foregroundStyle(.secondary).textSelection(.enabled).fixedSize(horizontal:false,vertical:true)
                     }
-                    HStack { Spacer(); Button(t("检查并创建请求…")) { confirmCreate=true }.buttonStyle(.borderedProminent).controlSize(.large).disabled(model.busy || context.count<100 || payment.isEmpty || amount.isEmpty || merchant.isEmpty || item.isEmpty) }
+                    HStack { Spacer(); Button(t("检查并创建请求…")) { confirmCreate=true }.buttonStyle(.borderedProminent).controlSize(.large).disabled(model.busy || payment.isEmpty || amount.isEmpty || merchant.isEmpty || item.isEmpty) }
                 }.padding(22).background(Color(nsColor:.controlBackgroundColor)).clipShape(RoundedRectangle(cornerRadius:16)).overlay(RoundedRectangle(cornerRadius:16).stroke(Color.primary.opacity(0.07)))
             }
             if let loginURL=model.loginURL {
                 HStack { Link(t("打开 Link 登录授权 ↗"),destination:loginURL); Text(model.loginPhrase).font(.system(.body,design:.monospaced)).textSelection(.enabled); Button(t("停止等待")) {model.loginTask?.cancel()} }
             }
             if !model.approvalURL.isEmpty, let u=URL(string:model.approvalURL), u.scheme == "https", u.host == "app.link.com" {
-                HStack { Link(t("在 Link 中批准请求 ↗"),destination:u); if !model.pendingID.isEmpty { Button(t("已批准，刷新卡信息")) { model.show(model.pendingID) }.disabled(model.busy) } }
+                HStack { Link(t("在 Link 中批准请求 ↗"),destination:u).buttonStyle(.borderedProminent); if !model.pendingID.isEmpty { Button(t("已批准，刷新卡信息")) { model.show(model.pendingID) }.disabled(model.busy) } }
             }
             if !model.detail.isEmpty {
                 ScrollView { Grid(alignment:.leading,horizontalSpacing:16,verticalSpacing:9) { ForEach(model.detail.indices,id:\.self) { i in
@@ -104,9 +116,10 @@ struct ContentView: View {
             }.font(.caption2)
 
         }.padding(24).frame(maxWidth:1000).frame(maxWidth:.infinity) }.background(Color(nsColor:.windowBackgroundColor)).frame(minWidth:520,minHeight:480)
-        .onChange(of:model.lastCreatedID) {selected=$0}
+        .onChange(of:model.lastCreatedID) {selected=$0;tab=2}
+        .onChange(of:tab) { value in if value == 2 {model.load()} }
         .environment(\.locale,model.language.locale)
-        .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context,validUntil:validUntil); tab=0 } } message: { Text(createSummary) }
+        .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context,validUntil:validUntil); tab=2 } } message: { Text(createSummary) }
         .alert(t("取消这个请求？"),isPresented:Binding(get:{toCancel != nil},set:{if !$0 {toCancel=nil}})) { Button(t("返回"),role:.cancel){toCancel=nil}; Button(t("取消请求"),role:.destructive){if let r=toCancel {model.cancel(r)};toCancel=nil} } message:{Text("\(toCancel?.merchant ?? "")\n\(toCancel?.id ?? "")\n\(t("这不会撤销已完成的付款。"))")}
     }
     var expiryPicker:some View {

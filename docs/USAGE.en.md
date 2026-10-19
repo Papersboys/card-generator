@@ -71,13 +71,7 @@ First confirm the item and final checkout total on the merchant's website. Then:
 | Currency | Three-letter currency code | `usd` |
 | Valid until | Request expiry in local date/time; defaults to 24 hours from opening the form. Use One day from now to reset it | Tomorrow at the current time |
 | Item | Purchase description; quantity is currently fixed at 1 and commas are not allowed in the name | Meal credit |
-| Context | At least 100 characters describing the purchase, merchant, amount, and purpose | See below |
-
-Example context; adapt it to the actual purchase:
-
-```text
-Requesting approval to purchase 15 USD of meal credit from Example Store at https://example.com. This request is for the checkout total I reviewed and will be paid using my selected Link payment method.
-```
+| Context | Generated automatically from merchant, URL, item, amount, and currency; no typing required | Review before creation |
 
 5. Click **Review and create…**.
 6. Check the merchant, URL, amount, item, and context in the confirmation dialog.
@@ -93,7 +87,7 @@ The selected Valid until is included in the review dialog and sent as request `e
 
 ## 4. Approve and automatically show card details
 
-1. After creation, click **Approve in Link ↗**.
+1. After creation, the **Approve** tab opens. Click **Approve in Link ↗**. You can also select earlier pending requests here to review their merchant, amount, and generated context. If no link is available yet, click **Get approval link**.
 2. Review and personally approve the request on the official Link page.
 3. Keep the app window open. The app checks every two seconds for up to ten minutes and retrieves card details once approved.
 4. If the display does not update, click **Refresh after approval**, or select the request and click **Show card details**.

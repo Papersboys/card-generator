@@ -71,13 +71,7 @@ open dist/LinkCard.app
 | 币种 | 三字母币种代码 | `usd` |
 | 可用截止时间 | 以本地日期／时间设置请求到期时间，默认打开表单时的 24 小时以后；「一天以后」可重置 | 明天的当前时间 |
 | 商品 | 本次购买内容；当前表单固定数量为 1，商品名不要包含逗号 | Meal credit |
-| 用途 Context | 至少 100 个字符，说明买什么、在哪买、金额及用途 | 见下方示例 |
-
-用途示例（请改成符合真实购买的内容）：
-
-```text
-Requesting approval to purchase 15 USD of meal credit from Example Store at https://example.com. This request is for the checkout total I reviewed and will be paid using my selected Link payment method.
-```
+| 用途 Context | 根据商家、URL、商品、金额和币种自动生成，无需填写 | 创建前可在确认框核对 |
 
 5. 点击 **检查并创建请求…**。
 6. 在确认框中核对商家、URL、金额、商品和用途。
@@ -93,7 +87,7 @@ Requesting approval to purchase 15 USD of meal credit from Example Store at http
 
 ## 4. 批准请求并自动显示卡信息
 
-1. 创建成功后，点击 **在 Link 中批准请求 ↗**。
+1. 创建成功后自动进入 **待批准** 页，点击 **在 Link 中批准请求 ↗**。也可以在此页选择之前的待批准请求，核对商家、金额及自动生成的用途；若尚无链接，点击 **获取批准链接**。
 2. 在 Link 官方页面核对并亲自批准本次请求。
 3. 保持 App 窗口打开。App 每两秒检查一次状态，最多等待十分钟；发现已批准后自动读取卡信息。
 4. 如果没有自动更新，点击 **已批准，刷新卡信息**，或在列表中选中请求后点击 **显示卡信息 Show**。
@@ -157,7 +151,7 @@ App 不会替你批准购买请求。等待超过十分钟只表示 App 停止�
 | --- | --- |
 | 没有活跃请求 | 打开「包含历史」，或创建新请求 |
 | 付款方式列表为空 | 确认登录账户正确，点击「加载」；根据 Link 返回的提示处理账户或付款方式问题 |
-| 创建按钮不可点击 | 检查必填字段、用途是否达到 100 字符，以及是否仍有操作在进行 |
+| 创建按钮不可点击 | 检查必填字段，以及是否仍有操作在进行 |
 | 提示金额或 URL 无效 | 金额填写正整数最小单位；URL 必须带 `http://` 或 `https://` |
 | `pending_approval`，没有卡号 | 打开本次请求的批准链接，完成批准后刷新 |
 | 登录过期、HTTP 401 | 点击「登录 Link」重新授权，再刷新 |

@@ -51,6 +51,12 @@ final class MockProtocol:URLProtocol {
 }
 @main struct Tests {
     @MainActor static func main() async throws {
+        let generated=Model.purchaseContext(merchant:"Example Store",url:"https://example.com",amount:"200",currency:"jpy",item:"Lunch")
+        precondition(generated.count>=100 && generated.contains("200 minor units in JPY") && generated.contains("Lunch") && generated.contains("Example Store"))
+        precondition(RequestItem(raw:["status":"pending_approval","approval_url":"https://app.link.com/activity/approve/lsrq_mock"]).approvalLink != nil)
+        precondition(RequestItem(raw:["status":"approved","approval_url":"https://app.link.com/activity/approve/lsrq_mock"]).approvalLink == nil)
+        precondition(RequestItem(raw:["status":"pending_approval","approval_url":"https://example.com"]).approvalLink == nil)
+        print("PASS: generated purchase context, pending approval filtering, and trusted approval links")
         let config=URLSessionConfiguration.ephemeral;config.protocolClasses=[MockProtocol.self]
         let api=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_OLD",refresh_token:"MOCK_REFRESH",expires_at:Date().timeIntervalSince1970*1000+600000),persistTokens:false)
         let list=try await api.list(history:true)

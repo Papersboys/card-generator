@@ -6,6 +6,11 @@ struct RequestItem: Identifiable {
     var id:String { str(raw,"id") }
     var merchant:String { str(raw,"merchant_name") }
     var status:String { str(raw,"status") }
+    var needsApproval:Bool { status == "pending_approval" }
+    var approvalLink:URL? {
+        guard needsApproval, let url=URL(string:str(raw,"approval_url")), url.scheme == "https", url.host == "app.link.com" else {return nil}
+        return url
+    }
     var canCancel:Bool { ["created","pending_approval","approved"].contains(status) }
 }
 @MainActor final class Model: ObservableObject {
@@ -134,12 +139,20 @@ struct RequestItem: Identifiable {
             var data=r.raw;for (key,value) in updated {data[key]=value};return RequestItem(raw:data)
         }
     } }
-    func show(_ id:String, fallback:[String:Any] = [:]) { perform { try await self.retrieve(id,fallback:fallback) } }
+    func show(_ id:String, fallback:[String:Any] = [:]) { perform {
+        try await self.retrieve(id,fallback:fallback)
+        if self.pendingID == id {self.watchApproval(id)}
+    } }
     func retrieve(_ id:String, fallback:[String:Any] = [:]) async throws {
         guard !canceledIDs.contains(id) else {detail=[];message="该请求已取消，卡信息已清除。";return}
         let result = try await self.api.retrieve(id,card:true)
         guard !canceledIDs.contains(id) else {detail=[];message="该请求已取消，卡信息已清除。";return}
         let request = objects(result).first(where:{str($0,"id")==id}) ?? fallback
+        if let index=self.requests.firstIndex(where:{$0.id==id}) {
+            var merged=self.requests[index].raw
+            for (key,value) in request {merged[key]=value}
+            self.requests[index]=RequestItem(raw:merged)
+        }
         let card:Any = request["card"] ?? [:]
         let month = find(card,["exp_month","expiry_month","expiration_month"])
         let year = find(card,["exp_year","expiry_year","expiration_year"])
@@ -148,9 +161,13 @@ struct RequestItem: Identifiable {
         if let d = address as? [String:Any] { billing = ["name","line1","line_1","line2","line_2","city","locality","state","administrative_area","postal_code","country"].compactMap { d[$0] as? String }.filter{ !$0.isEmpty }.joined(separator:", ") }
         else { billing = address.map{String(describing:$0)} ?? "" }
         self.detail = [("Spend request ID",id),("Status",str(request,"status")),("Merchant",str(request,"merchant_name")),("Merchant URL",str(request,"merchant_url")),("Context",str(request,"context")),("Created at",str(request,"created_at")),("Card number",find(card,["number","card_number","pan"])),("CVC",find(card,["cvc","cvv","security_code"])),("Brand",find(card,["brand","network"]).isEmpty ? str(request,"card_brand") : find(card,["brand","network"])),("Expiration",month.isEmpty ? find(card,["expiration_date","expiry"]) : month+"/"+year),("Billing address",billing),("Request expiry",str(request,"expires_at")),("Valid until",find(card,["valid_until","expires_at"]))]
-        self.approvalURL = str(request,"approval_url")
+        let stored=self.requests.first(where:{$0.id==id})
+        self.approvalURL = str(request,"status")=="pending_approval" ? (stored?.approvalLink?.absoluteString ?? str(request,"approval_url")) : ""
         self.pendingID = ["pending_approval","created","requires_action"].contains(str(request,"status")) ? id : ""
         if find(card,["number","card_number","pan"]).isEmpty { self.message = "暂无完整卡信息。若等待批准，请打开 Link 批准后点击刷新卡信息。" }
+    }
+    static func purchaseContext(merchant:String,url:String,amount:String,currency:String,item:String)->String {
+        "Purchase of 1 unit of \(item) from \(merchant) at \(url). The requested checkout total is \(amount) minor units in \(currency.uppercased()), funded by the selected payment method saved in Link. The user will review and approve this spend request in Link before payment credentials are issued."
     }
     func create(payment:String,merchant:String,url:String,amount:String,currency:String,item:String,context:String,validUntil:Date=Date().addingTimeInterval(86400)) { perform {
         guard let cents = Int(amount), cents > 0, context.count >= 100, let u = URL(string:url), ["http","https"].contains(u.scheme ?? ""), !merchant.isEmpty, !payment.isEmpty, !item.contains(",") else { throw LinkError(message:"检查付款方式、商家 URL、正整数金额和至少 100 字符的用途；商品名不能包含逗号。") }
@@ -160,6 +177,8 @@ struct RequestItem: Identifiable {
         guard let request = objects(result).first(where:{str($0,"id").hasPrefix("lsrq_")}) else { throw LinkError(message:"未返回 spend request ID") }
         let id = str(request,"id")
         self.requests.insert(RequestItem(raw:request),at:0)
+        self.approvalURL=str(request,"approval_url")
+        self.pendingID=str(request,"status")=="pending_approval" ? id : ""
         self.lastCreatedID=id
         try await self.retrieve(id,fallback:request)
         if !self.pendingID.isEmpty { self.watchApproval(id) }
