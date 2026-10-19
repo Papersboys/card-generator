@@ -80,6 +80,24 @@ struct RequestItem: Identifiable {
         }
     }
 
+    func logout() {
+        guard !busy && !checkingAccount && !loggingIn else {return}
+        busy=true
+        approvalWatch?.cancel();approvalWatch=nil
+        loginTask?.cancel();loginTask=nil
+        Task {
+            defer {busy=false}
+            do {
+                try await api.logout()
+                isSignedIn=false;account=nil;detail=[];methods=[];requests=[]
+                createdIDs=[];canceledIDs=[];lastCreatedID=nil
+                pendingID="";approvalURL="";loginURL=nil;loginPhrase=""
+                loggingIn=false;creationError=nil;lastError=""
+                message="已退出登录。"
+            } catch {handle(error)}
+        }
+    }
+
     @Published var requests:[RequestItem] = []
     @Published var methods:[[String:Any]] = []
     @Published var busy = false

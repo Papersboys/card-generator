@@ -26,6 +26,10 @@ enum TokenStore {
         guard status==errSecSuccess,let data=result as? Data else { throw LinkError(message:"无法读取 Keychain 登录凭证（\(status)）") }
         return try JSONDecoder().decode(LinkTokens.self,from:data)
     }
+    static func delete() throws {
+        let status=SecItemDelete(query as CFDictionary)
+        guard status==errSecSuccess || status==errSecItemNotFound else {throw LinkError(message:"无法清除 Keychain 登录凭证（\(status)）")}
+    }
     static func save(_ tokens:LinkTokens) throws {
         let data=try JSONEncoder().encode(tokens)
         let attrs=[kSecValueData as String:data]
@@ -46,6 +50,8 @@ actor NativeLink {
     private var tokens:LinkTokens?
     private var ownsSession=false
     private var sessionRevoked=false
+    private var sessionGeneration=0
+    private static let signedOutKey="linkCardExplicitlySignedOut"
     private let persistTokens:Bool
     private var refreshTask:Task<LinkTokens,Error>?
     private let clientID="lwlpk_U7Qy7ThG69STZk" // Public device-flow client from Stripe's MIT-licensed Link CLI.
@@ -60,7 +66,7 @@ actor NativeLink {
         self.tokens=testTokens
     }
     private func readTokens() throws -> LinkTokens {
-        guard !sessionRevoked else {throw LinkError(message:"Link 登录授权已失效，请重新登录。",requiresLogin:true)}
+        guard !sessionRevoked && !(persistTokens && UserDefaults.standard.bool(forKey:Self.signedOutKey)) else {throw LinkError(message:"Link 登录授权已失效，请重新登录。",requiresLogin:true)}
         if let tokens=tokens { return tokens }
         if let saved=try TokenStore.load() { tokens=saved; ownsSession=true; return saved }
         // Read-only compatibility: never rotate or write the CLI's shared refresh token.
@@ -79,6 +85,7 @@ actor NativeLink {
         if !force && (current.expires_at ?? 0)>Date().timeIntervalSince1970*1000+60000 { return current.access_token }
         guard let refresh=current.refresh_token else { throw LinkError(message:"现有登录已过期。请点击「登录 Link」建立独立 App 登录。",requiresLogin:true) }
         if let task=refreshTask { return try await task.value.access_token }
+        let generation=sessionGeneration
         let task=Task<LinkTokens,Error> {
             let (status,data)=try await self.form("/device/token",["grant_type":"refresh_token","refresh_token":refresh,"client_id":self.clientID])
             guard (200..<300).contains(status) else { throw self.error(status,data) }
@@ -92,6 +99,7 @@ actor NativeLink {
             if (error as? LinkError)?.requiresLogin == true {sessionRevoked=true;tokens=nil}
             throw error
         }
+        guard generation==sessionGeneration && !sessionRevoked else {throw CancellationError()}
         if ownsSession && persistTokens { try TokenStore.save(renewed) }
         tokens=renewed; return renewed.access_token
     }
@@ -126,13 +134,17 @@ actor NativeLink {
         return DeviceLogin(deviceCode:code,phrase:phrase,url:url,interval:max(1,data["interval"] as? Double ?? 5),expires:Date().addingTimeInterval(data["expires_in"] as? Double ?? 600))
     }
     func finishLogin(_ login:DeviceLogin) async throws -> Bool {
+        let generation=sessionGeneration
         let (status,data)=try await form("/device/token",["grant_type":"urn:ietf:params:oauth:grant-type:device_code","device_code":login.deviceCode,"client_id":clientID])
         if status==400,let code=data["error"] as? String {
             if code=="authorization_pending" { return false }
             if code=="slow_down" { throw LoginSlowDown() }
         }
         guard (200..<300).contains(status) else { throw error(status,data) }
-        let saved=try decodeTokens(data);if persistTokens { try TokenStore.save(saved) };tokens=saved;ownsSession=true;sessionRevoked=false;return true
+        guard generation==sessionGeneration else {throw CancellationError()}
+        let saved=try decodeTokens(data)
+        if persistTokens {try TokenStore.save(saved);UserDefaults.standard.set(false,forKey:Self.signedOutKey)}
+        tokens=saved;ownsSession=true;sessionRevoked=false;return true
     }
     func request(_ path:String,method:String="GET",body:[String:Any]?=nil,retry:Bool=true) async throws -> Any {
         let token=try await accessToken()
@@ -148,6 +160,16 @@ actor NativeLink {
         let json=(try? JSONSerialization.jsonObject(with:data)) ?? [:]
         guard (200..<300).contains(http.statusCode) else { throw error(http.statusCode,json as? [String:Any] ?? [:]) }
         return json
+    }
+    func logout() throws {
+        if persistTokens {
+            try TokenStore.delete()
+            // Do not silently re-import the CLI login after an explicit app logout.
+            UserDefaults.standard.set(true,forKey:Self.signedOutKey)
+        }
+        sessionGeneration += 1
+        refreshTask?.cancel();refreshTask=nil
+        tokens=nil;ownsSession=false;sessionRevoked=true
     }
     func hasSession()->Bool { (try? readTokens()) != nil }
     func userInfo() async throws -> [String:Any] {

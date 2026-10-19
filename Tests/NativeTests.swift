@@ -119,6 +119,19 @@ final class MockProtocol:URLProtocol {
         while model.busy { try await Task.sleep(nanoseconds:10_000_000) }
         precondition(model.isSignedIn && model.account?.email=="example@example.com" && !model.loggingIn)
         func idle(_ model:Model) async throws {while model.busy {try await Task.sleep(nanoseconds:10_000_000)}}
+        let logoutModel=Model(api:revokedAPI)
+        await logoutModel.refreshAccount()
+        logoutModel.detail=[("CVC","MOCK_CVC")];logoutModel.requests=[RequestItem(raw:["id":"lsrq_mock","status":"approved"])]
+        logoutModel.methods=[["id":"csmrpd_mock"]];logoutModel.pendingID="lsrq_mock";logoutModel.approvalURL="https://app.link.com/activity/approve/lsrq_mock"
+        let beforeLogoutCalls=MockProtocol.calls.count
+        logoutModel.logout();try await idle(logoutModel)
+        precondition(!logoutModel.isSignedIn && logoutModel.account==nil && logoutModel.detail.isEmpty && logoutModel.requests.isEmpty && logoutModel.methods.isEmpty)
+        precondition(logoutModel.pendingID.isEmpty && logoutModel.approvalURL.isEmpty && logoutModel.message=="已退出登录。")
+        precondition(MockProtocol.calls.count==beforeLogoutCalls)
+        let sessionAfterLogout=await revokedAPI.hasSession();precondition(!sessionAfterLogout)
+        logoutModel.login();await logoutModel.loginTask?.value;try await idle(logoutModel)
+        precondition(logoutModel.isSignedIn)
+        print("PASS: logout clears local session and sensitive state without API mutations; fresh login works")
         let context=String(repeating:"Mock purchase details. ",count:8)
         model.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)
         try await idle(model)

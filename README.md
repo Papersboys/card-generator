@@ -74,6 +74,8 @@ For convenience, an existing unexpired Link CLI access token can be reused read-
 
 This personal app uses the public device-flow client and API protocol from Stripe's MIT-licensed implementation, labeled “Link Card.” New authorizations display this name without a computer hostname; existing connections keep their original names until reauthorized. For distributing a product to other users, register your own OAuth client with Stripe rather than relying on the public CLI client.
 
+Use **Log out** beside your account to clear this app's local credentials and displayed data. CLI login and existing requests are unaffected.
+
 ## Usage
 
 📖 **[Usage guide](docs/USAGE.en.md)** · **[中文使用说明](docs/USAGE.zh-CN.md)** — step-by-step login, creation, approval, card display, cancellation, history, and troubleshooting.

@@ -49,6 +49,7 @@ struct ContentView: View {
                         }
                     }
                 }.frame(maxWidth:200,alignment:.leading).help([model.account?.name,model.account?.email].compactMap{$0}.filter{!$0.isEmpty}.joined(separator:"\n"))
+                Button(t("退出登录")) {model.logout()}.disabled(model.busy || model.checkingAccount || model.loggingIn)
             } else { Button(t("登录 Link")) { model.login() }.disabled(model.loggingIn) }; Spacer(); Button(t("清除卡信息")) { model.detail=[] }.disabled(model.detail.isEmpty) }
             Picker("",selection:$tab) { Text(t("请求 / 历史")).tag(0); Text(t("创建 Generate")).tag(1); Text(t("待批准")).tag(2) }.pickerStyle(.segmented)
             if tab == 0 || tab == 2 {

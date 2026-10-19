@@ -8,6 +8,7 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "退出登录":"Log out", "已退出登录。":"Logged out.",
         "Link 登录授权已失效，请重新登录。":"Your Link authorization is no longer valid. Please log in again.",
         "选择付款方式，或粘贴 ID":"Select a payment method or paste its ID",
         "例如 1500（$15.00 USD）":"e.g. 1500 ($15.00 USD)",
@@ -88,7 +89,7 @@ enum L10n {
             let id=value.dropFirst("已取消请求 ".count).dropLast(1)
             return "Canceled request \(id)."
         }
-        for (prefix,translation) in [("无法读取 Keychain 登录凭证（","Unable to read Keychain credentials ("),("无法保存 Keychain 登录凭证（","Unable to save Keychain credentials (")] {
+        for (prefix,translation) in [("无法清除 Keychain 登录凭证（","Unable to delete Keychain credentials ("),("无法读取 Keychain 登录凭证（","Unable to read Keychain credentials ("),("无法保存 Keychain 登录凭证（","Unable to save Keychain credentials (")] {
             if value.hasPrefix(prefix) {return translation+value.dropFirst(prefix.count).replacingOccurrences(of:"）",with:")")}
         }
         return value.replacingOccurrences(of:"请求失败",with:"Request failed").replacingOccurrences(of:"Link 登录授权已失效，请重新登录。",with:"Your Link authorization is no longer valid. Please log in again.")

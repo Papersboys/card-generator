@@ -59,6 +59,12 @@ Authorizing the app and approving an individual purchase are separate steps. The
 
 An existing unexpired CLI access token can be reused read-only without changing its configuration or using its refresh token. Once it expires, use the app's login button to establish an independent session.
 
+### Log out
+
+After signing in, click **Log out** beside the account information. This removes the app's Keychain credentials, clears account/card details and local lists, and stops approval checks. Log in to Link becomes available again. The app will not silently reuse a CLI login on restart after an explicit logout; sign in again to view existing server-side requests.
+
+This signs out of this app only. It does not modify CLI configuration, sign out of Link in your browser, or cancel existing requests. Manage connections in Link if you want to revoke the server-side authorization.
+
 ## 3. Create a spend request
 
 First confirm the item and final checkout total on the merchant's website. Then:
