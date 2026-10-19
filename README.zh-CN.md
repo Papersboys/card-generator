@@ -12,6 +12,43 @@
 
 **无需安装 link-cli、Node.js、npm、Shell helper 或本地服务。** 需要 Apple Silicon 和 macOS 13 或更新版本。
 
+## 下载：App 或 CLI
+
+| 版本 | 下载 | 环境要求 |
+| --- | --- | --- |
+| macOS 菜单栏 App | [LinkCard-macos-arm64.zip](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip) | Apple Silicon、macOS 13+，无需 CLI 依赖 |
+| 终端工具 | [link-card-cli.tar.gz](https://github.com/Papersboys/card-generator/releases/latest/download/link-card-cli.tar.gz) | Bash、Python 3、jq，以及已登录的 `link-cli` |
+
+### 安装终端工具
+
+CLI 下载包包含现有 shell/Python 脚本及全部辅助文件，不是免依赖的原生可执行文件。先安装依赖并登录：
+
+```sh
+brew install python jq
+npm install -g @stripe/link-cli --registry=https://registry.npmjs.org/
+link-cli auth login
+```
+
+下载并解压 `link-card-cli.tar.gz`，在解压后的 `link-card-cli` 文件夹内运行：
+
+```sh
+./install.sh
+export PATH="$HOME/bin:$PATH"
+link-card --help
+```
+
+安装程序会备份已有的 `~/bin/link-card`，将辅助文件安装到 `~/.local/lib/link-card`，并在 `~/bin/link-card` 创建启动入口。将 PATH 那一行加入 `~/.zshrc`，新开的终端也能使用。
+
+```sh
+link-card create               # 选择付款方式、填写信息、确认创建，再在 Link 中批准
+link-card show                 # 选择活跃请求并显示卡信息
+link-card show lsrq_EXAMPLE     # 查看指定请求，请替换为自己的请求 ID
+link-card history              # 从当前及历史请求中选择
+link-card cancel               # 选择请求，输入 yes 确认取消
+```
+
+卡信息以彩色表格显示。`show` 默认在临时目录保存权限受限的 JSON；加 `--delete` 可在显示后删除，加 `--path` 可查看文件位置。完整卡号和 CVC 会保留在终端回滚记录中。详见 [CLI 完整使用说明](cli/README.md#中文)；校验文件见 [最新 Release](https://github.com/Papersboys/card-generator/releases/latest)。
+
 ## 核心功能：显示 Visa 虚拟卡信息
 
 **批准后直接查看并复制卡号、CVC／CVV、有效期和账单地址，用于商家结账。** 无需从终端 JSON 中寻找字段；也可以选中已有的批准请求，随时重新读取卡信息。实际卡组织和字段以 Link 返回为准。
@@ -133,7 +170,3 @@ API 和授权实现参考 Stripe 的开源 Link SDK 与 CLI；原始 MIT 版权�
 这是独立项目，不是 Stripe 或 Link 官方 App。
 
 自动更新采用 [Sparkle](https://sparkle-project.org/)，许可声明保留在 [ThirdParty/Sparkle-LICENSE.txt](ThirdParty/Sparkle-LICENSE.txt)。维护者发布流程见[更新发布说明](docs/UPDATES.md)。
-
-## link-card CLI
-
-终端工具：从 [Release 下载 link-card CLI](https://github.com/Papersboys/card-generator/releases/latest/download/link-card-cli.tar.gz)，详见 [CLI 安装与使用](cli/README.md#中文)。需要 `link-cli`、Python 3 和 jq，与免 CLI 依赖的 macOS App 分开打包。

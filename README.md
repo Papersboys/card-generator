@@ -12,6 +12,43 @@ Download the ZIP, extract it, and drag **LinkCard.app** into Applications. Open 
 
 **No link-cli binary, Node.js, npm, shell helpers, or local server is required.** Requires Apple Silicon and macOS 13+.
 
+## Download: App or CLI
+
+| Version | Download | Requirements |
+| --- | --- | --- |
+| macOS menu-bar App | [LinkCard-macos-arm64.zip](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip) | Apple Silicon, macOS 13+; no CLI dependencies |
+| Terminal tool | [link-card-cli.tar.gz](https://github.com/Papersboys/card-generator/releases/latest/download/link-card-cli.tar.gz) | Bash, Python 3, jq, and authenticated `link-cli` |
+
+### Install the terminal tool
+
+The CLI download bundles the existing shell/Python scripts and all helper files; it is not a standalone native binary. Install dependencies and log in first:
+
+```sh
+brew install python jq
+npm install -g @stripe/link-cli --registry=https://registry.npmjs.org/
+link-cli auth login
+```
+
+Download and extract `link-card-cli.tar.gz`, then run these commands inside the extracted `link-card-cli` folder:
+
+```sh
+./install.sh
+export PATH="$HOME/bin:$PATH"
+link-card --help
+```
+
+The installer backs up an existing `~/bin/link-card`, installs helpers under `~/.local/lib/link-card`, and creates the launcher at `~/bin/link-card`. Add the PATH line to `~/.zshrc` to retain it in new terminals.
+
+```sh
+link-card create               # Select payment method, enter details, confirm and approve in Link
+link-card show                 # Select an active request and show its card details
+link-card show lsrq_EXAMPLE     # Show a specific request (replace with your request ID)
+link-card history              # Select from current and past requests
+link-card cancel               # Select a request and type yes to confirm cancellation
+```
+
+Full card details are displayed in a colored terminal table. `show` saves a private JSON response in the temporary directory; add `--delete` to remove it after display or `--path` to show its location. Card numbers and CVCs remain visible in terminal scrollback. See the [complete CLI guide](cli/README.md) and [release checksums](https://github.com/Papersboys/card-generator/releases/latest).
+
 ## Core feature: view Visa virtual card details
 
 **After approval, view and copy the card number, CVC/CVV, expiration date, and billing address for merchant checkout.** No terminal JSON to search through. Select an existing approved request to retrieve its card details again. The actual network and available fields depend on Link's response.
@@ -133,7 +170,3 @@ The Link API and authentication implementation follows Stripe's open-source Link
 This is an independent project and is not an official Stripe or Link application.
 
 Automatic updates use [Sparkle](https://sparkle-project.org/); its license is preserved in [ThirdParty/Sparkle-LICENSE.txt](ThirdParty/Sparkle-LICENSE.txt). See [update publishing](docs/UPDATES.md) for maintainers.
-
-## link-card CLI
-
-Terminal helper: download `link-card-cli.tar.gz` from [Releases](https://github.com/Papersboys/card-generator/releases/latest/download/link-card-cli.tar.gz). See [CLI installation and commands](cli/README.md). Requires `link-cli`, Python 3, and jq; packaged separately from the app.
