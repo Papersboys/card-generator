@@ -93,6 +93,18 @@ struct ContentView: View {
             }
             if !model.message.isEmpty { ScrollView { Text(t(model.message)).font(.caption).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading) }.frame(maxHeight:90) }
             Text(t("原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭窗口会清除显示。")).font(.caption2).foregroundStyle(.secondary)
+            HStack(spacing:6) {
+                Text("© 2026 Yuanxi Li").foregroundStyle(.secondary)
+                Text("·").foregroundStyle(.tertiary)
+                Button("Apache License 2.0") {
+                    if let licenseURL=Bundle.main.url(forResource:"LICENSE",withExtension:nil) {
+                        NSWorkspace.shared.open(licenseURL)
+                    } else if let licenseURL=URL(string:"https://www.apache.org/licenses/LICENSE-2.0") {
+                        NSWorkspace.shared.open(licenseURL)
+                    }
+                }.buttonStyle(.link).help(t("查看完整许可证"))
+            }.font(.caption2)
+
         }.padding(24).frame(maxWidth:1000).frame(maxWidth:.infinity) }.background(Color(nsColor:.windowBackgroundColor)).frame(minWidth:520,minHeight:480)
         .onChange(of:model.lastCreatedID) {selected=$0}
         .environment(\.locale,model.language.locale)
