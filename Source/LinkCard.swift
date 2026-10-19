@@ -43,7 +43,7 @@ struct ContentView: View {
                     HStack { Picker(t("付款方式"),selection:$payment) { Text(t("选择或填写下方 ID")).tag(""); ForEach(model.methods.indices,id:\.self) { i in let d=model.methods[i]; Text("\(find(d,["brand"])) …\(find(d,["last4"])) · \(str(d,"id"))").tag(str(d,"id")) } }; Button(t("加载")) { model.loadMethods() } }
                     TextField(t("付款方式 ID"),text:$payment)
                     TextField(t("商家名称"),text:$merchant); TextField(t("商家 URL"),text:$url)
-                    HStack { TextField(t("金额（最小单位，如 $15 = 1500）"),text:$amount); TextField(t("币种"),text:$currency).frame(width:80) }
+                    HStack { TextField(t("金额（最小单位，如 $15 = 1500）"),text:$amount); TextField(t("币种"),text:$currency).frame(width:150) }
                     TextField(t("商品（数量 1）"),text:$item)
                     Text(t("用途 Context（至少 100 字符）")+" · \(context.count)/100").font(.caption)
                     TextEditor(text:$context).frame(height:65).border(.gray.opacity(0.3))

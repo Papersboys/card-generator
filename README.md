@@ -8,6 +8,14 @@ Run `./build.sh`, then open **dist/LinkCard.app**. Use the credit-card icon in t
 
 **No link-cli binary, Node.js, npm, shell helpers, or local server is required.** Requires Apple Silicon and macOS 13+.
 
+## Screenshots
+
+| Requests and history · 中文 | Create a request · English |
+| --- | --- |
+| ![Chinese request history with a fictional signed-in account](docs/images/overview-zh.jpg) | ![English creation form with fictional purchase details](docs/images/create-en.jpg) |
+
+Screenshots use fictional demo data. See the [illustrated usage guide](docs/USAGE.zh-CN.md) for login, card details, and creation/cancellation confirmations.
+
 ## Quick start
 
 Install Xcode and select its developer tools, then run:
