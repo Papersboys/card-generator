@@ -6,7 +6,7 @@
 
 原生 macOS 菜单栏 App，用于创建 Link 付款请求、在 Link 中批准请求、查看虚拟卡信息，以及取消未使用的请求。使用 SwiftUI、AppKit 和 URLSession 构建。
 
-[下载 Apple Silicon 版](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip) · [全部版本与校验文件](https://github.com/Papersboys/card-generator/releases)
+[产品主页](https://papersboys.github.io/card-generator/) · [下载 Apple Silicon 版](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip) · [全部版本与校验文件](https://github.com/Papersboys/card-generator/releases)
 
 下载 ZIP 并解压，将 **LinkCard.app** 拖入 Applications 后打开即可，**无需编译**。通过菜单栏信用卡图标打开窗口或退出。
 

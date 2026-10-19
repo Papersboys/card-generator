@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>安装指南 · Link Card</title>
+<meta name="description" content="Link Card 的安装、Visa 虚拟卡信息、创建与批准请求操作指南。">
+<link rel="icon" type="image/png" href="site/app-icon.png"><link rel="stylesheet" href="site/style.css"><link rel="stylesheet" href="site/guide.css"></head>
+<body class="guide-page"><a class="skip" href="#article">跳到正文</a>
+<header class="header wrap"><a class="brand" href="index.html"><img src="site/app-icon.png" width="40" height="40" alt=""><span>Link Card</span></a>
+<nav aria-label="导航"><a href="index.html">产品主页</a><a href="install.html">安装</a><a href="guide.html">使用指南</a></nav>
+<div class="header-actions"><div class="language"><a href="install.html" aria-current="page">中文</a><a href="install.en.html" >EN</a></div></div></header>
+<div class="guide-title wrap"><p class="eyebrow">LINK CARD / 文档</p><h1>安装指南</h1><p>从查看卡信息，到下一笔付款请求。</p><a class="button primary" href="https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip">下载 Mac 版 ↓</a></div>
+<main class="guide-layout wrap"><aside class="guide-toc" aria-label="目录"><p>本页内容</p><div class="toc">
+<ul>
+<li><a href="#_1">选择安装方式</a></li>
+<li><a href="#_2">系统要求</a></li>
+<li><a href="#app">方式一：安装已打包的 App</a><ul>
+<li><a href="#_3">可选：校验下载文件</a></li>
+</ul>
+</li>
+<li><a href="#_4">方式二：从源码构建</a><ul>
+<li><a href="#1-xcode">1. 准备 Xcode</a></li>
+<li><a href="#2">2. 获取源码</a></li>
+<li><a href="#3">3. 构建</a></li>
+<li><a href="#4-applications">4. 安装到个人 Applications 文件夹</a></li>
+</ul>
+</li>
+<li><a href="#_5">首次启动与登录</a></li>
+<li><a href="#_6">菜单栏与退出</a></li>
+<li><a href="#app_1">更新已安装的 App</a></li>
+<li><a href="#_7">常见安装问题</a></li>
+<li><a href="#_8">卸载</a></li>
+</ul>
+</div>
+</aside><article id="article" class="guide-article"><p>安装后，从 macOS 顶部菜单栏的信用卡图标打开 App。Link Card 直接连接 Link API，不需要安装 <code>link-cli</code>、Node.js 或 npm。</p>
+<h2 id="_1">选择安装方式</h2>
+<table>
+<thead>
+<tr>
+<th>你手里有什么</th>
+<th>使用哪种方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>已打包的 <code>LinkCard.zip</code> 或 <code>LinkCard.app</code></td>
+<td>按「方式一」安装，无需 Xcode</td>
+</tr>
+<tr>
+<td>Git 仓库或源码 ZIP</td>
+<td>按「方式二」先构建，再安装</td>
+</tr>
+</tbody>
+</table>
+<p>直接从 <a href="https://github.com/Papersboys/card-generator/releases/latest">GitHub Releases</a> 下载已编译的 App；二进制以 Release 附件发布，不纳入 Git 源码。只有希望自行构建时，才需要方式二。</p>
+<h2 id="_2">系统要求</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mac</td>
+<td>Apple Silicon，例如 M1、M2、M3、M4 系列；当前脚本固定构建 <code>arm64</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td>13 或更新版本</td>
+</tr>
+<tr>
+<td>网络</td>
+<td>登录、读取账户和付款请求时需要能访问 Link 官方服务</td>
+</tr>
+<tr>
+<td>账户</td>
+<td>可以使用相应 Link 功能的个人账户；具体可用功能由 Link 决定</td>
+</tr>
+<tr>
+<td>从源码构建</td>
+<td>Xcode、macOS SDK 和 Swift 编译器；当前项目已使用 Swift 6.2 构建验证</td>
+</tr>
+</tbody>
+</table>
+<p>仅运行已构建的 App 不需要 Xcode。当前构建脚本没有提供 Intel Mac 或 Universal 版本。</p>
+<h2 id="app">方式一：安装已打包的 App</h2>
+<ol>
+<li>下载 <a href="https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip">LinkCard-macos-arm64.zip</a>，在 Finder 中双击解压。</li>
+<li>将 <code>LinkCard.app</code> 拖入 <strong>应用程序 / Applications</strong>，或个人主文件夹下的 <strong>Applications</strong> 文件夹。</li>
+<li>双击安装后的 <code>LinkCard.app</code>。</li>
+<li>窗口打开后，确认顶部菜单栏出现信用卡图标。</li>
+</ol>
+<p>当前 App 使用本地 ad-hoc 签名，未经过 Apple 公证；收到的文件也应当来自你信任的构建来源。若 macOS 或受管理设备阻止打开，先检查文件来源及系统提示，也可以使用下方源码构建方式；不要直接关闭系统安全保护。</p>
+<h3 id="_3">可选：校验下载文件</h3>
+<p>从同一个 Release 下载 <a href="https://github.com/Papersboys/card-generator/releases/latest/download/SHA256SUMS.txt">SHA256SUMS.txt</a>，与 ZIP 放在同一目录，在该目录执行：</p>
+<pre><code class="language-bash">shasum -a 256 -c SHA256SUMS.txt
+</code></pre>
+<p>ZIP 显示 <code>OK</code> 即校验通过。上面的普通 Finder 安装方式不需要 Xcode、终端命令或编译。</p>
+<h2 id="_4">方式二：从源码构建</h2>
+<h3 id="1-xcode">1. 准备 Xcode</h3>
+<p>安装 Xcode，并至少打开一次，完成它要求的首次设置。</p>
+<p>在终端检查当前开发工具：</p>
+<pre><code class="language-bash">xcode-select -p
+xcrun --find swiftc
+xcrun --show-sdk-path
+</code></pre>
+<p>如果机器安装了多个 Xcode，或当前选中了其他开发工具目录，请选择你实际安装的 Xcode。常见路径对应的命令是：</p>
+<pre><code class="language-bash">sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+</code></pre>
+<p>如果 Xcode 不在这个位置，请使用自己的安装路径。首次构建若提示许可证或附加组件未就绪，先打开 Xcode 完成设置，再重试。</p>
+<h3 id="2">2. 获取源码</h3>
+<pre><code class="language-bash">git clone https://github.com/Papersboys/card-generator.git
+cd card-generator
+</code></pre>
+<p>如果已经有本地仓库，直接进入该目录即可；不用重复 clone。</p>
+<p>也可以解压源码 ZIP，在终端进入包含 <code>build.sh</code> 和 <code>Info.plist</code> 的项目根目录。</p>
+<h3 id="3">3. 构建</h3>
+<pre><code class="language-bash">./build.sh
+</code></pre>
+<p>脚本会编译 Swift 源码、生成 App 图标、组装 App、执行本地签名并验证。成功后终端会显示类似：</p>
+<pre><code class="language-text">Built: /path/to/card-generator/dist/LinkCard.app
+</code></pre>
+<p>先直接试运行：</p>
+<pre><code class="language-bash">open dist/LinkCard.app
+</code></pre>
+<p>可选：运行离线测试。这些测试使用模拟 API，不会创建真实请求或扣款。</p>
+<pre><code class="language-bash">./test.sh
+</code></pre>
+<h3 id="4-applications">4. 安装到个人 Applications 文件夹</h3>
+<p>如果 App 已经打开，先从菜单栏图标中选择 <strong>退出 / Quit</strong>，再复制：</p>
+<pre><code class="language-bash">mkdir -p &quot;$HOME/Applications&quot;
+ditto dist/LinkCard.app &quot;$HOME/Applications/LinkCard.app&quot;
+open &quot;$HOME/Applications/LinkCard.app&quot;
+</code></pre>
+<p>这组命令会安装或替换个人 Applications 文件夹中的 LinkCard；以后从该位置打开即可。也可以用 Finder 将构建好的 App 拖入系统的 <code>/Applications</code>，按系统要求授权。</p>
+<h2 id="_5">首次启动与登录</h2>
+<ol>
+<li>点击 <strong>登录 Link / Log in to Link</strong>。</li>
+<li>点击官方授权链接，在浏览器中登录自己的 Link 账户。</li>
+<li>按页面要求输入 App 显示的授权短语并完成授权。</li>
+<li>返回 App，等待右上角显示 <strong>已登录 / Logged in</strong> 和账户姓名／邮箱。</li>
+<li>使用顶部 <strong>中文 / English</strong> 控件切换语言。</li>
+</ol>
+<p>账户登录会保存到 macOS Keychain；语言偏好会在重启后保留。不要把自己的授权短语、登录凭证或完整卡信息放入 Git。</p>
+<p><img alt="登录授权界面，所有信息均为虚构示例" src="images/login-zh.jpg" /></p>
+<p>登录完成后，继续阅读<a href="guide.html">带截图的使用说明</a>，了解创建、批准、显示卡信息和取消请求的步骤。</p>
+<h2 id="_6">菜单栏与退出</h2>
+<ul>
+<li>点击菜单栏信用卡图标 → <strong>打开 Link Card / Open Link Card</strong>，重新显示窗口。</li>
+<li>关闭窗口不会退出 App，也不会取消服务端请求。</li>
+<li>点击菜单栏图标 → <strong>退出 / Quit</strong>，完全退出。</li>
+<li>安装不会自动设置登录启动。</li>
+</ul>
+<h2 id="app_1">更新已安装的 App</h2>
+<ol>
+<li>从菜单栏退出正在运行的 Link Card。</li>
+<li>进入自己的源码仓库；先保存本地修改，再更新源码：</li>
+</ol>
+<p><code>bash
+   git pull --ff-only
+   ./build.sh</code></p>
+<ol start="3">
+<li>将新构建的 <code>dist/LinkCard.app</code> 复制到原安装位置，替换旧版。</li>
+<li>重新打开 App，检查账户和语言设置。</li>
+</ol>
+<p>使用个人 Applications 目录时，可以复用：</p>
+<pre><code class="language-bash">ditto dist/LinkCard.app &quot;$HOME/Applications/LinkCard.app&quot;
+open &quot;$HOME/Applications/LinkCard.app&quot;
+</code></pre>
+<p>替换 App 不会主动删除 Keychain 登录或语言偏好。签名或系统访问权限发生变化时，可能需要重新确认 Keychain 访问或在 App 中重新登录。</p>
+<p>v2.6.0 起，点击 App 底部或菜单栏的「检查更新…」，按提示下载、安装并重启。默认每天自动检查，可在底部关闭；更新包及清单均经过签名校验。更早的版本需要先从<a href="https://github.com/Papersboys/card-generator/releases/latest">最新 Release</a> 手动下载并替换一次。</p>
+<h2 id="_7">常见安装问题</h2>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th>检查与处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>找不到 <code>swiftc</code> 或 macOS SDK</td>
+<td>安装并打开 Xcode，检查 <code>xcode-select -p</code> 和 <code>xcrun --show-sdk-path</code></td>
+</tr>
+<tr>
+<td>提示 Xcode 许可证或附加组件未完成</td>
+<td>打开 Xcode 完成首次设置，再重新构建</td>
+</tr>
+<tr>
+<td><code>./build.sh: permission denied</code></td>
+<td>在项目根目录运行 <code>chmod +x build.sh test.sh</code>，再执行脚本</td>
+</tr>
+<tr>
+<td>找不到 <code>build.sh</code></td>
+<td>当前目录不对；进入包含 <code>Source/</code>、<code>build.sh</code> 和 <code>Info.plist</code> 的项目根目录</td>
+</tr>
+<tr>
+<td>安装位置没有写入权限</td>
+<td>使用个人的 <code>$HOME/Applications</code>，或在 Finder 中按系统提示授权</td>
+</tr>
+<tr>
+<td>下载的 App 无法打开</td>
+<td>确认来源、解压是否完整和系统提示；也可以从源码构建。不要通过关闭系统安全保护解决</td>
+</tr>
+<tr>
+<td>启动后没有 Dock 图标</td>
+<td>这是菜单栏 App；请找屏幕顶部的信用卡图标</td>
+</tr>
+<tr>
+<td>关闭后找不到窗口</td>
+<td>从菜单栏图标选择「打开 Link Card」</td>
+</tr>
+<tr>
+<td>显示多个同名 App</td>
+<td>确认已退出旧版，以后固定从安装目录启动，避免同时打开 <code>dist/</code> 和已安装副本</td>
+</tr>
+<tr>
+<td>登录过期或账户信息暂不可用</td>
+<td>按 App 提示检查网络或重新登录；详细流程见使用说明</td>
+</tr>
+<tr>
+<td>在 Intel Mac 上无法运行</td>
+<td>当前脚本只构建 Apple Silicon，不支持 Intel；需要另行适配和验证</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_8">卸载</h2>
+<ol>
+<li>从菜单栏选择 <strong>退出 / Quit</strong>。</li>
+<li>在 Finder 中将安装位置的 <code>LinkCard.app</code> 移到废纸篓。</li>
+</ol>
+<p>删除 App 不会取消付款请求，也不会退款。如果不再使用此 App，可自行在 Link 的已连接应用中移除相应授权；本机 Keychain 登录项和语言偏好也不会因删除 <code>.app</code> 自动清除。</p></article></main>
+<footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>独立开源项目 · 非 Link / Stripe 官方产品</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
+</body></html>

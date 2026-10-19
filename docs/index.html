@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Link Card — Visa virtual cards, at home on your Mac</title>
+<meta name="description" content="Link Card 是免费开源的 macOS 菜单栏 App。创建 Link 付款请求，批准后查看 Visa 虚拟卡卡号、CVC、有效期和账单地址。">
+<meta name="theme-color" content="#102a43">
+<meta property="og:title" content="Link Card · Virtual cards, at home on your Mac">
+<meta property="og:description" content="Create, approve, and view Link virtual cards from your Mac. Free and open source.">
+<meta property="og:type" content="website"><meta property="og:url" content="https://papersboys.github.io/card-generator/">
+<meta property="og:image" content="https://papersboys.github.io/card-generator/site/app-icon.png">
+<link rel="canonical" href="https://papersboys.github.io/card-generator/">
+<link rel="icon" type="image/png" href="site/app-icon.png"><link rel="stylesheet" href="site/style.css">
+<script src="site/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">跳到正文</a>
+<header class="header wrap">
+<a href="#" class="brand" aria-label="Link Card home"><img src="site/app-icon.png" width="40" height="40" alt=""><span>Link Card</span></a>
+<nav aria-label="Main navigation"><a href="#preview" data-i18n="navPreview">界面预览</a><a href="#how" data-i18n="navHow">如何使用</a><a href="#faq" data-i18n="navFaq">常见问题</a></nav>
+<div class="header-actions"><div class="language" role="group" aria-label="Language / 语言"><button type="button" data-lang="zh" aria-pressed="true">中文</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div><a class="github" href="https://github.com/Papersboys/card-generator" aria-label="GitHub repository"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.55.1.76-.24.76-.54v-2.07c-3.1.67-3.75-1.32-3.75-1.32-.5-1.28-1.23-1.62-1.23-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.7 1.15 1.7 1.15 1 1.7 2.6 1.21 3.24.92.1-.72.39-1.21.71-1.49-2.48-.28-5.09-1.24-5.09-5.52 0-1.22.44-2.22 1.15-3-.11-.28-.5-1.42.11-2.96 0 0 .94-.3 3.06 1.14A10.7 10.7 0 0 1 12 6.16c.94 0 1.88.13 2.76.38 2.12-1.44 3.05-1.14 3.05-1.14.61 1.54.23 2.68.12 2.96.71.78 1.14 1.78 1.14 3.01 0 4.29-2.61 5.23-5.1 5.51.4.35.75 1.03.75 2.07v3.04c0 .3.2.65.77.54A11.1 11.1 0 0 0 12 .9Z"/></svg></a></div>
+</header>
+<main id="main">
+<section class="hero wrap">
+<div class="hero-copy"><p class="eyebrow"><span class="status-dot"></span><span data-i18n="eyebrow">为 macOS 而做 · 免费开源</span></p>
+<h1><span data-i18n="heroLine1">你的 Visa 虚拟卡，</span><br><span class="accent" data-i18n="heroLine2">在 Mac 上一目了然。</span></h1>
+<p class="hero-description" data-i18n="heroDescription">卡号、CVC、有效期、账单地址，批准后直接查看和复制。把 Link 虚拟卡的日常操作，放进一个顺手的菜单栏 App。</p>
+<div class="cta-row"><a class="button primary" href="https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip"><svg viewBox="0 0 20 20" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 2v10m-4-4 4 4 4-4M3 13v4h14v-4"/></svg><span data-i18n="download">下载 Mac 版</span></a><a class="text-link guide-link" href="guide.html"><span data-i18n="guide">阅读使用指南</span><span aria-hidden="true"> ↗</span></a></div>
+<p class="requirements" data-i18n="requirements">Apple Silicon · macOS 13+ · 无需 Node.js 或 CLI</p>
+<div class="hero-meta"><span data-i18n="metaNative">原生 Mac App</span><span data-i18n="metaLanguage">中英文界面</span><span data-i18n="metaUpdate">支持 App 内更新</span></div>
+</div>
+<div class="hero-visual">
+<div class="menu-strip"><span class="menu-app">Link Card</span><span class="menu-icons" aria-hidden="true">◒　▰　⌕</span><span class="menu-selected"><svg width="17" height="14" viewBox="0 0 20 16" fill="none" aria-hidden="true"><rect x="1" y="1" width="18" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M1 6h18" stroke="currentColor" stroke-width="2"/></svg></span></div>
+<div class="card-window"><div class="window-top"><span class="traffic" aria-hidden="true"><i></i><i></i><i></i></span><span>Link Card</span><span class="approved" data-i18n="approved">已批准</span></div>
+<div class="visa-card"><div class="card-top"><span class="virtual-label" data-i18n="virtualCard">虚拟支付卡</span><strong class="visa-word">VISA</strong></div><svg width="38" height="29" viewBox="0 0 38 29" aria-hidden="true" class="chip"><rect x=".5" y=".5" width="37" height="28" rx="6" fill="#e8d8ab" stroke="#cdb77d"/><path d="M14 0v8H0m38 0H24V0M14 29v-8H0m38 0H24v8M14 8h10v13H14zM0 14.5h14m10 0h14" fill="none" stroke="#b9a16a"/></svg>
+<div class="card-number">4242 4242 4242 4242</div><div class="card-bottom"><div><span data-i18n="expires">有效期</span><strong>12 / 2030</strong></div><div><span>CVC</span><strong>123</strong></div><span class="demo-pill" data-i18n="demo">演示数据</span></div></div>
+<div class="address"><span data-i18n="billing">账单地址</span><p>123 Example St, Demo City<br>CA 00000, US</p></div><button type="button" class="copy-demo" id="copy-demo"><span data-i18n="copyDemo">试试复制演示卡号</span><span aria-hidden="true">⧉</span></button>
+</div><p class="visual-caption" data-i18n="visualCaption">功能示意 · 虚构卡信息，不能用于付款</p>
+</div>
+</section>
+<section class="funding wrap" aria-labelledby="funding-title"><div class="funding-path" aria-hidden="true"><span class="amex">AMEX</span><span class="path-line">→</span><span class="visa-small">VISA</span></div><div><h2 id="funding-title" data-i18n="fundingTitle">Amex → Visa，操作更顺手。</h2><p data-i18n="fundingDescription">选择 Link 中保存的 Amex 作为资金来源，申请 Visa 虚拟卡用于结账。实际可用性取决于 Link 账户资格、付款方式和商家限制。</p></div></section>
+<section class="section wrap" id="preview"><div class="section-heading"><p class="eyebrow" data-i18n="previewEyebrow">从查看卡信息开始</p><h2 data-i18n="previewTitle">重要的信息，清楚地放在一起。</h2><p data-i18n="previewDescription">真实 App 界面。创建、批准、查看，随时找回你的请求。</p></div>
+<div class="screenshot-shell"><div class="tabs" role="tablist" aria-label="App screenshots"><button role="tab" id="tab-card" aria-controls="screenshot-panel" aria-selected="true" data-shot="card" data-i18n="tabCard">卡片信息</button><button role="tab" id="tab-create" aria-controls="screenshot-panel" aria-selected="false" tabindex="-1" data-shot="create" data-i18n="tabCreate">创建请求</button><button role="tab" id="tab-approve" aria-controls="screenshot-panel" aria-selected="false" tabindex="-1" data-shot="approve" data-i18n="tabApprove">待批准</button><button role="tab" id="tab-update" aria-controls="screenshot-panel" aria-selected="false" tabindex="-1" data-shot="update" data-i18n="tabUpdate">自动更新</button></div><div role="tabpanel" id="screenshot-panel" aria-labelledby="tab-card" tabindex="0"><img id="app-screenshot" src="images/card-details-zh.jpg" alt="虚构 Visa 卡详情：卡号、CVC、有效期及账单地址" width="920" height="852" loading="lazy"></div></div>
+<p class="screenshot-note" data-i18n="screenshotNote">截图使用模拟账户与虚构卡信息，部分截图为此前版本；卡信息以 Link 实际返回为准。</p></section>
+<section class="features section wrap"><div class="section-heading"><p class="eyebrow" data-i18n="featuresEyebrow">把操作留给 App，把决定留给你</p><h2 data-i18n="featuresTitle">少一点来回，多一点顺手。</h2></div><div class="feature-grid">
+<article><span class="feature-symbol" aria-hidden="true">↗</span><h3 data-i18n="feature1Title">填好信息，用途自动生成</h3><p data-i18n="feature1Description">选择付款方式，填写商家、商品和金额。自动整理用途说明，核对后再提交。</p></article>
+<article><span class="feature-symbol" aria-hidden="true">✓</span><h3 data-i18n="feature2Title">每笔请求，由你批准</h3><p data-i18n="feature2Description">待批准页集中展示请求，点击链接在 Link 中确认。批准后自动刷新卡信息。</p></article>
+<article><span class="feature-symbol" aria-hidden="true">⌘</span><h3 data-i18n="feature3Title">熟悉的 Mac 使用方式</h3><p data-i18n="feature3Description">菜单栏随时打开，中英文即时切换。窗口自由缩放，输入和卡信息支持复制。</p></article>
+<article><span class="feature-symbol" aria-hidden="true">◈</span><h3 data-i18n="feature4Title">凭证保存在你的 Mac</h3><p data-i18n="feature4Description">App 直连 Link API，登录凭证存入 Keychain。卡信息仅保留在内存，关闭窗口即清除显示。</p></article>
+</div></section>
+<section class="how-section" id="how"><div class="wrap section"><div class="section-heading"><p class="eyebrow" data-i18n="howEyebrow">从请求到结账</p><h2 data-i18n="howTitle">三步，拿到可用的卡信息。</h2></div><ol class="steps"><li><span class="step-index">1</span><h3 data-i18n="step1Title">创建请求</h3><p data-i18n="step1Description">登录 Link，选择付款方式，填写商家和实际结账金额。USD 以美分填写：1500 = $15。</p></li><li><span class="step-index">2</span><h3 data-i18n="step2Title">在 Link 中批准</h3><p data-i18n="step2Description">打开批准链接，亲自核对并确认。你可以在待批准页重新找到之前的请求。</p></li><li><span class="step-index">3</span><h3 data-i18n="step3Title">复制卡信息结账</h3><p data-i18n="step3Description">返回 App 查看卡号、CVC、有效期和账单地址，复制到商家付款页完成结账。</p></li></ol></div></section>
+<section class="faq section wrap" id="faq"><div class="section-heading"><p class="eyebrow">FAQ</p><h2 data-i18n="faqTitle">下载前，你可能想知道。</h2></div>
+<details open><summary data-i18n="faq1Q">支持哪些 Mac？需要安装其他工具吗？</summary><p data-i18n="faq1A">支持 Apple Silicon（M 系列芯片）及 macOS 13 或更新版本。下载 ZIP、解压，将 LinkCard.app 拖到 Applications 即可。无需安装 Node.js、npm 或 link-cli。</p></details>
+<details><summary data-i18n="faq2Q">第一次打开被 macOS 阻止怎么办？</summary><p data-i18n="faq2A">当前版本使用 ad-hoc 签名，尚未经过 Apple 公证。确认从本项目的 GitHub Release 下载后，尝试打开，再到系统设置 → 隐私与安全性，选择“仍要打开”。</p></details>
+<details><summary data-i18n="faq3Q">可以自动更新吗？</summary><p data-i18n="faq3A">v2.6.0 起默认每天检查新版，也可在 App 内手动检查。确认后下载、安装并重启；更新清单和安装包都会校验签名。旧版本需要先手动升级一次。</p></details>
+<details><summary data-i18n="faq4Q">支持哪些币种？</summary><p data-i18n="faq4A">默认 USD，金额以美分填写，最低 50（$0.50）。其他币种使用三位代码及各自最小单位。Link 未公开完整清单，实际支持情况以 API 返回为准；App 不进行汇率换算。</p></details>
+<details><summary data-i18n="faq5Q">这是 Link 官方产品吗？会存储我的卡信息吗？</summary><p data-i18n="faq5A">这是独立开源项目，与 Link 或 Stripe 无隶属关系。App 不经过开发者服务器，登录凭证保存在本机 Keychain，卡信息仅在内存中显示。你可以随时退出登录，清除本 App 的凭证。</p></details>
+</section>
+<section class="bottom-cta wrap"><img src="site/app-icon.png" width="80" height="80" alt="" loading="lazy"><h2 data-i18n="bottomTitle">下一笔付款，从这里开始。</h2><p data-i18n="bottomDescription">免费开源，把 Link 虚拟卡放到你的菜单栏。</p><a class="button primary" href="https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip" data-i18n="download">下载 Mac 版</a><span class="requirements" data-i18n="bottomRequirements">Apple Silicon · macOS 13+</span></section>
+</main>
+<footer class="footer wrap"><a href="#" class="brand"><img src="site/app-icon.png" width="28" height="28" alt=""><span>Link Card</span></a><p data-i18n="footerNote">独立开源项目 · 非 Link / Stripe 官方产品</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a><a class="guide-link" href="guide.html" data-i18n="guideShort">使用指南</a></div></footer>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body></html>

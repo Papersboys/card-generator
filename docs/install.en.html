@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Installation · Link Card</title>
+<meta name="description" content="Install Link Card, view Visa virtual card details, and create and approve requests.">
+<link rel="icon" type="image/png" href="site/app-icon.png"><link rel="stylesheet" href="site/style.css"><link rel="stylesheet" href="site/guide.css"></head>
+<body class="guide-page"><a class="skip" href="#article">Skip to content</a>
+<header class="header wrap"><a class="brand" href="index.html?lang=en"><img src="site/app-icon.png" width="40" height="40" alt=""><span>Link Card</span></a>
+<nav aria-label="Navigation"><a href="index.html?lang=en">Home</a><a href="install.en.html">Installation</a><a href="guide.en.html">User guide</a></nav>
+<div class="header-actions"><div class="language"><a href="install.html" >中文</a><a href="install.en.html" aria-current="page">EN</a></div></div></header>
+<div class="guide-title wrap"><p class="eyebrow">LINK CARD / DOCUMENTATION</p><h1>Installation</h1><p>From your card details to your next spend request.</p><a class="button primary" href="https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip">Download for Mac ↓</a></div>
+<main class="guide-layout wrap"><aside class="guide-toc" aria-label="On this page"><p>ON THIS PAGE</p><div class="toc">
+<ul>
+<li><a href="#choose-an-installation-method">Choose an installation method</a></li>
+<li><a href="#requirements">Requirements</a></li>
+<li><a href="#method-1-install-a-packaged-app">Method 1: install a packaged app</a><ul>
+<li><a href="#optional-verify-the-download">Optional: verify the download</a></li>
+</ul>
+</li>
+<li><a href="#method-2-build-from-source">Method 2: build from source</a><ul>
+<li><a href="#1-set-up-xcode">1. Set up Xcode</a></li>
+<li><a href="#2-get-the-source">2. Get the source</a></li>
+<li><a href="#3-build">3. Build</a></li>
+<li><a href="#4-install-in-your-personal-applications-folder">4. Install in your personal Applications folder</a></li>
+</ul>
+</li>
+<li><a href="#first-launch-and-login">First launch and login</a></li>
+<li><a href="#menu-bar-and-quitting">Menu bar and quitting</a></li>
+<li><a href="#updating">Updating</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#uninstalling">Uninstalling</a></li>
+</ul>
+</div>
+</aside><article id="article" class="guide-article"><p>After installation, open Link Card from the credit-card icon in the macOS menu bar. It connects directly to Link; no <code>link-cli</code>, Node.js, or npm installation is required.</p>
+<h2 id="choose-an-installation-method">Choose an installation method</h2>
+<table>
+<thead>
+<tr>
+<th>What you have</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A packaged <code>LinkCard.zip</code> or <code>LinkCard.app</code></td>
+<td>Method 1; Xcode is not required</td>
+</tr>
+<tr>
+<td>The Git repository or a source ZIP</td>
+<td>Method 2: build, then install</td>
+</tr>
+</tbody>
+</table>
+<p>Download the prebuilt app from <a href="https://github.com/Papersboys/card-generator/releases/latest">GitHub Releases</a>. App bundles are distributed as release assets rather than tracked in Git. Method 2 is optional for users who want to build from source.</p>
+<h2 id="requirements">Requirements</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mac</td>
+<td>Apple Silicon, such as M1–M4; the current script builds <code>arm64</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td>Version 13 or later</td>
+</tr>
+<tr>
+<td>Network</td>
+<td>Access to official Link services for login, account information, and requests</td>
+</tr>
+<tr>
+<td>Account</td>
+<td>A personal Link account eligible for the relevant features; eligibility is determined by Link</td>
+</tr>
+<tr>
+<td>Source builds</td>
+<td>Xcode, its macOS SDK, and Swift; the project has been built with Swift 6.2</td>
+</tr>
+</tbody>
+</table>
+<p>Running a packaged app does not require Xcode. The current build script does not produce an Intel or Universal version.</p>
+<h2 id="method-1-install-a-packaged-app">Method 1: install a packaged app</h2>
+<ol>
+<li>Download <a href="https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip">LinkCard-macos-arm64.zip</a>, then double-click it in Finder to extract it.</li>
+<li>Drag <code>LinkCard.app</code> into <strong>Applications</strong>, or the <strong>Applications</strong> folder inside your home folder.</li>
+<li>Double-click the installed app.</li>
+<li>Check that the credit-card icon appears in the menu bar.</li>
+</ol>
+<p>Current builds use a local ad-hoc signature and are not Apple-notarized. Obtain packages from a trusted source. If macOS or a managed device blocks launch, check the source and system message, or build from source below. Do not disable system security protections to work around the issue.</p>
+<h3 id="optional-verify-the-download">Optional: verify the download</h3>
+<p>Download <a href="https://github.com/Papersboys/card-generator/releases/latest/download/SHA256SUMS.txt">SHA256SUMS.txt</a> from the same release. Put it beside the ZIP and run in that folder:</p>
+<pre><code class="language-bash">shasum -a 256 -c SHA256SUMS.txt
+</code></pre>
+<p>The ZIP should report <code>OK</code>. No Xcode, Terminal commands, or compilation are required for the normal Finder installation above.</p>
+<h2 id="method-2-build-from-source">Method 2: build from source</h2>
+<h3 id="1-set-up-xcode">1. Set up Xcode</h3>
+<p>Install Xcode, open it at least once, and complete its first-launch setup.</p>
+<p>Check your developer tools in Terminal:</p>
+<pre><code class="language-bash">xcode-select -p
+xcrun --find swiftc
+xcrun --show-sdk-path
+</code></pre>
+<p>If multiple Xcode versions are installed, or another developer-tools directory is selected, choose the Xcode installation you intend to use. For the usual installation path:</p>
+<pre><code class="language-bash">sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+</code></pre>
+<p>Use your actual path if Xcode is installed elsewhere. If the build reports an incomplete license or missing components, open Xcode and finish setup before retrying.</p>
+<h3 id="2-get-the-source">2. Get the source</h3>
+<pre><code class="language-bash">git clone https://github.com/Papersboys/card-generator.git
+cd card-generator
+</code></pre>
+<p>If you already have a checkout, enter that folder instead of cloning again. You can also extract a source ZIP and enter the project root containing <code>build.sh</code> and <code>Info.plist</code>.</p>
+<h3 id="3-build">3. Build</h3>
+<pre><code class="language-bash">./build.sh
+</code></pre>
+<p>The script compiles Swift, generates the icon, assembles the bundle, and signs and verifies it locally. On success:</p>
+<pre><code class="language-text">Built: /path/to/card-generator/dist/LinkCard.app
+</code></pre>
+<p>Try the app directly:</p>
+<pre><code class="language-bash">open dist/LinkCard.app
+</code></pre>
+<p>Optionally run the offline tests. They use mocked APIs and do not create real requests or charges:</p>
+<pre><code class="language-bash">./test.sh
+</code></pre>
+<h3 id="4-install-in-your-personal-applications-folder">4. Install in your personal Applications folder</h3>
+<p>If the app is running, choose <strong>Quit</strong> from its menu-bar menu before copying:</p>
+<pre><code class="language-bash">mkdir -p &quot;$HOME/Applications&quot;
+ditto dist/LinkCard.app &quot;$HOME/Applications/LinkCard.app&quot;
+open &quot;$HOME/Applications/LinkCard.app&quot;
+</code></pre>
+<p>These commands install or replace the copy in your personal Applications folder. Use that location for subsequent launches. Alternatively, drag the built app into <code>/Applications</code> in Finder and authorize the copy if prompted.</p>
+<h2 id="first-launch-and-login">First launch and login</h2>
+<ol>
+<li>Click <strong>Log in to Link</strong>.</li>
+<li>Open the official authorization link and sign in to your Link account in the browser.</li>
+<li>Enter the phrase shown by the app when requested, and authorize the connection.</li>
+<li>Return to the app and wait for <strong>Logged in</strong> and the name/email returned by Link.</li>
+<li>Select <strong>中文 / English</strong> at the top to change the interface language.</li>
+</ol>
+<p>The independent app login is stored in macOS Keychain; the language preference survives restarts. Do not commit authorization phrases, credentials, or full card details to Git.</p>
+<p><img alt="Login authorization screen with fictional demo data; the interface is shown in Chinese" src="images/login-zh.jpg" /></p>
+<p>Continue with the <a href="guide.en.html">illustrated usage guide</a> for creation, approval, card display, and cancellation.</p>
+<h2 id="menu-bar-and-quitting">Menu bar and quitting</h2>
+<ul>
+<li>Click the credit-card icon → <strong>Open Link Card</strong> to reopen the window.</li>
+<li>Closing the window does not quit the app or cancel server-side requests.</li>
+<li>Choose <strong>Quit</strong> from the menu-bar menu to exit completely.</li>
+<li>Installation does not automatically enable launch at login.</li>
+</ul>
+<h2 id="updating">Updating</h2>
+<ol>
+<li>Quit the running app from its menu-bar menu.</li>
+<li>Enter your source checkout. Save any local changes, then update and rebuild:</li>
+</ol>
+<p><code>bash
+   git pull --ff-only
+   ./build.sh</code></p>
+<ol start="3">
+<li>Replace the installed app with <code>dist/LinkCard.app</code>.</li>
+<li>Reopen it and check the account and language settings.</li>
+</ol>
+<p>For a personal Applications installation:</p>
+<pre><code class="language-bash">ditto dist/LinkCard.app &quot;$HOME/Applications/LinkCard.app&quot;
+open &quot;$HOME/Applications/LinkCard.app&quot;
+</code></pre>
+<p>Replacing the bundle does not intentionally remove Keychain credentials or language preferences. Signature or access-permission changes may require confirming Keychain access or logging in again.</p>
+<p>From v2.6.0, use Check for Updates… in the footer or menu bar to download, install, and relaunch. Daily automatic checks are enabled by default and can be disabled in the footer. The feed and archive are signature-verified. Earlier versions need one manual download from <a href="https://github.com/Papersboys/card-generator/releases/latest">the latest release</a>.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>What to check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>swiftc</code> or the macOS SDK is missing</td>
+<td>Install/open Xcode; check <code>xcode-select -p</code> and <code>xcrun --show-sdk-path</code></td>
+</tr>
+<tr>
+<td>Xcode license or components are incomplete</td>
+<td>Complete Xcode setup, then rebuild</td>
+</tr>
+<tr>
+<td><code>./build.sh: permission denied</code></td>
+<td>Run <code>chmod +x build.sh test.sh</code> in the project root, then retry</td>
+</tr>
+<tr>
+<td><code>build.sh</code> cannot be found</td>
+<td>Enter the project root containing <code>Source/</code>, <code>build.sh</code>, and <code>Info.plist</code></td>
+</tr>
+<tr>
+<td>No permission to install</td>
+<td>Use <code>$HOME/Applications</code>, or authorize the Finder copy when prompted</td>
+</tr>
+<tr>
+<td>A downloaded app will not open</td>
+<td>Check its source, extraction, and the system message; consider a source build rather than disabling security protections</td>
+</tr>
+<tr>
+<td>No Dock icon appears</td>
+<td>This is a menu-bar app; look for the credit-card icon at the top of the screen</td>
+</tr>
+<tr>
+<td>The window disappeared</td>
+<td>Choose <strong>Open Link Card</strong> from the menu-bar icon</td>
+</tr>
+<tr>
+<td>Multiple copies appear</td>
+<td>Quit old copies and consistently open the installed bundle instead of also launching <code>dist/</code></td>
+</tr>
+<tr>
+<td>Login expired or account information is unavailable</td>
+<td>Follow the app's network/login prompts and the usage guide</td>
+</tr>
+<tr>
+<td>App will not run on Intel</td>
+<td>The current script only builds for Apple Silicon; Intel requires separate adaptation and verification</td>
+</tr>
+</tbody>
+</table>
+<h2 id="uninstalling">Uninstalling</h2>
+<ol>
+<li>Choose <strong>Quit</strong> from the menu-bar menu.</li>
+<li>Move the installed <code>LinkCard.app</code> to Trash in Finder.</li>
+</ol>
+<p>Deleting the bundle does not cancel spend requests or refund payments. If you stop using the app, you can remove its authorization in Link's connected applications. Local Keychain entries and language preferences are not automatically removed with the bundle.</p></article></main>
+<footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>Independent open-source project · Not affiliated with Link or Stripe</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
+</body></html>

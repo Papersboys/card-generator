@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>使用指南 · Link Card</title>
+<meta name="description" content="Link Card 的安装、Visa 虚拟卡信息、创建与批准请求操作指南。">
+<link rel="icon" type="image/png" href="site/app-icon.png"><link rel="stylesheet" href="site/style.css"><link rel="stylesheet" href="site/guide.css"></head>
+<body class="guide-page"><a class="skip" href="#article">跳到正文</a>
+<header class="header wrap"><a class="brand" href="index.html"><img src="site/app-icon.png" width="40" height="40" alt=""><span>Link Card</span></a>
+<nav aria-label="导航"><a href="index.html">产品主页</a><a href="install.html">安装</a><a href="guide.html">使用指南</a></nav>
+<div class="header-actions"><div class="language"><a href="guide.html" aria-current="page">中文</a><a href="guide.en.html" >EN</a></div></div></header>
+<div class="guide-title wrap"><p class="eyebrow">LINK CARD / 文档</p><h1>使用指南</h1><p>从查看卡信息，到下一笔付款请求。</p><a class="button primary" href="https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip">下载 Mac 版 ↓</a></div>
+<main class="guide-layout wrap"><aside class="guide-toc" aria-label="目录"><p>本页内容</p><div class="toc">
+<ul>
+<li><a href="#1-visa">1. 核心功能：显示与复制 Visa 虚拟卡</a><ul>
+<li><a href="#_1">已有批准请求，如何显示？</a></li>
+</ul>
+</li>
+<li><a href="#2">2. 启动与菜单栏</a><ul>
+<li><a href="#_2">切换语言</a></li>
+<li><a href="#_3">窗口缩放与输入快捷键</a></li>
+<li><a href="#v260">自动更新（v2.6.0 起）</a></li>
+</ul>
+</li>
+<li><a href="#3-link">3. 登录 Link</a><ul>
+<li><a href="#_4">退出登录</a></li>
+</ul>
+</li>
+<li><a href="#4">4. 创建付款请求</a></li>
+<li><a href="#5">5. 批准请求并自动显示卡信息</a></li>
+<li><a href="#6">6. 取消请求</a></li>
+<li><a href="#7">7. 查看历史</a></li>
+<li><a href="#_5">常见问题</a></li>
+<li><a href="#_6">当前范围</a></li>
+</ul>
+</div>
+</aside><article id="article" class="guide-article"><p>Link Card 是 macOS 菜单栏 App，负责创建 Link 付款请求、读取批准后的虚拟卡信息和取消请求。它不会替你在商家网站下单，也不会自动提交商家付款表单。</p>
+<blockquote>
+<p>本页截图来自真实界面代码的离线演示窗口。账户、授权短语、请求和卡信息均为虚构示例；Costco 为默认商家示例，演示卡信息不能用于付款。</p>
+</blockquote>
+<p>首次安装请先阅读<a href="install.html">安装指南</a>，下载安装最新版 App。</p>
+<h2 id="1-visa">1. 核心功能：显示与复制 Visa 虚拟卡</h2>
+<p><strong>批准后直接查看卡号、CVC／CVV、卡面有效期和账单地址，并复制到商家的付款页面。</strong> 下图展示 Visa 虚拟卡；实际卡组织及可用字段以 Link 返回结果为准。</p>
+<p><img alt="虚拟卡详情，展示示例卡号、安全码、有效期、账单地址和可用截止时间" src="images/card-details-zh.jpg" /></p>
+<p><em>卡信息展示示例：图中全部为虚构数据，不是真实付款凭证。</em></p>
+<p>下方表格显示以下字段，未返回的字段显示为 <code>—</code>：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Card number</td>
+<td>Link 返回的虚拟卡卡号</td>
+</tr>
+<tr>
+<td>CVC</td>
+<td>虚拟卡安全码，也称 CVV</td>
+</tr>
+<tr>
+<td>Expiration</td>
+<td>卡的月份／年份有效期</td>
+</tr>
+<tr>
+<td>Billing address</td>
+<td>返回的账单地址</td>
+</tr>
+<tr>
+<td>Brand</td>
+<td>卡组织</td>
+</tr>
+<tr>
+<td>Valid until</td>
+<td>Link 返回的卡凭证实际截止时间；缺失时显示 <code>—</code>，与请求到期时间、卡面有效期分别展示</td>
+</tr>
+<tr>
+<td>Request expiry</td>
+<td>Link 返回的请求到期时间</td>
+</tr>
+<tr>
+<td>Spend request ID</td>
+<td>请求 ID，通常以 <code>lsrq_</code> 开头</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>请求当前状态</td>
+</tr>
+<tr>
+<td>Merchant / Merchant URL</td>
+<td>创建请求时填写的商家名称和网址</td>
+</tr>
+<tr>
+<td>Context</td>
+<td>购买用途</td>
+</tr>
+<tr>
+<td>Created at</td>
+<td>请求创建时间</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_1">已有批准请求，如何显示？</h3>
+<ol>
+<li>切换到 <strong>请求 / 历史</strong>。</li>
+<li>点击 <strong>刷新列表</strong>。</li>
+<li>选中要查看的请求。</li>
+<li>点击 <strong>显示卡信息 Show</strong>。</li>
+</ol>
+<p>可以选中文本后按 <strong>⌘C</strong> 复制到自己的商家结账页面。App 不会自动复制，也不会自动填写商家页面。完整卡号和 CVC 会直接显示在窗口内。</p>
+<p>点击 <strong>清除卡信息</strong> 可清空当前显示。关闭窗口也会清除显示并停止自动批准状态检查；不会取消服务端请求。卡响应使用临时网络会话处理，不会写成卡信息 JSON 文件。</p>
+<p>第一次使用？继续阅读下面的启动、登录、创建和批准流程。未批准的请求不会显示完整卡信息。</p>
+<h2 id="2">2. 启动与菜单栏</h2>
+<p>安装完成后，双击 Applications 中的 <strong>LinkCard.app</strong> 即可。从源码目录试运行时，也可以执行：</p>
+<pre><code class="language-bash">./build.sh
+open dist/LinkCard.app
+</code></pre>
+<p>启动后，屏幕顶部菜单栏会出现信用卡图标：</p>
+<ul>
+<li><strong>打开 Link Card</strong>：显示主窗口。</li>
+<li><strong>退出</strong>：结束 App。</li>
+</ul>
+<p>关闭主窗口后，App 仍保留在菜单栏。要再次使用，点击菜单栏图标并选择「打开 Link Card」。App 不会自动设置开机启动。</p>
+<p><img alt="中文请求与历史列表，展示已登录账户和不同请求状态" src="images/overview-zh.jpg" /></p>
+<p><em>主界面：顶部显示登录账户，列表展示请求 ID、金额和状态。</em></p>
+<h3 id="_2">切换语言</h3>
+<p>窗口顶部提供 <strong>中文 / English</strong> 切换控件。切换后，按钮、菜单栏菜单、确认框、卡信息字段和已有状态提示会即时更新，重启后也会保留选择。商家名称、用途、请求 ID 和卡信息本身不会被翻译。</p>
+<h3 id="_3">窗口缩放与输入快捷键</h3>
+<p>使用指南截图对应 <strong>v2.5.6</strong>。拖动窗口边缘可调整尺寸：窄窗口使用单列表单，宽窗口自动分列；内容较长时向下滚动即可看到自动用途说明和创建按钮。底部显示 App 版本；如果仍是旧表单，请退出旧 App 后替换为最新版。</p>
+<table>
+<thead>
+<tr>
+<th>窄窗口单列</th>
+<th>滚动至底部</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="540 宽的中文单列表单" src="images/responsive-narrow-zh.jpg" /></td>
+<td><img alt="滚动后可见自动用途和创建按钮" src="images/responsive-narrow-bottom-zh.jpg" /></td>
+</tr>
+</tbody>
+</table>
+<p>所有文本输入框支持 <strong>⌘C 复制、⌘V 粘贴、⌘X 剪切、⌘A 全选、⌘Z 撤销、⇧⌘Z 重做</strong>，也可使用 macOS 的「编辑」菜单。先点击输入框，将光标放入其中；⌘A 后粘贴可替换整个字段。付款方式下拉选择后，其 ID 仍可手动粘贴修改。Context 自动生成，无需输入；可选中文本复制。</p>
+<h3 id="v260">自动更新（v2.6.0 起）</h3>
+<p>底部提供「检查更新…」按钮和「自动检查更新」开关，菜单栏也有检查入口。自动检查默认每天一次；关闭后仍可手动检查。发现新版时，按 Sparkle 窗口提示下载、安装并重启；安装前请完成当前操作。更新清单和下载包都会验证签名。第一次从旧版升级到带更新功能的版本，仍需手动下载替换一次。</p>
+<p><img alt="自动检查开关和手动检查入口" src="images/update-controls-zh.jpg" /></p>
+<p><img alt="公开签名更新源检查成功，当前为最新版" src="images/update-check-en.jpg" /></p>
+<h2 id="3-link">3. 登录 Link</h2>
+<ol>
+<li>点击标题下方的 <strong>登录 Link</strong>。</li>
+<li>点击 <strong>打开 Link 登录授权 ↗</strong>，进入官方 Link 网站。</li>
+<li>在浏览器登录自己的 Link 账户，根据页面要求输入 App 显示的授权短语并完成授权。</li>
+<li>返回 App，等待登录完成。右上角的登录按钮会替换为「已登录」和 Link 返回的姓名／邮箱。</li>
+</ol>
+<p><img alt="登录授权界面，使用 DEMO PHRASE 示例短语" src="images/login-zh.jpg" /></p>
+<p><em>点击授权链接，在官方 Link 页面完成登录；图中短语仅为演示。</em></p>
+<p>重新打开 App 时会自动检查登录并读取账户信息；如果登录失效且无法自动续期，会重新显示登录按钮。临时网络故障不会直接把已有登录标记为退出，账户信息无法加载时会显示提示。</p>
+<p>这是授权 App 访问 Link，和稍后批准某一笔购买请求是两个独立步骤。独立 App 登录保存在 macOS Keychain 中，无需安装 <code>link-cli</code>、Node.js 或 npm。</p>
+<p>如果本机已有尚未过期的 CLI 登录，App 可以只读复用其 access token，不会修改 CLI 配置或使用 CLI 的 refresh token。提示过期后，点击 App 的「登录 Link」建立独立登录即可。</p>
+<h3 id="_4">退出登录</h3>
+<p>登录后，账户信息旁会显示 <strong>退出登录</strong>。点击后会清除本 App 的 Keychain 登录凭证、账户信息、卡信息和本地列表，并停止等待批准。退出后显示「登录 Link」，下次启动也不会自动复用 link-cli 的登录；重新登录即可查看服务端已有请求。</p>
+<p>此操作只退出本 App，不修改 link-cli 配置、不退出浏览器中的 Link，也不会取消已有付款请求。需要撤销服务端授权时，请在 Link 中管理连接。</p>
+<h2 id="4">4. 创建付款请求</h2>
+<p>先在商家网站确认要购买的商品和结账总金额，再回到 App：</p>
+<ol>
+<li>选择 <strong>创建 Generate</strong> 页签。</li>
+<li>在付款方式旁点击 <strong>加载</strong>。</li>
+<li>从下拉列表选择付款方式；选择后，「付款方式 ID」会自动填入。也可以手动填写已有的付款方式 ID。</li>
+<li>填写下列信息。</li>
+</ol>
+<p><img alt="Costco 默认名称和网址，以及金额与商品输入提示" src="images/create-defaults-zh.jpg" /></p>
+<p>商家默认填入 <strong>Costco</strong> 和 <strong>https://www.costco.com</strong>，可以修改。金额和商品框中的浅色文字只是示例，不会自动提交，必须填入实际购买内容。USD 金额按美分填写，最低 <code>50</code>（$0.50）；<code>1500</code> = $15.00，<code>50000</code> = $500.00。用途说明会随字段自动更新，无需手填。</p>
+<p><img alt="English 创建表单，演示付款方式、商家、1500 USD 最小单位及用途" src="images/create-en.jpg" /></p>
+<p><em>英文界面示例：金额 <code>1500</code> 配合 <code>usd</code> 表示 $15.00。</em></p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>怎么填</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>付款方式 ID</td>
+<td>Link 中用于支付的付款方式，不是 spend request ID</td>
+<td>从下拉列表选择</td>
+</tr>
+<tr>
+<td>商家名称</td>
+<td>实际收款商家，默认 Costco，可修改</td>
+<td>Costco</td>
+</tr>
+<tr>
+<td>商家 URL</td>
+<td>完整的 HTTP/HTTPS 地址，默认 Costco 网址，可修改</td>
+<td><code>https://www.costco.com</code></td>
+</tr>
+<tr>
+<td>金额</td>
+<td>币种的最小单位，填写正整数</td>
+<td>USD $15.00 填 <code>1500</code></td>
+</tr>
+<tr>
+<td>币种</td>
+<td>三字母币种代码</td>
+<td><code>usd</code></td>
+</tr>
+<tr>
+<td>商品</td>
+<td>本次购买内容；当前表单固定数量为 1，商品名不要包含逗号</td>
+<td>Meal credit</td>
+</tr>
+<tr>
+<td>用途 Context</td>
+<td>根据商家、URL、商品、金额和币种自动生成，无需填写</td>
+<td>创建前可在确认框核对</td>
+</tr>
+</tbody>
+</table>
+<ol start="5">
+<li>点击 <strong>检查并创建请求…</strong>。</li>
+<li>在确认框中核对商家、URL、金额、商品和用途。</li>
+<li>点击 <strong>创建并请求批准</strong>。仅填写表单不会提交请求。</li>
+</ol>
+<p><img alt="创建前确认框，展示商家、金额和购买用途" src="images/create-review-en.jpg" /></p>
+<p><em>确认框供你检查内容；点击 Back 可以返回修改。</em></p>
+<p>金额必须结合币种理解。例如 <code>usd</code> 下 <code>10000</code> 表示 $100.00，而不是 $10,000。请求金额和状态也不等于商家最终结算金额。</p>
+<p>此客户端不支持自定义请求到期时间，创建时不提交 <code>expires_at</code>。卡面有效期和实际可用截止时间以 Link 返回结果为准。</p>
+<h2 id="5">5. 批准请求并自动显示卡信息</h2>
+<ol>
+<li>创建成功后自动进入 <strong>待批准</strong> 页，点击 <strong>在 Link 中批准请求 ↗</strong>。也可以在此页选择之前的待批准请求，核对商家、金额及自动生成的用途；若尚无链接，点击 <strong>获取批准链接</strong>。</li>
+<li>在 Link 官方页面核对并亲自批准本次请求。</li>
+<li>保持 App 窗口打开。App 每两秒检查一次状态，最多等待十分钟；发现已批准后自动读取卡信息。</li>
+<li>如果没有自动更新，点击 <strong>已批准，刷新卡信息</strong>，或在列表中选中请求后点击 <strong>显示卡信息 Show</strong>。</li>
+</ol>
+<p><img alt="待批准页：选中之前的请求，核对用途并打开 Link 批准链接" src="images/approve-zh.jpg" /></p>
+<p><strong>查看之前的请求：</strong> 打开「待批准」，点击「刷新列表」，选中请求查看商家 URL、请求金额和用途。没有链接时点击「获取批准链接」；点击「查看请求」可重新读取状态并开始等待批准。已批准的请求会在刷新后离开待批准列表，可到「请求 / 历史」查看卡信息。没有待批准请求时页面会显示空状态提示。</p>
+<p>App 不会替你批准购买请求。等待超过十分钟只表示 App 停止自动检查，不代表请求已取消。</p>
+<h2 id="6">6. 取消请求</h2>
+<ol>
+<li>在 <strong>请求 / 历史</strong> 中选中请求。</li>
+<li>直接点击该行的 <strong>取消请求</strong>，或使用列表下方的 <strong>取消请求 Cancel</strong>。只有已创建、等待批准或已批准状态可以取消。</li>
+<li>核对确认框中的商家和请求 ID，再点击 <strong>取消请求</strong>。</li>
+<li>Link 确认取消后，App 会清除该请求的卡信息并停止等待批准。请求会从活跃列表移除，打开「包含历史」即可查看；也可以刷新以重新读取服务端状态。</li>
+</ol>
+<p><img alt="取消请求确认框，提示取消不会撤销已完成付款" src="images/cancel-confirmation-zh.jpg" /></p>
+<p><em>核对商家和请求 ID，再决定返回或取消；截图没有执行取消操作。</em></p>
+<p>服务端可能拒绝取消某些状态的请求，App 会显示错误。</p>
+<h2 id="7">7. 查看历史</h2>
+<p>打开 <strong>包含历史</strong>，列表会重新读取历史请求，包括取消、过期等非活跃请求。选中记录后可以尝试显示详情，但过期或已结束的请求不保证还能返回完整卡信息。</p>
+<p>这里是 <strong>spend request 历史</strong>：列表金额是请求中记录的金额，不是专门查询的商家实际扣款金额。当前 App 没有独立的商家交易流水、退款追踪或对账页面。核对实际扣款时，请结合商家收据和原付款方式最终入账记录。</p>
+<h2 id="_5">常见问题</h2>
+<p><img alt="固定在顶部的错误栏，支持复制和关闭" src="images/error-banner-zh.jpg" /></p>
+<p>发生错误时，窗口顶部会显示红色错误栏，保留 Link 返回的具体错误。切换页面、刷新和滚动不会清除它；点击「复制错误」可分享错误文字，点击 × 可关闭。创建失败会保留填写内容，不会跳转到待批准页。</p>
+<p>遇到 <code>amount must be at least $0.50 usd</code> 时，将 USD 金额填写为至少 <code>50</code>。创建失败不会产生可批准的请求。若旧版本提示 <code>expires_at is not supported for this client</code>，退出并更新到 v2.5.6 或更新版本；当前创建表单已移除自定义截止时间。</p>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th>处理方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>没有活跃请求</td>
+<td>打开「包含历史」，或创建新请求</td>
+</tr>
+<tr>
+<td>付款方式列表为空</td>
+<td>确认登录账户正确，点击「加载」；根据 Link 返回的提示处理账户或付款方式问题</td>
+</tr>
+<tr>
+<td>创建按钮不可点击</td>
+<td>检查必填字段，以及是否仍有操作在进行</td>
+</tr>
+<tr>
+<td>提示金额或 URL 无效</td>
+<td>金额填写正整数最小单位；URL 必须带 <code>http://</code> 或 <code>https://</code></td>
+</tr>
+<tr>
+<td><code>pending_approval</code>，没有卡号</td>
+<td>打开本次请求的批准链接，完成批准后刷新</td>
+</tr>
+<tr>
+<td>登录过期、HTTP 401</td>
+<td>点击「登录 Link」重新授权，再刷新</td>
+</tr>
+<tr>
+<td>卡号、地址或 CVC 显示 <code>—</code></td>
+<td>该次响应没有提供此字段；确认状态和批准情况，不能从 <code>—</code> 推断真实卡信息</td>
+</tr>
+<tr>
+<td>关闭窗口后看不到卡信息</td>
+<td>从菜单栏重新打开，选择请求并点击「显示卡信息 Show」</td>
+</tr>
+<tr>
+<td>请求创建后出现错误</td>
+<td>先刷新列表及历史，确认是否已创建，避免直接重复提交同一笔请求</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">当前范围</h2>
+<ul>
+<li>Apple Silicon、macOS 13 或更新版本。</li>
+<li>支持中文和 English 即时切换，并保存语言偏好。</li>
+<li>每个创建请求包含一项商品，数量固定为 1。</li>
+<li>不自动下单、不自动批准、不自动启动、不提供退款操作。</li>
+<li>当前构建采用本地 ad-hoc 签名，没有 Apple 公证。</li>
+</ul>
+<p>若出现 <code>refresh_token is not active: status: revoked</code>，表示保存的登录刷新凭证已失效。v2.5.7 起会恢复「登录 Link」按钮；点击并在 Link 中重新授权即可。无需分享任何 token。</p></article></main>
+<footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>独立开源项目 · 非 Link / Stripe 官方产品</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
+</body></html>

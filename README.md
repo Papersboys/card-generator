@@ -6,7 +6,7 @@
 
 A native macOS menu-bar app to create Link spend requests, approve them in Link, display virtual card details, and cancel unused requests. Built with SwiftUI, AppKit, and URLSession.
 
-[Download for Apple Silicon](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip) · [All releases and checksums](https://github.com/Papersboys/card-generator/releases)
+[Product website](https://papersboys.github.io/card-generator/?lang=en) · [Download for Apple Silicon](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip) · [All releases and checksums](https://github.com/Papersboys/card-generator/releases)
 
 Download the ZIP, extract it, and drag **LinkCard.app** into Applications. Open the installed app and use the menu-bar credit-card icon. No compilation is required.
 

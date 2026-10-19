@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>User guide · Link Card</title>
+<meta name="description" content="Install Link Card, view Visa virtual card details, and create and approve requests.">
+<link rel="icon" type="image/png" href="site/app-icon.png"><link rel="stylesheet" href="site/style.css"><link rel="stylesheet" href="site/guide.css"></head>
+<body class="guide-page"><a class="skip" href="#article">Skip to content</a>
+<header class="header wrap"><a class="brand" href="index.html?lang=en"><img src="site/app-icon.png" width="40" height="40" alt=""><span>Link Card</span></a>
+<nav aria-label="Navigation"><a href="index.html?lang=en">Home</a><a href="install.en.html">Installation</a><a href="guide.en.html">User guide</a></nav>
+<div class="header-actions"><div class="language"><a href="guide.html" >中文</a><a href="guide.en.html" aria-current="page">EN</a></div></div></header>
+<div class="guide-title wrap"><p class="eyebrow">LINK CARD / DOCUMENTATION</p><h1>User guide</h1><p>From your card details to your next spend request.</p><a class="button primary" href="https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip">Download for Mac ↓</a></div>
+<main class="guide-layout wrap"><aside class="guide-toc" aria-label="On this page"><p>ON THIS PAGE</p><div class="toc">
+<ul>
+<li><a href="#1-core-feature-view-and-copy-visa-virtual-card-details">1. Core feature: view and copy Visa virtual card details</a><ul>
+<li><a href="#already-have-an-approved-request">Already have an approved request?</a></li>
+</ul>
+</li>
+<li><a href="#2-launch-and-menu-bar">2. Launch and menu bar</a><ul>
+<li><a href="#change-language">Change language</a></li>
+<li><a href="#resize-the-window-and-edit-fields">Resize the window and edit fields</a></li>
+<li><a href="#automatic-updates-v260-onward">Automatic updates (v2.6.0 onward)</a></li>
+</ul>
+</li>
+<li><a href="#3-log-in-to-link">3. Log in to Link</a><ul>
+<li><a href="#log-out">Log out</a></li>
+</ul>
+</li>
+<li><a href="#4-create-a-spend-request">4. Create a spend request</a></li>
+<li><a href="#5-approve-and-automatically-show-card-details">5. Approve and automatically show card details</a></li>
+<li><a href="#6-cancel-a-request">6. Cancel a request</a></li>
+<li><a href="#7-history">7. History</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#current-scope">Current scope</a></li>
+</ul>
+</div>
+</aside><article id="article" class="guide-article"><p>Link Card is a macOS menu-bar app for creating Link spend requests, retrieving approved virtual card details, and canceling requests. It does not place merchant orders or submit merchant checkout forms for you.</p>
+<blockquote>
+<p>Screenshots come from an offline demo using the actual interface code. Accounts, authorization phrases, requests, and card details are fictional; Costco is shown as the default example merchant and cannot be used for payment. Screenshots show both available interface languages; the English button names below correspond to their Chinese counterparts.</p>
+</blockquote>
+<p>For first-time setup, follow the <a href="install.en.html">installation guide</a>.</p>
+<h2 id="1-core-feature-view-and-copy-visa-virtual-card-details">1. Core feature: view and copy Visa virtual card details</h2>
+<p><strong>After approval, see the card number, CVC/CVV, expiration date, and billing address, ready to copy into the merchant's checkout.</strong> The example shows a Visa virtual card; the actual network and available fields depend on Link's response.</p>
+<p><img alt="Card details shown in Chinese with a fictional number, CVC, expiration, billing address, and validity time" src="images/card-details-zh.jpg" /></p>
+<p><em>Every account and card field shown is fictional, not a real payment credential.</em></p>
+<p>Missing fields display as <code>—</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Card number</td>
+<td>Virtual card number returned by Link</td>
+</tr>
+<tr>
+<td>CVC</td>
+<td>Virtual card security code, also called CVV</td>
+</tr>
+<tr>
+<td>Expiration</td>
+<td>Card expiration month/year</td>
+</tr>
+<tr>
+<td>Billing address</td>
+<td>Billing address returned by Link</td>
+</tr>
+<tr>
+<td>Brand</td>
+<td>Card network</td>
+</tr>
+<tr>
+<td>Valid until</td>
+<td>The actual credential deadline returned by Link; missing values display as <code>—</code>. This is separate from request expiry and card expiration</td>
+</tr>
+<tr>
+<td>Request expiry</td>
+<td>The request expiry returned by Link</td>
+</tr>
+<tr>
+<td>Spend request ID</td>
+<td>The request ID, typically starting with <code>lsrq_</code></td>
+</tr>
+<tr>
+<td>Status</td>
+<td>Current request status</td>
+</tr>
+<tr>
+<td>Merchant / Merchant URL</td>
+<td>Merchant information supplied when creating the request</td>
+</tr>
+<tr>
+<td>Context</td>
+<td>Purchase purpose</td>
+</tr>
+<tr>
+<td>Created at</td>
+<td>Request creation time</td>
+</tr>
+</tbody>
+</table>
+<h3 id="already-have-an-approved-request">Already have an approved request?</h3>
+<ol>
+<li>Select <strong>Requests / History</strong>.</li>
+<li>Click <strong>Refresh list</strong>.</li>
+<li>Select the request.</li>
+<li>Click <strong>Show card details</strong>.</li>
+</ol>
+<p>Select text and press <strong>⌘C</strong> to copy it to your own checkout form. The app does not automatically copy or fill merchant forms. Full card numbers and CVCs appear directly in the window.</p>
+<p>Click <strong>Clear card details</strong> to clear the display. Closing the window also clears it and stops approval checks, without canceling the server-side request. Card responses use an ephemeral network session and are not written to credential JSON files.</p>
+<p>First time here? Continue with launch, login, creation, and approval below. Pending requests do not expose full card details.</p>
+<h2 id="2-launch-and-menu-bar">2. Launch and menu bar</h2>
+<p>Open the installed <strong>LinkCard.app</strong> from Applications. If you prefer trying a source build directly:</p>
+<pre><code class="language-bash">./build.sh
+open dist/LinkCard.app
+</code></pre>
+<p>A credit-card icon appears in the macOS menu bar:</p>
+<ul>
+<li><strong>Open Link Card</strong> shows the main window.</li>
+<li><strong>Quit</strong> exits the app.</li>
+</ul>
+<p>Closing the window leaves the app in the menu bar. Reopen it from the icon. The app does not automatically enable launch at login.</p>
+<p><img alt="Chinese request history showing a fictional signed-in account and request statuses" src="images/overview-zh.jpg" /></p>
+<p><em>The header shows the account; rows show request IDs, amounts, and statuses.</em></p>
+<h3 id="change-language">Change language</h3>
+<p>Use <strong>中文 / English</strong> at the top of the window. Controls, menu-bar items, confirmations, card field labels, and existing status messages update immediately. Your choice survives restarts. Merchant names, purchase context, IDs, and card data are preserved.</p>
+<h3 id="resize-the-window-and-edit-fields">Resize the window and edit fields</h3>
+<p>These screenshots show <strong>v2.5.6</strong>. Drag a window edge to resize it: narrow windows use one form column and wider windows arrange fields into multiple columns. Scroll down to reach generated context and the create button. Check the version in the footer; if the old form still appears, quit the old app before replacing it with the latest build.</p>
+<table>
+<thead>
+<tr>
+<th>Narrow single-column form</th>
+<th>Scroll to the bottom</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="Chinese form at 540-point window width" src="images/responsive-narrow-zh.jpg" /></td>
+<td><img alt="Generated context and create button remain accessible by scrolling" src="images/responsive-narrow-bottom-zh.jpg" /></td>
+</tr>
+</tbody>
+</table>
+<p>All text input fields support <strong>⌘C Copy, ⌘V Paste, ⌘X Cut, ⌘A Select All, ⌘Z Undo, and ⇧⌘Z Redo</strong>, also available through the macOS Edit menu. Click a field first; use ⌘A followed by paste to replace its contents. The payment-method ID can be pasted or edited after selecting a method. Context is generated automatically and can be selected and copied; it needs no manual entry.</p>
+<h3 id="automatic-updates-v260-onward">Automatic updates (v2.6.0 onward)</h3>
+<p>Use Check for Updates… and the Automatically check for updates toggle in the footer. A check command is also available in the menu bar. Automatic checks run daily by default; manual checks remain available when disabled. Follow Sparkle's update dialog to download, install, and relaunch; finish current work before installing. Both the feed and archive are signature-verified. Older builds need one manual download to gain this feature.</p>
+<p><img alt="Automatic-check toggle and manual check button; Chinese interface" src="images/update-controls-zh.jpg" /></p>
+<p><img alt="Successful check of the public signed feed: already up to date" src="images/update-check-en.jpg" /></p>
+<h2 id="3-log-in-to-link">3. Log in to Link</h2>
+<ol>
+<li>Click <strong>Log in to Link</strong> below the title.</li>
+<li>Click <strong>Open Link authorization ↗</strong> to open the official Link website.</li>
+<li>Sign in to your account and enter the app's authorization phrase if requested.</li>
+<li>Return to the app. The login button is replaced by <strong>Logged in</strong> and the name/email returned by Link.</li>
+</ol>
+<p><img alt="Login instructions with the fictional DEMO PHRASE; shown in Chinese" src="images/login-zh.jpg" /></p>
+<p><em>The authorization phrase in this screenshot is only an example.</em></p>
+<p>On launch, the app checks the session and loads account details. If authentication expires and cannot be refreshed, the login button returns. Temporary network failures do not automatically sign you out; the app reports when account information is unavailable.</p>
+<p>Authorizing the app and approving an individual purchase are separate steps. The independent app login is stored in macOS Keychain. No CLI, Node.js, or npm is required.</p>
+<p>An existing unexpired CLI access token can be reused read-only without changing its configuration or using its refresh token. Once it expires, use the app's login button to establish an independent session.</p>
+<h3 id="log-out">Log out</h3>
+<p>After signing in, click <strong>Log out</strong> beside the account information. This removes the app's Keychain credentials, clears account/card details and local lists, and stops approval checks. Log in to Link becomes available again. The app will not silently reuse a CLI login on restart after an explicit logout; sign in again to view existing server-side requests.</p>
+<p>This signs out of this app only. It does not modify CLI configuration, sign out of Link in your browser, or cancel existing requests. Manage connections in Link if you want to revoke the server-side authorization.</p>
+<h2 id="4-create-a-spend-request">4. Create a spend request</h2>
+<p>First confirm the item and final checkout total on the merchant's website. Then:</p>
+<ol>
+<li>Select <strong>Create</strong>.</li>
+<li>Click <strong>Load</strong> beside Payment method.</li>
+<li>Select a method from the dropdown. Its ID fills automatically; you can also enter an existing payment-method ID manually.</li>
+<li>Complete the form. Merchant name and URL default to <strong>Costco</strong> and <strong>https://www.costco.com</strong>, and remain editable. Amount and item examples are placeholders; enter the actual checkout amount and item.</li>
+</ol>
+<p><img alt="Editable Costco merchant defaults and amount/item placeholders; Chinese interface" src="images/create-defaults-zh.jpg" /></p>
+<p>USD amounts use cents: the minimum is <code>50</code> ($0.50); <code>1500</code> = $15.00 and <code>50000</code> = $500.00. Placeholder examples are not submitted values. Generated context updates as you edit the purchase fields.</p>
+<p><img alt="English creation form with a fictional payment method, merchant, amount, and purchase context" src="images/create-en.jpg" /></p>
+<p><em>With currency <code>usd</code>, an amount of <code>1500</code> represents $15.00.</em></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>What to enter</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Payment method ID</td>
+<td>The Link funding method, not a spend-request ID</td>
+<td>Select from the dropdown</td>
+</tr>
+<tr>
+<td>Merchant name</td>
+<td>Actual merchant; defaults to Costco and is editable</td>
+<td>Costco</td>
+</tr>
+<tr>
+<td>Merchant URL</td>
+<td>Complete HTTP/HTTPS URL; editable Costco default</td>
+<td><code>https://www.costco.com</code></td>
+</tr>
+<tr>
+<td>Amount</td>
+<td>A positive integer in the currency's minor units</td>
+<td>For USD $15.00, enter <code>1500</code></td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>Three-letter currency code</td>
+<td><code>usd</code></td>
+</tr>
+<tr>
+<td>Item</td>
+<td>Purchase description; quantity is currently fixed at 1 and commas are not allowed in the name</td>
+<td>Meal credit</td>
+</tr>
+<tr>
+<td>Context</td>
+<td>Generated automatically from merchant, URL, item, amount, and currency; no typing required</td>
+<td>Review before creation</td>
+</tr>
+</tbody>
+</table>
+<ol start="5">
+<li>Click <strong>Review and create…</strong>.</li>
+<li>Check the merchant, URL, amount, item, and context in the confirmation dialog.</li>
+<li>Click <strong>Create and request approval</strong>. Filling in the form alone does not submit a request.</li>
+</ol>
+<p><img alt="Review dialog showing the merchant, amount, and context" src="images/create-review-en.jpg" /></p>
+<p><em>Choose Back to return and edit the form.</em></p>
+<p>Interpret the amount together with its currency: <code>10000</code> in <code>usd</code> means $100.00, not $10,000. Request amounts and statuses are not necessarily the merchant's final settlement amount.</p>
+<p>This client does not support custom request expiry. Creation omits <code>expires_at</code>; card expiration and credential validity are determined by Link.</p>
+<h2 id="5-approve-and-automatically-show-card-details">5. Approve and automatically show card details</h2>
+<ol>
+<li>After creation, the <strong>Approve</strong> tab opens. Click <strong>Approve in Link ↗</strong>. You can also select earlier pending requests here to review their merchant, amount, and generated context. If no link is available yet, click <strong>Get approval link</strong>.</li>
+<li>Review and personally approve the request on the official Link page.</li>
+<li>Keep the app window open. The app checks every two seconds for up to ten minutes and retrieves card details once approved.</li>
+<li>If the display does not update, click <strong>Refresh after approval</strong>, or select the request and click <strong>Show card details</strong>.</li>
+</ol>
+<p><img alt="Approve tab showing an earlier pending request, purchase context, and Link approval link; Chinese interface" src="images/approve-zh.jpg" /></p>
+<p><strong>Return to an earlier request:</strong> Open Approve, click Refresh list, and select a request to review its merchant URL, requested amount, and context. Use Get approval link if none is shown. Review request reloads its status and starts waiting for approval. Approved requests leave the pending list after refresh; use Requests / History to view their card details. An empty-state message appears when no requests need approval.</p>
+<p>The app does not approve purchases for you. Reaching the ten-minute polling limit only stops automatic checks; it does not cancel the request.</p>
+<h2 id="6-cancel-a-request">6. Cancel a request</h2>
+<ol>
+<li>Select the request in <strong>Requests / History</strong>.</li>
+<li>Click <strong>Cancel request</strong> in that row, or use the button below the list. Only created, pending-approval, or approved requests can be canceled.</li>
+<li>Verify the merchant and request ID, then confirm <strong>Cancel request</strong>.</li>
+<li>After Link confirms cancellation, the app clears the corresponding card display and stops approval polling. Canceled requests leave the active list; enable <strong>Include history</strong> to view them. Refresh to reload server state.</li>
+</ol>
+<p><img alt="Cancellation confirmation in Chinese explaining that completed payments are not reversed" src="images/cancel-confirmation-zh.jpg" /></p>
+<p><em>Review the merchant and ID before confirming. No cancellation was submitted for this screenshot.</em></p>
+<p>The server can reject cancellation in some states; the app displays the error.</p>
+<h2 id="7-history">7. History</h2>
+<p>Enable <strong>Include history</strong> to reload past requests, including canceled and expired ones. You can select a record and try retrieving details, but full card credentials may no longer be available.</p>
+<p>This is <strong>spend-request history</strong>. Row amounts are request amounts, not a dedicated query of actual merchant charges. The app currently has no separate merchant transaction ledger, refund tracker, or reconciliation view. Compare merchant receipts with the final posted funding-method transaction when checking actual charges.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<p><img alt="Persistent error banner with Copy error and Dismiss controls; Chinese interface" src="images/error-banner-zh.jpg" /></p>
+<p>Errors appear in a persistent red banner at the top of the window. It keeps the specific Link error through tab changes, refreshes, and scrolling. Use Copy error to copy the text, or × to dismiss it. Failed creation preserves the form and does not switch to Approve.</p>
+<p>For <code>amount must be at least $0.50 usd</code>, enter at least <code>50</code> for USD. A rejected creation does not produce a request to approve. If an older build reports <code>expires_at is not supported for this client</code>, quit and update to v2.5.6 or later; custom expiry has been removed from creation.</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No active requests</td>
+<td>Enable Include history or create a request</td>
+</tr>
+<tr>
+<td>No payment methods</td>
+<td>Check the account, click Load, and follow any account/payment-method instructions returned by Link</td>
+</tr>
+<tr>
+<td>Create button is disabled</td>
+<td>Check required fields, whether another action is running</td>
+</tr>
+<tr>
+<td>Invalid amount or URL</td>
+<td>Use positive integer minor units and a complete <code>http://</code> or <code>https://</code> URL</td>
+</tr>
+<tr>
+<td><code>pending_approval</code>, with no card number</td>
+<td>Open that request's approval link, approve it, then refresh</td>
+</tr>
+<tr>
+<td>Expired login or HTTP 401</td>
+<td>Use Log in to Link, then refresh</td>
+</tr>
+<tr>
+<td>Card number, address, or CVC is <code>—</code></td>
+<td>The response did not include that field; check approval/status rather than inferring its value</td>
+</tr>
+<tr>
+<td>Details disappeared after closing</td>
+<td>Reopen from the menu bar, select the request, and show details again</td>
+</tr>
+<tr>
+<td>Creation returned an error</td>
+<td>Refresh active requests and history before retrying, to avoid duplicate submissions</td>
+</tr>
+</tbody>
+</table>
+<h2 id="current-scope">Current scope</h2>
+<ul>
+<li>Apple Silicon, macOS 13 or later.</li>
+<li>Persistent Chinese/English switching.</li>
+<li>One item per request, quantity fixed at 1.</li>
+<li>No automatic merchant checkout, approval, launch at login, or refund operation.</li>
+<li>Local ad-hoc signing, without Apple notarization.</li>
+</ul>
+<p>If <code>refresh_token is not active: status: revoked</code> appears, the saved refresh credential is no longer valid. From v2.5.7 onward, Log in to Link becomes available again; use it to authorize a fresh session. Do not share tokens.</p></article></main>
+<footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>Independent open-source project · Not affiliated with Link or Stripe</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
+</body></html>
