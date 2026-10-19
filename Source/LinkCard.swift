@@ -17,6 +17,7 @@ struct ContentView: View {
     @State var confirmCreate = false
     @State var toCancel:RequestItem?
     var body: some View {
+        GeometryReader { geometry in
         ScrollView { VStack(alignment:.leading,spacing:20) {
             HStack(spacing:12) { Image(systemName:"creditcard.fill").foregroundStyle(.cyan); Text("Link Card").font(.title2.bold()); Spacer(); Picker("Language / 语言",selection:$model.language) { Text("中文").tag(AppLanguage.chinese); Text("English").tag(AppLanguage.english) }.pickerStyle(.segmented).labelsHidden().frame(width:145) }
             HStack(spacing:12) { if model.busy { ProgressView().controlSize(.small) }; if model.checkingAccount {
@@ -106,6 +107,8 @@ struct ContentView: View {
             if !model.message.isEmpty { ScrollView { Text(t(model.message)).font(.caption).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading) }.frame(maxHeight:90) }
             Text(t("原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭窗口会清除显示。")).font(.caption2).foregroundStyle(.secondary)
             HStack(spacing:6) {
+                Text("Link Card \(Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "")").foregroundStyle(.secondary)
+                Text("·").foregroundStyle(.tertiary)
                 Button("Apache License 2.0") {
                     if let licenseURL=Bundle.main.url(forResource:"LICENSE",withExtension:nil) {
                         NSWorkspace.shared.open(licenseURL)
@@ -115,7 +118,8 @@ struct ContentView: View {
                 }.buttonStyle(.link).help(t("查看完整许可证"))
             }.font(.caption2)
 
-        }.padding(24).frame(maxWidth:1000).frame(maxWidth:.infinity) }.background(Color(nsColor:.windowBackgroundColor)).frame(minWidth:520,minHeight:480)
+        }.frame(width:min(1000,max(0,geometry.size.width-48))).padding(24).frame(maxWidth:.infinity) }
+        }.background(Color(nsColor:.windowBackgroundColor)).frame(minWidth:520,minHeight:480)
         .onChange(of:model.lastCreatedID) {selected=$0;tab=2}
         .onChange(of:tab) { value in if value == 2 {model.load()} }
         .environment(\.locale,model.language.locale)
