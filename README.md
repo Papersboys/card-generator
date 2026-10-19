@@ -6,7 +6,9 @@
 
 A native macOS menu-bar app to create Link spend requests, approve them in Link, display virtual card details, and cancel unused requests. Built with SwiftUI, AppKit, and URLSession.
 
-Run `./build.sh`, then open **dist/LinkCard.app**. Use the credit-card icon in the macOS menu bar to open the window or quit. You can move the app to Applications.
+[Download for Apple Silicon](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip) · [All releases and checksums](https://github.com/Papersboys/card-generator/releases)
+
+Download the ZIP, extract it, and drag **LinkCard.app** into Applications. Open the installed app and use the menu-bar credit-card icon. No compilation is required.
 
 **No link-cli binary, Node.js, npm, shell helpers, or local server is required.** Requires Apple Silicon and macOS 13+.
 
@@ -29,7 +31,7 @@ Screenshots use fictional demo data. See the [illustrated usage guide](docs/USAG
 
 The **[installation guide](docs/INSTALL.en.md)** ([简体中文](docs/INSTALL.zh-CN.md)) covers packaged-app installation, Xcode setup, source builds, installation into Applications, first login, updates, and troubleshooting.
 
-A packaged `.app` requires Apple Silicon and macOS 13+, without Xcode or CLI dependencies. Building from source requires Xcode and its macOS SDK. The repository does not include binary downloads; use a trusted app package or build from source.
+A packaged `.app` requires Apple Silicon and macOS 13+, without Xcode or CLI dependencies. Building from source requires Xcode and its macOS SDK. Prebuilt binaries and SHA-256 checksums are available on [GitHub Releases](https://github.com/Papersboys/card-generator/releases). Source builds remain optional.
 
 ### Quick start from source
 
@@ -92,6 +94,8 @@ The app has a local ad-hoc signature, not an Apple notarized distribution signat
 Build on Apple Silicon with Xcode using `./build.sh`. Run `./test.sh` for offline tests of the native API transport, authentication refresh, and device authorization. Tests use a mocked URLSession and do not read real login credentials or send network requests.
 
 API/auth protocol references: [Stripe Link SDK and CLI](https://github.com/stripe/link-cli). Stripe's MIT notice is included in `STRIPE-LICENSE.txt` and the app bundle.
+
+For maintainers: `./package.sh` builds and verifies `dist/LinkCard-macos-arm64.zip` and generates `dist/SHA256SUMS.txt`.
 
 ## App icon
 

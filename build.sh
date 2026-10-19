@@ -7,6 +7,7 @@ bundle="$staging/LinkCard.app"
 mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources"
 cp Info.plist "$bundle/Contents/Info.plist"
 cp STRIPE-LICENSE.txt "$bundle/Contents/Resources/STRIPE-LICENSE.txt"
+cp LICENSE "$bundle/Contents/Resources/LICENSE"
 iconset="$staging/AppIcon.iconset"
 mkdir -p "$iconset"
 for size in 16 32 128 256 512; do

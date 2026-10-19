@@ -11,7 +11,7 @@ After installation, open Link Card from the credit-card icon in the macOS menu b
 | A packaged `LinkCard.zip` or `LinkCard.app` | Method 1; Xcode is not required |
 | The Git repository or a source ZIP | Method 2: build, then install |
 
-The repository does not track app bundles or distribution ZIPs and has no script that downloads a binary automatically. If you only have source code, use Method 2.
+Download the prebuilt app from [GitHub Releases](https://github.com/Papersboys/card-generator/releases/latest). App bundles are distributed as release assets rather than tracked in Git. Method 2 is optional for users who want to build from source.
 
 ## Requirements
 
@@ -27,12 +27,22 @@ Running a packaged app does not require Xcode. The current build script does not
 
 ## Method 1: install a packaged app
 
-1. If you received `LinkCard.zip`, double-click it in Finder to extract it.
+1. Download [LinkCard-macos-arm64.zip](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip), then double-click it in Finder to extract it.
 2. Drag `LinkCard.app` into **Applications**, or the **Applications** folder inside your home folder.
 3. Double-click the installed app.
 4. Check that the credit-card icon appears in the menu bar.
 
 Current builds use a local ad-hoc signature and are not Apple-notarized. Obtain packages from a trusted source. If macOS or a managed device blocks launch, check the source and system message, or build from source below. Do not disable system security protections to work around the issue.
+
+### Optional: verify the download
+
+Download [SHA256SUMS.txt](https://github.com/Papersboys/card-generator/releases/latest/download/SHA256SUMS.txt) from the same release. Put it beside the ZIP and run in that folder:
+
+```bash
+shasum -a 256 -c SHA256SUMS.txt
+```
+
+The ZIP should report `OK`. No Xcode, Terminal commands, or compilation are required for the normal Finder installation above.
 
 ## Method 2: build from source
 
@@ -144,7 +154,7 @@ open "$HOME/Applications/LinkCard.app"
 
 Replacing the bundle does not intentionally remove Keychain credentials or language preferences. Signature or access-permission changes may require confirming Keychain access or logging in again.
 
-For a packaged installation, obtain the new package, quit the old app, and replace the bundle. There is no automatic updater.
+For a packaged installation, download the new ZIP from [the latest release](https://github.com/Papersboys/card-generator/releases/latest), quit the old app, and replace the bundle. There is no automatic updater.
 
 ## Troubleshooting
 

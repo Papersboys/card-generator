@@ -6,7 +6,9 @@
 
 原生 macOS 菜单栏 App，用于创建 Link 付款请求、在 Link 中批准请求、查看虚拟卡信息，以及取消未使用的请求。使用 SwiftUI、AppKit 和 URLSession 构建。
 
-运行 `./build.sh` 后打开 `dist/LinkCard.app`。通过菜单栏信用卡图标打开窗口或退出；也可以将 App 安装到 Applications 文件夹。
+[下载 Apple Silicon 版](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip) · [全部版本与校验文件](https://github.com/Papersboys/card-generator/releases)
+
+下载 ZIP 并解压，将 **LinkCard.app** 拖入 Applications 后打开即可，**无需编译**。通过菜单栏信用卡图标打开窗口或退出。
 
 **无需安装 link-cli、Node.js、npm、Shell helper 或本地服务。** 需要 Apple Silicon 和 macOS 13 或更新版本。
 
@@ -27,7 +29,7 @@
 
 ## 安装
 
-已打包的 App 无需 Xcode 或 CLI。源码构建需要 Xcode 和 macOS SDK。仓库不包含打包二进制；请使用可信来源的 App 包，或自行构建。
+已打包的 App 无需 Xcode 或 CLI。源码构建需要 Xcode 和 macOS SDK。已编译的 App 和 SHA-256 校验文件发布在 [GitHub Releases](https://github.com/Papersboys/card-generator/releases)，源码构建是可选方式。
 
 ### 从源码快速开始
 
@@ -92,6 +94,8 @@ open "$HOME/Applications/LinkCard.app"
 App 不启动子进程。使用 Xcode 在 Apple Silicon 上运行 `./build.sh` 构建，运行 `./test.sh` 执行离线模拟测试；测试不读取真实登录凭证，也不发送网络请求。
 
 API 和授权协议参考 [Stripe Link SDK 与 CLI](https://github.com/stripe/link-cli)。Stripe 的 MIT 声明保留在 `STRIPE-LICENSE.txt`，并随 App 打包。
+
+维护者可运行 `./package.sh`，构建并验证 `dist/LinkCard-macos-arm64.zip`，同时生成 `dist/SHA256SUMS.txt`。
 
 ## App 图标
 

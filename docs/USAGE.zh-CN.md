@@ -10,7 +10,7 @@ Link Card 是 macOS 菜单栏 App，负责创建 Link 付款请求、读取批�
 
 ## 1. 启动与菜单栏
 
-首次使用先按 README 构建：
+安装完成后，双击 Applications 中的 **LinkCard.app** 即可。从源码目录试运行时，也可以执行：
 
 ```bash
 ./build.sh

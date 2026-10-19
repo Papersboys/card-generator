@@ -10,7 +10,7 @@ For first-time setup, follow the [installation guide](INSTALL.en.md).
 
 ## 1. Launch and menu bar
 
-After building as described in the README:
+Open the installed **LinkCard.app** from Applications. If you prefer trying a source build directly:
 
 ```bash
 ./build.sh

@@ -11,7 +11,7 @@
 | 已打包的 `LinkCard.zip` 或 `LinkCard.app` | 按「方式一」安装，无需 Xcode |
 | Git 仓库或源码 ZIP | 按「方式二」先构建，再安装 |
 
-仓库不跟踪 `.app` 或打包 ZIP，也没有自动下载二进制的安装脚本。只有源码时，请使用方式二。
+直接从 [GitHub Releases](https://github.com/Papersboys/card-generator/releases/latest) 下载已编译的 App；二进制以 Release 附件发布，不纳入 Git 源码。只有希望自行构建时，才需要方式二。
 
 ## 系统要求
 
@@ -27,12 +27,22 @@
 
 ## 方式一：安装已打包的 App
 
-1. 如果拿到的是 `LinkCard.zip`，在 Finder 中双击解压。
+1. 下载 [LinkCard-macos-arm64.zip](https://github.com/Papersboys/card-generator/releases/latest/download/LinkCard-macos-arm64.zip)，在 Finder 中双击解压。
 2. 将 `LinkCard.app` 拖入 **应用程序 / Applications**，或个人主文件夹下的 **Applications** 文件夹。
 3. 双击安装后的 `LinkCard.app`。
 4. 窗口打开后，确认顶部菜单栏出现信用卡图标。
 
 当前 App 使用本地 ad-hoc 签名，未经过 Apple 公证；收到的文件也应当来自你信任的构建来源。若 macOS 或受管理设备阻止打开，先检查文件来源及系统提示，也可以使用下方源码构建方式；不要直接关闭系统安全保护。
+
+### 可选：校验下载文件
+
+从同一个 Release 下载 [SHA256SUMS.txt](https://github.com/Papersboys/card-generator/releases/latest/download/SHA256SUMS.txt)，与 ZIP 放在同一目录，在该目录执行：
+
+```bash
+shasum -a 256 -c SHA256SUMS.txt
+```
+
+ZIP 显示 `OK` 即校验通过。上面的普通 Finder 安装方式不需要 Xcode、终端命令或编译。
 
 ## 方式二：从源码构建
 
@@ -146,7 +156,7 @@ open "$HOME/Applications/LinkCard.app"
 
 替换 App 不会主动删除 Keychain 登录或语言偏好。签名或系统访问权限发生变化时，可能需要重新确认 Keychain 访问或在 App 中重新登录。
 
-如果使用的是别人提供的打包版本，取得新版本后退出旧 App，再替换原来的 `.app`；当前 App 没有自动更新功能。
+使用打包版本时，从[最新 Release](https://github.com/Papersboys/card-generator/releases/latest) 下载新 ZIP，退出旧 App，再替换原来的 `.app`；当前 App 没有自动更新功能。
 
 ## 常见安装问题
 
