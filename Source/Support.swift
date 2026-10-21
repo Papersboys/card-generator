@@ -24,3 +24,12 @@ struct SignedInAccount {
         email=str(data,"email")
     }
 }
+
+func paymentMethodLabel(_ method:[String:Any]) -> String {
+    let nickname=(method["nickname"] as? String ?? "").trimmingCharacters(in:.whitespacesAndNewlines)
+    let brand=find(method,["brand"])
+    let last4=find(method,["last4"])
+    let card=[brand,last4.isEmpty ? "" : "…"+last4].filter{!$0.isEmpty}.joined(separator:" ")
+    let label=[nickname,card].filter{!$0.isEmpty}.joined(separator:" · ")
+    return label.isEmpty ? str(method,"id") : label
+}

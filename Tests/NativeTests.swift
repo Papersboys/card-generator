@@ -57,6 +57,11 @@ final class MockProtocol:URLProtocol {
 }
 @main struct Tests {
     @MainActor static func main() async throws {
+        let nicknameCard:[String:Any] = ["brand":"amex","last4":"1000"]
+        precondition(paymentMethodLabel(["nickname":" Gold ","card_details":nicknameCard]) == "Gold · amex …1000")
+        precondition(paymentMethodLabel(["nickname":NSNull(),"card_details":nicknameCard]) == "amex …1000")
+        precondition(paymentMethodLabel(["nickname":"  ","card_details":nicknameCard]) == "amex …1000")
+        print("PASS: payment method nicknames, whitespace trimming, and missing nickname fallback")
         let generated=Model.purchaseContext(merchant:"Example Store",url:"https://example.com",amount:"200",currency:"jpy",item:"Lunch")
         precondition(generated.count>=100 && generated.contains("200 minor units in JPY") && generated.contains("Lunch") && generated.contains("Example Store"))
         precondition(RequestItem(raw:["status":"pending_approval","approval_url":"https://app.link.com/activity/approve/lsrq_mock"]).approvalLink != nil)

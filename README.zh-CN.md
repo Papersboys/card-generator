@@ -12,6 +12,8 @@
 
 **无需安装 link-cli、Node.js、npm、Shell helper 或本地服务。** 需要 Apple Silicon 和 macOS 13 或更新版本。
 
+付款方式选择列表会显示 Link 中设置的昵称，再显示卡组织和尾号；未设置昵称时显示卡组织和尾号。
+
 ## 下载：App 或 CLI
 
 | 版本 | 下载 | 环境要求 |

@@ -84,7 +84,7 @@ struct ContentView: View {
                         Text(t("选择或填写下方 ID")).tag("")
                         ForEach(model.methods.indices,id:\.self) { i in
                             let d=model.methods[i]
-                            Text("\(find(d,["brand"])) …\(find(d,["last4"]))").tag(str(d,"id"))
+                            Text(paymentMethodLabel(d)).tag(str(d,"id"))
                         }
                     }.labelsHidden().frame(maxWidth:.infinity).clipped()
                     field("付款方式 ID",text:$payment)

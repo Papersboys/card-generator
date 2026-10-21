@@ -38,7 +38,9 @@ def main():
         print('\nPayment methods:')
         for i,(ident,obj) in enumerate(methods,1):
             card=next((o for o in objects(obj) if 'last4' in o),{})
-            print(f"  {i}. {card.get('brand',obj.get('type','card'))} …{card.get('last4','????')} ({ident})")
+            nickname=obj.get('nickname')
+            prefix=nickname.strip()+' · ' if isinstance(nickname,str) and nickname.strip() else ''
+            print(f"  {i}. {prefix}{card.get('brand',obj.get('type','card'))} …{card.get('last4','????')} ({ident})")
         while True:
             choice=ask('Choose payment method number')
             if choice.isdigit() and 1<=int(choice)<=len(methods):

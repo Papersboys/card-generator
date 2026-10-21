@@ -12,6 +12,8 @@ Download the ZIP, extract it, and drag **LinkCard.app** into Applications. Open 
 
 **No link-cli binary, Node.js, npm, shell helpers, or local server is required.** Requires Apple Silicon and macOS 13+.
 
+Payment method selection shows the nickname saved in Link, followed by the card brand and last four digits. Cards without a nickname show their brand and last four digits.
+
 ## Download: App or CLI
 
 | Version | Download | Requirements |
