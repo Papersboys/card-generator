@@ -14,6 +14,8 @@ Download the ZIP, extract it, and drag **LinkCard.app** into Applications. Open 
 
 Payment method selection shows the nickname saved in Link, followed by the card brand and last four digits. Cards without a nickname show their brand and last four digits.
 
+Click outside the menu-bar panel or press Esc to close it. Reopening preserves the creation form during the current app session; displayed card credentials are cleared when closed.
+
 ## Download: App or CLI
 
 | Version | Download | Requirements |

@@ -220,6 +220,8 @@ struct ContentView: View {
     let popover=NSPopover()
     var contextMenu=NSMenu()
     var languageObserver:AnyCancellable?
+    var outsideClickMonitor:Any?
+    var localClickMonitor:Any?
     init(model:Model?=nil,startServices:Bool=true) {
         self.model=model ?? Model();self.startServices=startServices;super.init()
     }
@@ -266,11 +268,35 @@ struct ContentView: View {
         popover.show(relativeTo:button.bounds,of:button,preferredEdge:.minY)
         NSApp.activate(ignoringOtherApps:true)
         popover.contentViewController?.view.window?.makeKey()
+        installDismissMonitors()
         if let id=model.lastCreatedID,model.requests.contains(where:{$0.id==id && $0.status=="approved"}),model.detail.isEmpty,!model.busy {
             model.show(id)
         }
     }
+    func installDismissMonitors() {
+        removeDismissMonitors()
+        outsideClickMonitor=NSEvent.addGlobalMonitorForEvents(matching:[.leftMouseDown,.rightMouseDown]) {[weak self] _ in
+            Task {@MainActor in self?.popover.performClose(nil)}
+        }
+        localClickMonitor=NSEvent.addLocalMonitorForEvents(matching:[.leftMouseDown,.rightMouseDown,.keyDown]) {[weak self] event in
+            guard let self=self,self.popover.isShown else {return event}
+            if event.type == .keyDown {
+                if event.keyCode == 53 {self.popover.performClose(nil);return nil}
+                return event
+            }
+            guard let panel=self.popover.contentViewController?.view.window else {return event}
+            // Preserve clicks in the panel, its confirmation sheets and native popup menus.
+            if event.window == panel || event.window?.sheetParent == panel || event.window?.parent == panel || event.window == self.status.button?.window {return event}
+            if event.window == nil || event.window?.level == .normal {self.popover.performClose(nil)}
+            return event
+        }
+    }
+    func removeDismissMonitors() {
+        if let monitor=outsideClickMonitor {NSEvent.removeMonitor(monitor);outsideClickMonitor=nil}
+        if let monitor=localClickMonitor {NSEvent.removeMonitor(monitor);localClickMonitor=nil}
+    }
     func popoverDidClose(_ notification:Notification) {
+        removeDismissMonitors()
         model.displayCredentials=false;model.detail=[]
     }
     @objc func quit() {NSApp.terminate(nil)}
