@@ -39,6 +39,7 @@ def main():
         for i,(ident,obj) in enumerate(methods,1):
             card=next((o for o in objects(obj) if 'last4' in o),{})
             nickname=obj.get('nickname')
+            if not isinstance(nickname,str) or not nickname.strip():nickname=obj.get('name')
             prefix=nickname.strip()+' · ' if isinstance(nickname,str) and nickname.strip() else ''
             print(f"  {i}. {prefix}{card.get('brand',obj.get('type','card'))} …{card.get('last4','????')} ({ident})")
         while True:
