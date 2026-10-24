@@ -36,7 +36,7 @@ struct ContentView: View {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(t(model.lastError),forType:.string)
                     }
-                    Button {model.lastError="";model.creationError=nil} label: {Image(systemName:"xmark")}.buttonStyle(.plain).help(t("关闭错误提示"))
+                    Button {model.lastError="";model.creationError=nil} label: {Image(systemName:"xmark").frame(width:32,height:32).contentShape(Rectangle())}.buttonStyle(.plain).help(t("关闭错误提示"))
                 }
                 ScrollView {
                     Text(t(model.lastError)).font(.callout).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading).fixedSize(horizontal:false,vertical:true)
@@ -266,6 +266,7 @@ struct ContentView: View {
                     VStack(spacing:5) {Image(systemName:icon).font(.system(size:15));Text(t(title)).font(.system(size:11,weight:.semibold))}.frame(maxWidth:.infinity).padding(.vertical,10)
                         .foregroundStyle(tab==index ? Color.white : Color.secondary)
                         .background(tab==index ? Color.linkInk : Color.clear,in:RoundedRectangle(cornerRadius:10))
+                        .contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityAddTraits(tab==index ? [.isSelected] : [])
             }
         }.padding(4).background(Color.primary.opacity(0.045),in:RoundedRectangle(cornerRadius:14))
@@ -275,9 +276,13 @@ struct ContentView: View {
             NSPasteboard.general.clearContents();NSPasteboard.general.setString(detailValue(key),forType:.string)
             copiedField=key
             Task {try? await Task.sleep(nanoseconds:2_000_000_000);if copiedField==key {copiedField=nil}}
-        } label: {Label(t(copiedField==key ? "已复制" : "复制"),systemImage:copiedField==key ? "checkmark" : "doc.on.doc")}
-        .buttonStyle(.plain).font(.caption.weight(.medium)).padding(.horizontal,10).padding(.vertical,7)
-        .background(.white.opacity(0.12),in:RoundedRectangle(cornerRadius:8))
+        } label: {
+            Label(t(copiedField==key ? "已复制" : "复制"),systemImage:copiedField==key ? "checkmark" : "doc.on.doc")
+                .font(.caption.weight(.medium)).padding(.horizontal,10).padding(.vertical,7)
+                .background(.white.opacity(0.12),in:RoundedRectangle(cornerRadius:8))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
         .disabled(detailValue(key).isEmpty).accessibilityLabel(t("复制")+" "+t(key))
     }
     var credentialPanel:some View {
@@ -381,7 +386,7 @@ final class MenuBarProgressIndicator:NSProgressIndicator {
     }
     func applicationDidFinishLaunching(_ notification:Notification) {
         NSApp.setActivationPolicy(.accessory)
-        status=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
+        status=NSStatusBar.system.statusItem(withLength:32)
         status.button?.image=menuBarMark()
         statusProgress.style = .spinning
         statusProgress.controlSize = .small

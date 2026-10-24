@@ -92,10 +92,10 @@ struct PaymentMethodsReloadButton:View {
         Button {model.loadMethods()} label: {
             Image(systemName:"arrow.clockwise")
                 .font(.system(size:14,weight:.semibold))
-                .frame(width:28,height:28)
+                .frame(width:36,height:36)
                 .foregroundStyle(Color.linkTeal)
                 .background(Color.linkTeal.opacity(0.09),in:RoundedRectangle(cornerRadius:9))
-                .contentShape(RoundedRectangle(cornerRadius:9))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(label)
