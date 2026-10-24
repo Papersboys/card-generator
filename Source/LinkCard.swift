@@ -68,7 +68,7 @@ struct ContentView: View {
                             Text(str(request.raw,"merchant_url")).textSelection(.enabled)
                             Text(str(request.raw,"context")).font(.callout).textSelection(.enabled)
                             if let link=request.approvalLink {Link(t("在 Link 中批准请求 ↗"),destination:link).buttonStyle(.borderedProminent)}
-                            else {Button(t("获取批准链接")) {model.show(request.id)}}
+                            else {Button(t("获取批准链接")) {model.requestApproval(request.id)}.disabled(model.busy)}
                         }.padding().frame(maxWidth:.infinity,alignment:.leading).background(.quaternary.opacity(0.3)).clipShape(RoundedRectangle(cornerRadius:10))
                     }
                 }
@@ -163,6 +163,7 @@ struct ContentView: View {
     }
     var displayedDetails:[(String,String)] {
         let priority=["Card number","CVC","Expiration","Billing address","Brand","Valid until"]
+        if model.detail.first(where:{$0.0=="Card number"})?.1.isEmpty != false {return model.detail.filter{!priority.contains($0.0)}}
         return priority.compactMap {key in model.detail.first{$0.0==key}} + model.detail.filter{!priority.contains($0.0)}
     }
     func placeholder(_ title:String)->String {

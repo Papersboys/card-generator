@@ -28,7 +28,10 @@
 <li><a href="#6">6. 取消请求</a></li>
 <li><a href="#7">7. 查看历史</a></li>
 <li><a href="#_5">常见问题</a></li>
-<li><a href="#_6">当前范围</a></li>
+<li><a href="#_6">当前范围</a><ul>
+<li><a href="#_7">没有批准链接或手机提示</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </aside><article id="article" class="guide-article"><p>Link Card 是 macOS 菜单栏 App，负责创建 Link 付款请求、读取批准后的虚拟卡信息和取消请求。它不会替你在商家网站下单，也不会自动提交商家付款表单。</p>
@@ -303,6 +306,8 @@
 <li>不自动下单、不自动批准、不自动启动、不提供退款操作。</li>
 <li>当前构建采用本地 ad-hoc 签名，没有 Apple 公证。</li>
 </ul>
-<p>若出现 <code>refresh_token is not active: status: revoked</code>，表示保存的登录刷新凭证已失效。v2.5.7 起会恢复「登录 Link」按钮；点击并在 Link 中重新授权即可。无需分享任何 token。</p></article></main>
+<p>若出现 <code>refresh_token is not active: status: revoked</code>，表示保存的登录刷新凭证已失效。v2.5.7 起会恢复「登录 Link」按钮；点击并在 Link 中重新授权即可。无需分享任何 token。</p>
+<h3 id="_7">没有批准链接或手机提示</h3>
+<p>更新到 v2.7.4 或更新版本，在「待批准」页刷新列表，选中请求，点击「获取批准链接」。<code>created</code>、<code>pending_approval</code> 和 <code>requires_action</code> 请求都会列出。获取成功后点击「在 Link 中批准请求」，在 Link 中完成批准，再刷新卡信息。若获取失败，查看顶部错误栏；不要仅因卡字段为空就重复创建。</p></article></main>
 <footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>独立开源项目 · 非 Link / Stripe 官方产品</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
 </body></html>

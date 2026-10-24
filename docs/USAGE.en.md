@@ -203,3 +203,7 @@ For `amount must be at least $0.50 usd`, enter at least `50` for USD. A rejected
 - Local ad-hoc signing, without Apple notarization.
 
 If `refresh_token is not active: status: revoked` appears, the saved refresh credential is no longer valid. From v2.5.7 onward, Log in to Link becomes available again; use it to authorize a fresh session. Do not share tokens.
+
+### Missing approval link or phone notification
+
+Update to v2.7.4 or later. Refresh the Approve tab, select the request, and click Get approval link. Requests in created, pending_approval, or requires_action are included. Open the returned Link approval URL, approve in Link, then refresh card details. If recovery fails, inspect the error banner before creating a duplicate request.

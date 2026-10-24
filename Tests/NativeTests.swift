@@ -45,6 +45,8 @@ final class MockProtocol:URLProtocol {
                     else {payload=["id":"lsrq_mock","status":Self.requestStatus,"approval_url":"https://app.link.com/activity/approve/lsrq_mock"]}}
                 else {payload=["data":Self.emptyList ? [] : [["id":"lsrq_mock","status":"approved"]]]}
             case "/spend_requests/lsrq_mock":payload=["id":"lsrq_mock","status":Self.requestStatus,"card":["number":"MOCK_NUMBER","cvc":"MOCK_CVC","exp_month":12,"exp_year":2030]]
+            case "/spend_requests/lsrq_mock/request_approval":
+                precondition(request.httpMethod=="POST");Self.requestStatus="pending_approval";payload=["id":"lsrq_mock","approval_link":"https://app.link.com/activity/approve/lsrq_mock"]
             case "/spend_requests/lsrq_mock/cancel":payload=["id":"lsrq_mock","status":Self.rejectCancel ? "approved" : "canceled"]
             default:status=404;payload=["message":"Not found"]
             }
@@ -185,6 +187,19 @@ final class MockProtocol:URLProtocol {
         MockProtocol.rejectCreate=false
         print("PASS: error banner state persists across refresh and can be dismissed")
         print("PASS: failed creation exposes server error and never signals a successful request")
+        let needsApproval=Model(api:api)
+        MockProtocol.requestStatus="created"
+        needsApproval.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)
+        try await idle(needsApproval)
+        precondition(needsApproval.requests.first?.status=="pending_approval")
+        precondition(needsApproval.approvalURL=="https://app.link.com/activity/approve/lsrq_mock")
+        precondition(MockProtocol.calls.contains{$0.url?.path.hasSuffix("/request_approval")==true})
+        needsApproval.approvalWatch?.cancel()
+        needsApproval.requests=[RequestItem(raw:["id":"lsrq_mock","status":"created"])]
+        needsApproval.requestApproval("lsrq_mock");try await idle(needsApproval)
+        precondition(needsApproval.requests.first?.approvalLink != nil)
+        needsApproval.approvalWatch?.cancel()
+        print("PASS: created requests explicitly request approval; approval_link is normalized; existing requests can recover approval links")
         let delayed=Model(api:api)
         MockProtocol.emptyList=true;MockProtocol.requestStatus="pending_approval"
         delayed.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)

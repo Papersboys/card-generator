@@ -203,3 +203,7 @@ App 不会替你批准购买请求。等待超过十分钟只表示 App 停止�
 - 当前构建采用本地 ad-hoc 签名，没有 Apple 公证。
 
 若出现 `refresh_token is not active: status: revoked`，表示保存的登录刷新凭证已失效。v2.5.7 起会恢复「登录 Link」按钮；点击并在 Link 中重新授权即可。无需分享任何 token。
+
+### 没有批准链接或手机提示
+
+更新到 v2.7.4 或更新版本，在「待批准」页刷新列表，选中请求，点击「获取批准链接」。`created`、`pending_approval` 和 `requires_action` 请求都会列出。获取成功后点击「在 Link 中批准请求」，在 Link 中完成批准，再刷新卡信息。若获取失败，查看顶部错误栏；不要仅因卡字段为空就重复创建。

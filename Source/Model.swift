@@ -12,9 +12,9 @@ struct RequestItem: Identifiable {
         if let expiry=Double(str(raw,"expires_at")),expiry<=Date().timeIntervalSince1970 {return false}
         return true
     }
-    var needsApproval:Bool { status == "pending_approval" }
+    var needsApproval:Bool { ["created","pending_approval","requires_action"].contains(status) }
     var approvalLink:URL? {
-        guard needsApproval, let url=URL(string:str(raw,"approval_url")), url.scheme == "https", url.host == "app.link.com" else {return nil}
+        guard needsApproval, let url=URL(string:str(raw,"approval_url","approval_link")), url.scheme == "https", url.host == "app.link.com" else {return nil}
         return url
     }
     var canCancel:Bool { ["created","pending_approval","approved"].contains(status) }
@@ -191,6 +191,24 @@ struct RequestItem: Identifiable {
             var data=r.raw;for (key,value) in updated {data[key]=value};return RequestItem(raw:data)
         }
     } }
+    func requestApproval(_ id:String) { perform {
+        try await self.prepareApproval(id)
+        self.watchApproval(id)
+    } }
+    func prepareApproval(_ id:String) async throws {
+        guard let existing=requests.first(where:{$0.id==id}),existing.needsApproval else {throw LinkError(message:"当前状态无法请求批准，请刷新列表检查状态。")}
+        let result=try await api.requestApproval(id)
+        guard let response=objects(result).first(where:{str($0,"id")==id}) else {throw LinkError(message:"Link 未返回批准链接，请刷新请求后重试。")}
+        guard let index=requests.firstIndex(where:{$0.id==id}),!canceledIDs.contains(id) else {return}
+        var metadata=requests[index].raw
+        for (key,value) in response {metadata[key]=value}
+        metadata["status"]="pending_approval"
+        metadata["approval_url"]=str(response,"approval_url","approval_link")
+        let item=RequestItem(raw:metadata)
+        guard let link=item.approvalLink else {throw LinkError(message:"Link 未返回批准链接，请刷新请求后重试。")}
+        requests[index]=item;approvalURL=link.absoluteString;pendingID=id;detail=[]
+        message="请求已创建，请在 Link 中批准。"
+    }
     func show(_ id:String, fallback:[String:Any] = [:]) { perform {
         try await self.retrieve(id,fallback:fallback)
         if self.pendingID == id {self.watchApproval(id)}
@@ -205,6 +223,9 @@ struct RequestItem: Identifiable {
             for (key,value) in request {merged[key]=value}
             self.requests[index]=RequestItem(raw:merged)
         }
+        let stored=self.requests.first(where:{$0.id==id})
+        self.approvalURL=stored?.approvalLink?.absoluteString ?? RequestItem(raw:request).approvalLink?.absoluteString ?? ""
+        self.pendingID=RequestItem(raw:request).needsApproval ? id : ""
         guard displayCredentials else {detail=[];return}
         let card:Any = request["card"] ?? [:]
         let month = find(card,["exp_month","expiry_month","expiration_month"])
@@ -214,9 +235,7 @@ struct RequestItem: Identifiable {
         if let d = address as? [String:Any] { billing = ["name","line1","line_1","line2","line_2","city","locality","state","administrative_area","postal_code","country"].compactMap { d[$0] as? String }.filter{ !$0.isEmpty }.joined(separator:", ") }
         else { billing = address.map{String(describing:$0)} ?? "" }
         self.detail = [("Spend request ID",id),("Status",str(request,"status")),("Merchant",str(request,"merchant_name")),("Merchant URL",str(request,"merchant_url")),("Context",str(request,"context")),("Created at",str(request,"created_at")),("Card number",find(card,["number","card_number","pan"])),("CVC",find(card,["cvc","cvv","security_code"])),("Brand",find(card,["brand","network"]).isEmpty ? str(request,"card_brand") : find(card,["brand","network"])),("Expiration",month.isEmpty ? find(card,["expiration_date","expiry"]) : month+"/"+year),("Billing address",billing),("Request expiry",str(request,"expires_at")),("Valid until",find(card,["valid_until","expires_at"]))]
-        let stored=self.requests.first(where:{$0.id==id})
-        self.approvalURL = str(request,"status")=="pending_approval" ? (stored?.approvalLink?.absoluteString ?? str(request,"approval_url")) : ""
-        self.pendingID = ["pending_approval","created","requires_action"].contains(str(request,"status")) ? id : ""
+
         if find(card,["number","card_number","pan"]).isEmpty { self.message = "暂无完整卡信息。若等待批准，请打开 Link 批准后点击刷新卡信息。" }
     }
     static func purchaseContext(merchant:String,url:String,amount:String,currency:String,item:String)->String {
@@ -234,10 +253,11 @@ struct RequestItem: Identifiable {
         self.createdIDs.insert(id)
         self.requests.removeAll{$0.id==id}
         self.requests.insert(RequestItem(raw:request),at:0)
-        self.approvalURL=str(request,"approval_url")
-        self.pendingID=str(request,"status")=="pending_approval" ? id : ""
+        self.approvalURL=str(request,"approval_url","approval_link")
+        self.pendingID=RequestItem(raw:request).needsApproval ? id : ""
         self.lastCreatedID=id
         if !self.pendingID.isEmpty {
+            if str(request,"status")=="created" || RequestItem(raw:request).approvalLink == nil {try await self.prepareApproval(id)}
             self.detail=[]
             self.message="请求已创建，请在 Link 中批准。"
             self.watchApproval(id)

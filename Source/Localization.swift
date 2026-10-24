@@ -24,6 +24,8 @@ enum L10n {
         "编辑":"Edit", "撤销":"Undo", "重做":"Redo", "剪切":"Cut", "复制":"Copy", "粘贴":"Paste", "全选":"Select All",
         "查看请求":"Review request", "待批准":"Approve", "用途说明（自动生成）":"Context (generated automatically)",
         "选择请求查看详情，批准操作将在 Link 中完成。":"Review a request here, then approve it in Link.",
+        "当前状态无法请求批准，请刷新列表检查状态。":"Approval cannot be requested in this state. Refresh the request status.",
+        "Link 未返回批准链接，请刷新请求后重试。":"Link did not return an approval link. Refresh the request and try again.",
         "没有待批准的请求。":"No requests awaiting approval.", "获取批准链接":"Get approval link",
         "查看完整许可证":"View full license",
         "可用截止时间":"Valid until", "一天以后":"One day from now",

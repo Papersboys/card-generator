@@ -179,6 +179,7 @@ actor NativeLink {
     func list(history:Bool) async throws -> Any { try await request("/spend_requests"+(history ? "?include_history=true" : "")) }
     func methods() async throws -> Any { try await request("/payment-details") }
     func retrieve(_ id:String,card:Bool=false) async throws -> Any { try await request("/spend_requests/"+(try safeID(id))+(card ? "?include=card" : "")) }
+    func requestApproval(_ id:String) async throws -> Any { try await request("/spend_requests/"+(try safeID(id))+"/request_approval",method:"POST") }
     func cancel(_ id:String) async throws -> Any { try await request("/spend_requests/"+(try safeID(id))+"/cancel",method:"POST") }
     private func safeID(_ id:String) throws -> String {
         guard id.hasPrefix("lsrq_"),id.allSatisfy({$0.isASCII && ($0.isLetter || $0.isNumber || $0=="_")}) else { throw LinkError(message:"无效的 spend request ID") };return id
