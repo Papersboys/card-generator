@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 
 func objects(_ value: Any) -> [[String: Any]] {
     if let d = value as? [String: Any] { return [d] + d.values.flatMap { objects($0) } }
@@ -34,4 +35,11 @@ func paymentMethodLabel(_ method:[String:Any]) -> String {
     let card=[brand,last4.isEmpty ? "" : "…"+last4].filter{!$0.isEmpty}.joined(separator:" ")
     let label=[displayName,card].filter{!$0.isEmpty}.joined(separator:" · ")
     return label.isEmpty ? str(method,"id") : label
+}
+
+func spendLimitValue(_ row:[String:Any]?,_ key:String)->String {
+    guard let value=row?[key] else {return "未返回"}
+    if value is NSNull {return key=="used" ? "未返回" : "无限额"}
+    guard let number=value as? NSNumber,CFGetTypeID(number) != CFBooleanGetTypeID() else {return "未返回"}
+    return String(format:"USD %.2f",number.doubleValue/100)
 }

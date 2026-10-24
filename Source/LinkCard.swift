@@ -56,6 +56,32 @@ struct ContentView: View {
                 }.frame(maxWidth:200,alignment:.leading).help([model.account?.name,model.account?.email].compactMap{$0}.filter{!$0.isEmpty}.joined(separator:"\n"))
                 Button(t("退出登录")) {model.logout()}.disabled(model.busy || model.checkingAccount || model.loggingIn)
             } else { Button(t("登录 Link")) { model.login() }.disabled(model.loggingIn) }; Spacer(); Button(t("清除卡信息")) { model.detail=[] }.disabled(model.detail.isEmpty) }
+            if model.isSignedIn {
+                VStack(alignment:.leading,spacing:10) {
+                    HStack {
+                        Label(t("消费限额"),systemImage:"gauge.with.dots.needle.50percent").font(.headline)
+                        Spacer()
+                        Button(t("刷新额度")) {Task {await model.refreshAccount()}}.disabled(model.checkingAccount || model.busy)
+                    }
+                    if let limits=model.spendLimits {
+                        Grid(alignment:.leading,horizontalSpacing:12,verticalSpacing:8) {
+                            GridRow {Text("");Text(t("上限"));Text(t("已用"));Text(t("剩余"))}.foregroundStyle(.secondary)
+                            ForEach([("per_transaction","单笔"),("daily","每日"),("thirty_day","滚动30天")],id:\.0) {key,title in
+                                let row=limits[key] as? [String:Any]
+                                GridRow {
+                                    Text(t(title))
+                                    Text(t(spendLimitValue(row,"limit")))
+                                    Text(key=="per_transaction" ? "—" : t(spendLimitValue(row,"used")))
+                                    Text(key=="per_transaction" ? "—" : t(spendLimitValue(row,"remaining")))
+                                }
+                            }
+                        }.font(.caption).textSelection(.enabled)
+                        Text(t("以 Link 当前返回的美元等值额度为准；此处不会推算或叠加账户额度。")).font(.caption2).foregroundStyle(.secondary)
+                    } else {
+                        Text(t(model.checkingAccount ? "正在加载额度…" : "Link 暂未返回消费限额，请尝试刷新。")).font(.caption).foregroundStyle(.secondary)
+                    }
+                }.padding(12).frame(maxWidth:.infinity,alignment:.leading).background(.quaternary.opacity(0.3)).clipShape(RoundedRectangle(cornerRadius:10))
+            }
             Picker("",selection:$tab) { Text(t("请求 / 历史")).tag(0); Text(t("创建 Generate")).tag(1); Text(t("待批准")).tag(2) }.pickerStyle(.segmented)
             if tab == 0 || tab == 2 {
                 HStack { if tab == 0 { Toggle(t("包含历史"),isOn:$model.history).onChange(of:model.history) { _ in model.load() } }; Spacer(); Button(t("刷新列表")) { model.load() } }.disabled(model.busy)

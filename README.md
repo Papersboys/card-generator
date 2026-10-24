@@ -178,3 +178,5 @@ Automatic updates use [Sparkle](https://sparkle-project.org/); its license is pr
 ## Local error logs
 
 Errors are recorded locally at `~/Library/Logs/LinkCard/error-log.jsonl` (up to 200 entries / 256 KiB, owner-only access). Records contain time, app/macOS versions, HTTP status, and a fixed error category; raw errors, account details, card data and credentials are excluded. Click **Send error logs** in the error banner to open the macOS share menu and choose a destination. Nothing is uploaded automatically or sent directly to S3.
+
+The signed-in account area shows **Spend limits** returned by Link: per-purchase limit, daily and rolling 30-day limits, usage and remaining amounts. Click Refresh limits to reload. Missing fields show Not provided; explicit null limits show Unlimited. No account limits are estimated or combined.

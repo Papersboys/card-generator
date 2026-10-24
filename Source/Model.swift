@@ -26,16 +26,20 @@ struct RequestItem: Identifiable {
     @Published var isSignedIn=false
     @Published var checkingAccount=true
     @Published var account:SignedInAccount?
+    @Published var spendLimits:[String:Any]?
     func start() {
         Task { await refreshAccount(); if isSignedIn { load() } }
     }
     func refreshAccount() async {
         checkingAccount=true
+        spendLimits=nil
         defer { checkingAccount=false }
         isSignedIn=await api.hasSession()
-        guard isSignedIn else { account=nil;return }
+        guard isSignedIn else { account=nil;spendLimits=nil;return }
         do {
-            account=SignedInAccount(try await api.userInfo())
+            let profile=try await api.userInfo()
+            account=SignedInAccount(profile)
+            spendLimits=profile["agent_wallet_spend_limits"] as? [String:Any]
             isSignedIn=true
         } catch {
             handle(error)
@@ -49,7 +53,7 @@ struct RequestItem: Identifiable {
         do {try ErrorLogStore.shared.append(ErrorReport(error:lastError));logWriteFailed=false}
         catch {logWriteFailed=true}
         if (error as? LinkError)?.requiresLogin == true {
-            isSignedIn=false;account=nil;detail=[];methods=[];requests=[];createdIDs=[]
+            isSignedIn=false;account=nil;spendLimits=nil;detail=[];methods=[];requests=[];createdIDs=[]
             approvalWatch?.cancel();pendingID="";approvalURL=""
         }
         message=error.localizedDescription
@@ -93,7 +97,7 @@ struct RequestItem: Identifiable {
             defer {busy=false}
             do {
                 try await api.logout()
-                isSignedIn=false;account=nil;detail=[];methods=[];requests=[]
+                isSignedIn=false;account=nil;spendLimits=nil;detail=[];methods=[];requests=[]
                 createdIDs=[];canceledIDs=[];lastCreatedID=nil
                 pendingID="";approvalURL="";loginURL=nil;loginPhrase=""
                 loggingIn=false;creationError=nil;lastError=""

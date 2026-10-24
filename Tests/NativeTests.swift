@@ -59,6 +59,11 @@ final class MockProtocol:URLProtocol {
 }
 @main struct Tests {
     @MainActor static func main() async throws {
+        precondition(spendLimitValue(["limit":50000],"limit")=="USD 500.00")
+        precondition(spendLimitValue(["remaining":0],"remaining")=="USD 0.00")
+        precondition(spendLimitValue(["limit":NSNull()],"limit")=="无限额")
+        precondition(spendLimitValue(nil,"limit")=="未返回")
+        print("PASS: spend limits distinguish monetary values, zero, unlimited and missing fields")
         let report=ErrorReport(error:"Link HTTP 401: token SECRET user@example.com card 4242424242424242 cvc 123",version:"2.7.4")
         precondition(report.http_status==401 && report.category=="authorization")
         for value in ["SECRET","user@example.com","4242424242424242","cvc"] {precondition(!report.preview.contains(value))}
