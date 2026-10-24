@@ -178,3 +178,6 @@ From v2.6.0, use Check for Updates… in the footer or menu bar to download, ins
 2. Move the installed `LinkCard.app` to Trash in Finder.
 
 Deleting the bundle does not cancel spend requests or refund payments. If you stop using the app, you can remove its authorization in Link's connected applications. Local Keychain entries and language preferences are not automatically removed with the bundle.
+
+
+Safari autofill setup and limitations: see [Safari card autofill](USAGE.en.md#safari-card-autofill-2130). App users do not need an extension or Node.js. Developers running `./test.sh` need Node.js 18+ for DOM regression tests.

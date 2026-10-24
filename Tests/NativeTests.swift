@@ -157,6 +157,15 @@ final class MockProtocol:URLProtocol {
         notificationModel.requests=[pending,RequestItem(raw:["id":"lsrq_sub","status":"approved","recurring":["interval":"month"]]),RequestItem(raw:["id":"lsrq_invalid","status":"approved","recurring":["interval":"hour"]])]
         precondition(notificationModel.subscriptionRequests.map(\.id)==["lsrq_sub"])
         print("PASS: subscription filtering, silent history baseline, status/payment transitions, deduplication and notification opt-out")
+        let fillCard=try AutofillCard(details:[("Card number","4242 4242 4242 4242"),("CVC","123"),("Expiration","3/30")],billing:["line1":"123 Mock Street","postal":"98000"])
+        precondition(fillCard.values["number"]=="4242424242424242" && fillCard.values["month"]=="03" && fillCard.values["year"]=="2030")
+        precondition(fillCard.values["line1"]=="123 Mock Street" && fillCard.values["name"]==nil)
+        do {_ = try AutofillCard(details:[("Card number","4242424242424242"),("CVC",""),("Expiration","12/2030")],billing:[:]);fatalError("Missing CVC accepted")} catch {}
+        do {_ = try AutofillCard(details:[("Card number","4242424242424242"),("CVC","123"),("Expiration","13/2030")],billing:[:]);fatalError("Invalid month accepted")} catch {}
+        let billingModel=Model();billingModel.detail=[("Card number","MOCK")];billingModel.billingFields=["line1":"Mock"]
+        billingModel.detail=[];precondition(billingModel.billingFields.isEmpty)
+        precondition(L10n.text("填入 Safari…",language:.english)=="Fill in Safari…")
+        print("PASS: autofill validates card fields, normalizes expiry, preserves only supplied billing fields and clears billing with credentials")
         let nicknameCard:[String:Any] = ["brand":"amex","last4":"1000"]
         precondition(paymentMethodLabel(["nickname":" Gold ","card_details":nicknameCard]) == "Gold · amex …1000")
         precondition(paymentMethodLabel(["nickname":NSNull(),"card_details":nicknameCard]) == "amex …1000")

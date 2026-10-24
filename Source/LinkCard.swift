@@ -317,6 +317,7 @@ struct ContentView: View {
                     }.frame(maxWidth:.infinity,alignment:.leading)
                 }
             }
+            SafariAutofillView(model:model)
         }.foregroundStyle(.white).padding(22).background(LinearGradient(colors:[.linkInk,Color(red:0.08,green:0.28,blue:0.33)],startPoint:.topLeading,endPoint:.bottomTrailing))
         .clipShape(RoundedRectangle(cornerRadius:20)).overlay(RoundedRectangle(cornerRadius:20).stroke(.white.opacity(0.12)))
     }

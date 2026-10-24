@@ -180,3 +180,6 @@ v2.6.0 起，点击 App 底部或菜单栏的「检查更新…」，按提示�
 2. 在 Finder 中将安装位置的 `LinkCard.app` 移到废纸篓。
 
 删除 App 不会取消付款请求，也不会退款。如果不再使用此 App，可自行在 Link 的已连接应用中移除相应授权；本机 Keychain 登录项和语言偏好也不会因删除 `.app` 自动清除。
+
+
+Safari 填卡的权限设置与限制见[使用指南](USAGE.zh-CN.md#safari-一键填卡2130)。运行 App 无需扩展或 Node.js；开发者运行 `./test.sh` 需要 Node.js 18+ 执行 DOM 回归测试。

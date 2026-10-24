@@ -267,3 +267,29 @@ Enable Status notifications at the bottom of the panel and grant macOS notificat
 Notifications exclude merchants, amounts, accounts, card numbers and CVCs. Turning off the option stops periodic checks; quitting the app stops monitoring. This is polling, not real-time webhooks. Sleep, network errors and Link data delays can delay notifications. Confirm final payment results against merchant records. Check macOS System Settings → Notifications → Link Card and Focus settings if delivery is missing.
 
 Offline mock regressions and app compilation were verified. No real payments or wallet changes were made, and system notification delivery has not been tested live.
+
+
+## Safari card autofill (2.13.0)
+
+Choose Fill in Safari… in the card panel, review the payment website, and confirm filling. This uses macOS Safari automation without a browser extension, CLI, Node.js or local server.
+
+### First-use setup
+
+1. Enable Show features for web developers in Safari Settings → Advanced.
+2. Enable Allow JavaScript from Apple Events in Safari's Develop menu or Developer settings. Its location varies by Safari version.
+3. Allow Link Card to control Safari when macOS prompts. If denied, change System Settings → Privacy & Security → Automation.
+4. The first permission dialog may dismiss the menu-bar panel. Reopen the panel and show the card after granting permission. Recheck permissions if they stop working after an update.
+
+### Fill a checkout
+
+1. Open an HTTPS checkout in Safari's current tab.
+2. Show an approved request's card in Link Card, then choose Fill in Safari….
+3. Review the website domain, requested merchant and detected fields. Different merchant/checkout domains receive an additional notice.
+4. Confirm and fill. The app checks Safari's page URL again before filling; changing pages requires another review.
+5. Review the results in Safari and submit payment yourself. The app never clicks a payment or submit button.
+
+Common card-number, CVC, combined/separate expiry, month/year selects and explicitly marked billing-address fields are supported. Only names/addresses returned by Link are used. Missing data is not inferred. Shipping, hidden and unknown fields are skipped. Cross-origin payment iframes, Shadow DOM and custom controls may be inaccessible; use the existing copy buttons for those fields.
+
+Credentials travel to Safari in memory, never through files, the clipboard, shell arguments or error logs. Closing the panel clears card details and structured billing fields. Confirmation URLs come from Safari itself. Page scripts return only field types and fill results, not field values.
+
+DOM mock tests cover HTTPS/page-change checks, field formats, billing selection and credential cleanup. Safari permissions and real merchant checkout filling have not been tested live. Running the app needs no Node.js; developers need Node.js 18+ for the DOM regressions in `./test.sh`.

@@ -165,3 +165,86 @@ struct SubscriptionTermsView:View {
         return Date(timeIntervalSince1970:seconds).formatted(Date.FormatStyle(date:.abbreviated,time:.shortened).locale(language.locale))
     }
 }
+
+struct SafariAutofillView:View {
+    @ObservedObject var model:Model
+    @State private var page:AutofillPage?
+    @State private var requestID=""
+    @State private var result:[String:Any]?
+    func t(_ key:String)->String {L10n.text(key,language:model.language)}
+    func detail(_ key:String)->String {model.detail.first{$0.0==key}?.1 ?? ""}
+    var body:some View {
+        VStack(alignment:.leading,spacing:9) {
+            Button {scan()} label: {Label(t("填入 Safari…"),systemImage:"safari").frame(maxWidth:.infinity).padding(10).background(.white.opacity(0.12),in:RoundedRectangle(cornerRadius:10)).contentShape(Rectangle())}
+                .buttonStyle(.plain).disabled(model.busy || model.checkingAccount || model.loggingIn)
+            Text(t("先确认网站，再填写；不会提交付款。跨域付款框可能需要手动复制。")).font(.caption2).foregroundStyle(.white.opacity(0.75))
+            if let result=result {
+                let filled=result["filled"] as? [String] ?? []
+                Text(t("已尝试填写，请在 Safari 核对后自行付款。")).font(.caption)
+                Text(t("已填写字段")+": "+filled.map{fieldName($0)}.joined(separator:", ")).font(.caption2)
+                if (result["blockedFrames"] as? Int ?? 0)>0 || !(result["skipped"] as? [String] ?? []).isEmpty {
+                    Text(t("部分字段无法填写，请使用复制按钮补齐。")).font(.caption2)
+                }
+            }
+            DisclosureGroup(t("首次使用设置")) {
+                Text(t("Safari 设置 → 高级 → 显示网页开发者功能，然后在开发菜单或开发者设置中允许来自 Apple 事件的 JavaScript；系统询问时允许 Link Card 控制 Safari。")).font(.caption2).fixedSize(horizontal:false,vertical:true).padding(.top,6)
+            }.font(.caption2)
+        }
+        .sheet(item:$page) {target in
+            VStack(alignment:.leading,spacing:16) {
+                Label(t("确认填写网站"),systemImage:"lock.shield").font(.title2.bold())
+                Text(target.origin).font(.system(.title3,design:.monospaced)).textSelection(.enabled)
+                Text(displayURL(target.url)).font(.caption).foregroundStyle(.secondary).lineLimit(3)
+                Text(t("请求商家")+": "+detail("Merchant")).font(.callout)
+                if let merchant=URL(string:detail("Merchant URL"))?.host,
+                   let current=URL(string:target.url)?.host,
+                   merchant.lowercased().replacingOccurrences(of:"www.",with:"") != current.lowercased().replacingOccurrences(of:"www.",with:"") {
+                    Text(t("当前网站与请求商家域名不同，请确认这是你要使用的付款网站。")).font(.callout).foregroundStyle(.orange)
+                }
+                Text(t("检测到字段")+": "+target.kinds.map{fieldName($0)}.joined(separator:", ")).font(.callout)
+                if target.blockedFrames>0 {Text(t("检测到无法访问的跨域付款框，部分字段需要手动复制。")).font(.caption).foregroundStyle(.secondary)}
+                Text(t("将填写当前显示的虚拟卡和已返回的账单地址，不会提交表单。继续会覆盖对应字段。")).font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Button(t("返回")) {page=nil}.keyboardShortcut(.cancelAction)
+                    Spacer()
+                    Button(t("确认并填写")) {fill(target)}.buttonStyle(.borderedProminent)
+                        .disabled(!target.kinds.contains("number") || model.busy || detail("Spend request ID") != requestID)
+                }
+                if !target.kinds.contains("number") {Text(t("没有找到可填写的卡号字段；跨域付款框请使用复制按钮。")).font(.caption).foregroundStyle(.secondary)}
+            }.padding(24).frame(width:430).foregroundStyle(.primary)
+        }
+        .onChange(of:model.detail.isEmpty) {empty in if empty {page=nil;result=nil}}
+    }
+    func scan() {
+        guard !model.busy,model.displayCredentials else {return}
+        requestID=detail("Spend request ID");let expected=requestID
+        result=nil;model.busy=true
+        Task {
+            defer {model.busy=false}
+            do {
+                let target=try await SafariAutofill.scan()
+                guard model.displayCredentials,detail("Spend request ID")==expected,!detail("Card number").isEmpty else {return}
+                page=target
+            } catch {model.handle(error)}
+        }
+    }
+    func fill(_ target:AutofillPage) {
+        guard !model.busy,model.displayCredentials,detail("Spend request ID")==requestID else {page=nil;return}
+        do {
+            let card=try AutofillCard(details:model.detail,billing:model.billingFields)
+            page=nil;model.busy=true
+            Task {
+                defer {model.busy=false}
+                do {result=try await SafariAutofill.fill(page:target,card:card)}
+                catch {model.handle(error)}
+            }
+        } catch {page=nil;model.handle(error)}
+    }
+    func displayURL(_ raw:String)->String {
+        guard var parts=URLComponents(string:raw) else {return ""}
+        parts.query=nil;parts.fragment=nil;return parts.string ?? ""
+    }
+    func fieldName(_ key:String)->String {
+        t(["number":"Card number","cvc":"CVC","expiry":"Expiration","month":"有效期月份","year":"有效期年份","name":"持卡人姓名","street":"Billing address","line1":"账单地址第一行","line2":"账单地址第二行","city":"城市","state":"州／省","postal":"邮编","country":"国家"][key] ?? key)
+    }
+}

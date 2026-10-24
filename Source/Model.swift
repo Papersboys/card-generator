@@ -198,7 +198,8 @@ struct RequestItem: Identifiable {
     @Published var busy = false
     @Published var message = ""
     @Published var history = false
-    @Published var detail:[(String,String)] = []
+    @Published var billingFields:[String:String]=[:]
+    @Published var detail:[(String,String)] = [] {didSet {if detail.isEmpty {billingFields=[:]}}}
     var displayCredentials=true
     @Published var approvalURL = ""
     @Published var pendingID = ""
@@ -387,6 +388,17 @@ struct RequestItem: Identifiable {
         if let d = address as? [String:Any] { billing = ["name","line1","line_1","line2","line_2","city","locality","state","administrative_area","postal_code","country"].compactMap { d[$0] as? String }.filter{ !$0.isEmpty }.joined(separator:", ") }
         else { billing = address.map{String(describing:$0)} ?? "" }
         self.detail = [("Spend request ID",id),("Status",str(request,"status")),("Merchant",str(request,"merchant_name")),("Merchant URL",str(request,"merchant_url")),("Context",str(request,"context")),("Created at",str(request,"created_at")),("Card number",find(card,["number","card_number","pan"])),("CVC",find(card,["cvc","cvv","security_code"])),("Brand",find(card,["brand","network"]).isEmpty ? str(request,"card_brand") : find(card,["brand","network"])),("Expiration",month.isEmpty ? find(card,["expiration_date","expiry"]) : month+"/"+year),("Billing address",billing),("Request expiry",str(request,"expires_at")),("Valid until",find(card,["valid_until","expires_at"]))]
+
+        billingFields=[:]
+        if let d=address as? [String:Any] {
+            for (key,aliases) in [("line1",["line1","line_1"]),("line2",["line2","line_2"]),("city",["city","locality"]),("state",["state","administrative_area"]),("postal",["postal_code"]),("country",["country"]),("name",["name"])] {
+                for alias in aliases {if let value=d[alias] as? String,!value.isEmpty {billingFields[key]=value;break}}
+            }
+        }
+        if billingFields["name"]==nil {
+            let name=objects(card).compactMap{($0["billing_details"] as? [String:Any])?["name"] as? String}.first
+            if let name=name {billingFields["name"]=name}
+        }
 
         if find(card,["number","card_number","pan"]).isEmpty { self.message = "暂无完整卡信息。若等待批准，请打开 Link 批准后点击刷新卡信息。" }
     }

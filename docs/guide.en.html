@@ -45,6 +45,11 @@
 <li><a href="#macos-status-notifications">macOS status notifications</a></li>
 </ul>
 </li>
+<li><a href="#safari-card-autofill-2130">Safari card autofill (2.13.0)</a><ul>
+<li><a href="#first-use-setup">First-use setup</a></li>
+<li><a href="#fill-a-checkout">Fill a checkout</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </aside><article id="article" class="guide-article"><p>Link Card is a macOS menu-bar app for creating Link spend requests, retrieving approved virtual card details, and canceling requests. It does not place merchant orders or submit merchant checkout forms for you.</p>
@@ -357,6 +362,26 @@
 <h3 id="macos-status-notifications">macOS status notifications</h3>
 <p>Enable Status notifications at the bottom of the panel and grant macOS notification permission. While the app runs, it checks logged-in accounts' Link requests about once a minute; approval waiting also observes changes. Notifications cover observed approval/request-failure transitions and payment success/failure changes reported by Link. Initial historical records and duplicate results stay silent.</p>
 <p>Notifications exclude merchants, amounts, accounts, card numbers and CVCs. Turning off the option stops periodic checks; quitting the app stops monitoring. This is polling, not real-time webhooks. Sleep, network errors and Link data delays can delay notifications. Confirm final payment results against merchant records. Check macOS System Settings → Notifications → Link Card and Focus settings if delivery is missing.</p>
-<p>Offline mock regressions and app compilation were verified. No real payments or wallet changes were made, and system notification delivery has not been tested live.</p></article></main>
+<p>Offline mock regressions and app compilation were verified. No real payments or wallet changes were made, and system notification delivery has not been tested live.</p>
+<h2 id="safari-card-autofill-2130">Safari card autofill (2.13.0)</h2>
+<p>Choose Fill in Safari… in the card panel, review the payment website, and confirm filling. This uses macOS Safari automation without a browser extension, CLI, Node.js or local server.</p>
+<h3 id="first-use-setup">First-use setup</h3>
+<ol>
+<li>Enable Show features for web developers in Safari Settings → Advanced.</li>
+<li>Enable Allow JavaScript from Apple Events in Safari's Develop menu or Developer settings. Its location varies by Safari version.</li>
+<li>Allow Link Card to control Safari when macOS prompts. If denied, change System Settings → Privacy &amp; Security → Automation.</li>
+<li>The first permission dialog may dismiss the menu-bar panel. Reopen the panel and show the card after granting permission. Recheck permissions if they stop working after an update.</li>
+</ol>
+<h3 id="fill-a-checkout">Fill a checkout</h3>
+<ol>
+<li>Open an HTTPS checkout in Safari's current tab.</li>
+<li>Show an approved request's card in Link Card, then choose Fill in Safari….</li>
+<li>Review the website domain, requested merchant and detected fields. Different merchant/checkout domains receive an additional notice.</li>
+<li>Confirm and fill. The app checks Safari's page URL again before filling; changing pages requires another review.</li>
+<li>Review the results in Safari and submit payment yourself. The app never clicks a payment or submit button.</li>
+</ol>
+<p>Common card-number, CVC, combined/separate expiry, month/year selects and explicitly marked billing-address fields are supported. Only names/addresses returned by Link are used. Missing data is not inferred. Shipping, hidden and unknown fields are skipped. Cross-origin payment iframes, Shadow DOM and custom controls may be inaccessible; use the existing copy buttons for those fields.</p>
+<p>Credentials travel to Safari in memory, never through files, the clipboard, shell arguments or error logs. Closing the panel clears card details and structured billing fields. Confirmation URLs come from Safari itself. Page scripts return only field types and fill results, not field values.</p>
+<p>DOM mock tests cover HTTPS/page-change checks, field formats, billing selection and credential cleanup. Safari permissions and real merchant checkout filling have not been tested live. Running the app needs no Node.js; developers need Node.js 18+ for the DOM regressions in <code>./test.sh</code>.</p></article></main>
 <footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>Independent open-source project · Not affiliated with Link or Stripe</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
 </body></html>
