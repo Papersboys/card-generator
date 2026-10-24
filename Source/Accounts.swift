@@ -18,6 +18,9 @@ struct AccountRecord:Codable,Identifiable {
     private var models:[String:Model]=[:]
     private var subscriptions:[String:AnyCancellable]=[:]
     var onSwitch:(()->Void)?
+    private var statusNotifications=false
+    var onNotification:((RequestEvent,AppLanguage)->Void)?
+    func setNotifications(_ enabled:Bool) {statusNotifications=enabled;for model in models.values {model.setNotifications(enabled)}}
     var activeModel:Model {models[activeID]!}
     init(initialModel:Model?=nil,makeModel:((String)->Model)?=nil) {
         self.makeModel=makeModel
@@ -36,6 +39,9 @@ struct AccountRecord:Codable,Identifiable {
         }
     }
     private func attach(_ model:Model,id:String) {
+        if persistAccounts {model.configureTemplates(account:id)}
+        model.emitNotification={[weak self] event,language in self?.onNotification?(event,language)}
+        model.setNotifications(statusNotifications)
         model.displayCredentials=false
         model.awaitingAccountAdmission=provisionalIDs.contains(id)
         model.accountAdmission={[weak self,weak model] identity in

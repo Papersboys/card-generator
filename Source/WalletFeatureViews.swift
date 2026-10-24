@@ -104,3 +104,64 @@ struct PaymentMethodsReloadButton:View {
         .opacity(model.busy || model.loggingIn || !model.isSignedIn ? 0.45 : 1)
     }
 }
+
+
+struct MerchantTemplatesView:View {
+    @ObservedObject var model:Model
+    let current:MerchantTemplate
+    let apply:(MerchantTemplate)->Void
+    @State private var selected=""
+    @State private var name=""
+    func t(_ key:String)->String {L10n.text(key,language:model.language)}
+    var body:some View {
+        DisclosureGroup {
+            VStack(alignment:.leading,spacing:12) {
+                Picker(t("选择模板"),selection:$selected) {
+                    Text(t("新模板")).tag("")
+                    ForEach(model.templates) {template in Text(template.name).tag(template.id.uuidString)}
+                }.onChange(of:selected) {id in
+                    guard let template=model.templates.first(where:{$0.id.uuidString==id}) else {name="";return}
+                    name=template.name;apply(template)
+                }
+                TextField(t("模板名称"),text:$name).textFieldStyle(.roundedBorder)
+                HStack {
+                    Button(t("保存当前填写")) {
+                        var template=current;template.name=name.trimmingCharacters(in:.whitespacesAndNewlines)
+                        if let id=UUID(uuidString:selected) {template.id=id}
+                        do {try model.saveTemplate(template);selected=template.id.uuidString}
+                        catch {model.handle(error)}
+                    }.disabled(name.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)
+                    if let id=UUID(uuidString:selected) {
+                        Button(t("删除模板"),role:.destructive) {model.deleteTemplate(id);selected="";name=""}
+                    }
+                }
+                Text(t("选择模板会替换当前购买信息；仅在本机按账户保存，不保存付款方式 ID 或卡信息。")).font(.caption).foregroundStyle(.secondary)
+            }.padding(.top,10)
+        } label: {Label(t("商家模板"),systemImage:"square.stack.3d.up")}
+        .panelSurface()
+    }
+}
+
+struct SubscriptionTermsView:View {
+    let request:RequestItem
+    let language:AppLanguage
+    func t(_ key:String)->String {L10n.text(key,language:language)}
+    var body:some View {
+        VStack(alignment:.leading,spacing:10) {
+            Label(request.merchant,systemImage:"repeat").font(.headline)
+            LabeledContent(t("周期"),value:RecurringSchedule.from(request.raw)?.label(language) ?? "—")
+            LabeledContent(t("每期上限"),value:WalletTransaction(raw:request.raw).formattedAmount)
+            LabeledContent(t("币种"),value:str(request.raw,"currency").uppercased())
+            LabeledContent(t("状态"),value:L10n.status(request.status,language:language))
+            LabeledContent(t("请求到期"),value:expiry)
+            Text(str(request.raw,"merchant_url")).font(.caption).textSelection(.enabled)
+            Text(request.id).font(.system(.caption,design:.monospaced)).textSelection(.enabled)
+            if let link=request.approvalLink {Link(t("在 Link 中批准请求 ↗"),destination:link)}
+            Text(t("每期上限不是已扣款金额。下次扣款日由商家决定；取消凭证后仍需在商家处取消订阅。")).font(.caption).foregroundStyle(.secondary)
+        }.panelSurface()
+    }
+    var expiry:String {
+        guard let seconds=Double(str(request.raw,"expires_at")) else {return t("未返回")}
+        return Date(timeIntervalSince1970:seconds).formatted(Date.FormatStyle(date:.abbreviated,time:.shortened).locale(language.locale))
+    }
+}

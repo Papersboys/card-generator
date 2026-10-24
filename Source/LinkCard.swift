@@ -7,6 +7,7 @@ struct ContentView: View {
     @ObservedObject var model:Model
     @EnvironmentObject var accounts:AccountManager
     @ObservedObject var updates=UpdateManager.shared
+    @ObservedObject var notifications=NotificationManager.shared
     @State var tab = 0
     @State var selected:String?
     @State var payment = ""
@@ -129,14 +130,14 @@ struct ContentView: View {
             }
             navigationTabs
             if !detailValue("Card number").isEmpty {credentialPanel}
-            if tab == 0 || tab == 2 {
-                HStack { if tab == 0 { Toggle(t("包含历史"),isOn:$model.history).onChange(of:model.history) { _ in model.load() } }; Spacer(); Button(t("刷新列表")) { model.load() } }.disabled(model.busy)
+            if tab == 0 || tab == 2 || tab == 5 {
+                HStack { if tab == 0 || tab == 5 { Toggle(t("包含历史"),isOn:$model.history).onChange(of:model.history) { _ in model.load() } }; Spacer(); Button(t("刷新列表")) { model.load() } }.disabled(model.busy)
                 if visibleRequests.isEmpty {
                     VStack(spacing:10) {
                         Image(systemName:tab==2 ? "checkmark.seal" : "rectangle.stack").font(.system(size:28,weight:.light)).foregroundStyle(Color.linkTeal)
-                        Text(t(tab==2 ? "没有待批准的请求。" : "还没有请求")).font(.headline)
+                        Text(t(tab==2 ? "没有待批准的请求。" : tab==5 ? "还没有周期请求" : "还没有请求")).font(.headline)
                         Text(t(tab==2 ? "批准入口会在创建请求后显示。" : "创建付款请求，批准后即可查看卡信息。")).font(.caption).foregroundStyle(.secondary)
-                        if tab==0 {Button(t("创建付款请求")) {tab=1}.buttonStyle(.borderedProminent)}
+                        if tab==0 || tab==5 {Button(t("创建付款请求")) {if tab==5 {recurringInterval="month"};tab=1}.buttonStyle(.borderedProminent)}
                     }.frame(maxWidth:.infinity).padding(.vertical,28).panelSurface()
                 } else {
                 List(selection:$selected) { ForEach(visibleRequests) { r in
@@ -155,10 +156,15 @@ struct ContentView: View {
                         }.padding().frame(maxWidth:.infinity,alignment:.leading).background(.quaternary.opacity(0.3)).clipShape(RoundedRectangle(cornerRadius:10))
                     }
                 }
+                if tab==5,let request=visibleRequests.first(where:{$0.id==selected}) {SubscriptionTermsView(request:request,language:model.language)}
                 HStack { Button(t(tab == 2 ? "查看请求" : "显示卡信息 Show")) { if let id=selected { model.show(id) } }; Button(t("取消请求 Cancel"),role:.destructive) { toCancel=model.requests.first{$0.id==selected} }.disabled(model.requests.first{$0.id==selected}?.canCancel != true) }.disabled(selected == nil || model.busy)
             } else if tab==3 {TransactionsView(model:model)}
             else if tab==4 {PaymentMethodsView(model:model)}
             else {
+                MerchantTemplatesView(model:model,current:MerchantTemplate(name:"",merchant:merchant,url:url,amount:amount,currency:currency,item:item,interval:recurringInterval,intervalCount:recurringCount)) {template in
+                    merchant=template.merchant;url=template.url;amount=template.amount;currency=template.currency
+                    item=template.item;recurringInterval=template.interval;recurringCount=template.intervalCount
+                }
                 VStack(alignment:.leading,spacing:20) {
                     HStack {
                         Label(t("付款方式"),systemImage:"wallet.pass").font(.headline)
@@ -216,6 +222,10 @@ struct ContentView: View {
                 } }.padding(12) }.frame(height:220).panelSurface()
             }
             if !model.message.isEmpty { ScrollView { Text(t(model.message)).font(.caption).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading) }.frame(maxHeight:90) }
+            VStack(alignment:.leading,spacing:6) {
+                Toggle(isOn:Binding(get:{notifications.enabled},set:{notifications.setEnabled($0)})) {Label(t("状态通知"),systemImage:"bell.badge")}.toggleStyle(.checkbox).disabled(notifications.requesting)
+                Text(t(notifications.message.isEmpty ? "开启后在 App 运行期间检查状态；通知不显示卡号、金额或账户信息。" : notifications.message)).font(.caption2).foregroundStyle(.secondary)
+            }
             Text(t("原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭面板会清除显示。")).font(.caption2).foregroundStyle(.secondary)
             HStack(spacing:6) {
                 Text("Link Card \(Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "")").foregroundStyle(.secondary)
@@ -243,25 +253,25 @@ struct ContentView: View {
         .onChange(of:model.detail.first(where:{$0.0=="Card number"})?.1) {_ in copiedField=nil}
         .onChange(of:tab) { value in if value == 2 {model.load()} }
         .task(id:"\(tab)-\(model.isSignedIn)") {
-            guard [1,4].contains(tab),model.isSignedIn else {return}
+            guard [1,4,5].contains(tab),model.isSignedIn else {return}
             // A request refresh may still be finishing when the user opens Create or Cards.
             // Wait for that operation instead of silently dropping the automatic load.
             do {
                 while model.busy {try await Task.sleep(nanoseconds:100_000_000)}
                 try Task.checkCancellation()
-                guard [1,4].contains(tab),model.isSignedIn else {return}
-                model.loadMethods()
+                guard [1,4,5].contains(tab),model.isSignedIn else {return}
+                if tab==5 {model.load()} else {model.loadMethods()}
             } catch is CancellationError {} catch {}
         }
         .environment(\.locale,model.language.locale)
         .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context,recurringInterval:recurringInterval,recurringCount:recurringCount) } } message: { Text(createSummary) }
         .alert(t("取消这个请求？"),isPresented:Binding(get:{toCancel != nil},set:{if !$0 {toCancel=nil}})) { Button(t("返回"),role:.cancel){toCancel=nil}; Button(t("取消请求"),role:.destructive){if let r=toCancel {model.cancel(r)};toCancel=nil} } message:{Text("\(toCancel?.merchant ?? "")\n\(toCancel?.id ?? "")\n\(t("这不会撤销已完成的付款。"))")}
     }
-    var visibleRequests:[RequestItem] {tab==2 ? model.requests.filter(\.needsApproval) : model.requests}
+    var visibleRequests:[RequestItem] {tab==5 ? model.subscriptionRequests : tab==2 ? model.requests.filter(\.needsApproval) : model.requests}
     func detailValue(_ key:String)->String {model.detail.first{$0.0==key}?.1 ?? ""}
     var navigationTabs:some View {
-        HStack(spacing:4) {
-            ForEach([(0,"请求","rectangle.stack"),(1,"创建","plus.circle"),(2,"批准","checkmark.seal"),(3,"流水","list.bullet.rectangle"),(4,"付款卡","wallet.pass")],id:\.0) {index,title,icon in
+        LazyVGrid(columns:[GridItem(.adaptive(minimum:95),spacing:4)],spacing:4) {
+            ForEach([(0,"请求","rectangle.stack"),(1,"创建","plus.circle"),(2,"批准","checkmark.seal"),(3,"流水","list.bullet.rectangle"),(4,"付款卡","wallet.pass"),(5,"订阅","repeat")],id:\.0) {index,title,icon in
                 Button {tab=index} label: {
                     VStack(spacing:5) {Image(systemName:icon).font(.system(size:15));Text(t(title)).font(.system(size:11,weight:.semibold))}.frame(maxWidth:.infinity).padding(.vertical,10)
                         .foregroundStyle(tab==index ? Color.white : Color.secondary)
@@ -378,6 +388,7 @@ final class MenuBarProgressIndicator:NSProgressIndicator {
     var contextMenu=NSMenu()
     var languageObserver:AnyCancellable?
     var loadingObserver:AnyCancellable?
+    var notificationObserver:AnyCancellable?
     let statusProgress=MenuBarProgressIndicator()
     var outsideClickMonitor:Any?
     var localClickMonitor:Any?
@@ -409,7 +420,12 @@ final class MenuBarProgressIndicator:NSProgressIndicator {
         installAccountPanel()
         languageObserver=model.$language.sink {[weak self] language in self?.updateMenu(language)}
         model.displayCredentials=false
-        if startServices {accounts.startActive();UpdateManager.shared.start()}
+        if startServices {
+            accounts.onNotification={event,language in NotificationManager.shared.send(event,language:language)}
+            notificationObserver=NotificationManager.shared.$enabled.sink {[weak self] enabled in self?.accounts.setNotifications(enabled)}
+            NotificationManager.shared.checkPermission()
+            accounts.startActive();UpdateManager.shared.start()
+        }
         else {openPopover()}
     }
     func installAccountPanel() {
@@ -464,6 +480,7 @@ final class MenuBarProgressIndicator:NSProgressIndicator {
         guard let button=status.button else {return}
         let available=button.window?.screen?.visibleFrame.size ?? NSSize(width:900,height:800)
         popover.contentSize=NSSize(width:min(640,available.width-24),height:min(760,available.height-36))
+        NotificationManager.shared.checkPermission()
         model.displayCredentials=true
         popover.show(relativeTo:button.bounds,of:button,preferredEdge:.minY)
         NSApp.activate(ignoringOtherApps:true)

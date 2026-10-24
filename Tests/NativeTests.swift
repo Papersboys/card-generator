@@ -113,6 +113,50 @@ final class MockProtocol:URLProtocol {
         precondition((attributes[.posixPermissions] as? NSNumber)?.intValue==0o600)
         print("PASS: bounded private local logs, sensitive fields excluded")
         print("PASS: report payload contains only allowlisted fields, no raw error text or credentials")
+        let templateSuite="link-card-templates-test-"+UUID().uuidString
+        let templateDefaults=UserDefaults(suiteName:templateSuite)!
+        defer {templateDefaults.removePersistentDomain(forName:templateSuite)}
+        let templateModel=Model();templateModel.configureTemplates(account:"first",defaults:templateDefaults)
+        var template=MerchantTemplate(name:"Meals",merchant:"Example",url:"https://example.com",amount:"1500",currency:"usd",item:"Meal",interval:"month",intervalCount:1)
+        try templateModel.saveTemplate(template)
+        let restoredTemplateModel=Model();restoredTemplateModel.configureTemplates(account:"first",defaults:templateDefaults)
+        precondition(restoredTemplateModel.templates==[template])
+        let otherTemplates=Model();otherTemplates.configureTemplates(account:"second",defaults:templateDefaults)
+        precondition(otherTemplates.templates.isEmpty)
+        template.amount="2000";try templateModel.saveTemplate(template)
+        precondition(templateModel.templates.count==1 && templateModel.templates[0].amount=="2000")
+        var invalidTemplate=template;invalidTemplate.url="not-a-url"
+        do {try templateModel.saveTemplate(invalidTemplate);fatalError("Invalid template accepted")} catch {}
+        precondition(templateModel.templates[0].url=="https://example.com")
+        let encodedTemplate=String(data:try JSONEncoder().encode(template),encoding:.utf8)!
+        precondition(!encodedTemplate.contains("payment_details") && !encodedTemplate.contains("cvc"))
+        templateModel.deleteTemplate(template.id)
+        restoredTemplateModel.configureTemplates(account:"first",defaults:templateDefaults)
+        precondition(restoredTemplateModel.templates.isEmpty)
+        print("PASS: templates persist per account, update in place, validate before saving, delete and exclude credentials")
+        var tracker=RequestEventTracker()
+        let pending=RequestItem(raw:["id":"lsrq_events","status":"pending_approval"])
+        let approved=RequestItem(raw:["id":"lsrq_events","status":"approved"])
+        let paid=RequestItem(raw:["id":"lsrq_events","status":"approved","payment_history":[["link_transaction_id":"txn_1","outcome":"success"]],"payment_status_details":["link_transaction_id":"txn_1","outcome":"success"]])
+        precondition(tracker.observe(pending).isEmpty)
+        precondition(tracker.observe(approved)==[.approved])
+        precondition(tracker.observe(approved).isEmpty)
+        precondition(tracker.observe(paid)==[.paymentSucceeded])
+        precondition(tracker.observe(paid).isEmpty)
+        var historical=RequestEventTracker();precondition(historical.observe(paid).isEmpty)
+        let declined=RequestItem(raw:["id":"lsrq_events","status":"declined"])
+        precondition(tracker.observe(declined)==[.failed])
+        let failedPayment=RequestItem(raw:["id":"lsrq_events","status":"declined","payment_history":[["link_transaction_id":"txn_2","outcome":"failed"]]])
+        precondition(tracker.observe(failedPayment)==[.paymentFailed])
+        let notificationModel=Model();notificationModel.requests=[pending];notificationModel.checkingAccount=false
+        var emitted:[RequestEvent]=[];notificationModel.emitNotification={event,_ in emitted.append(event)}
+        notificationModel.setNotifications(true);notificationModel.observeEvents([approved,paid,paid])
+        precondition(emitted==[.approved,.paymentSucceeded])
+        notificationModel.setNotifications(false);notificationModel.observeEvents([declined])
+        precondition(emitted==[.approved,.paymentSucceeded])
+        notificationModel.requests=[pending,RequestItem(raw:["id":"lsrq_sub","status":"approved","recurring":["interval":"month"]]),RequestItem(raw:["id":"lsrq_invalid","status":"approved","recurring":["interval":"hour"]])]
+        precondition(notificationModel.subscriptionRequests.map(\.id)==["lsrq_sub"])
+        print("PASS: subscription filtering, silent history baseline, status/payment transitions, deduplication and notification opt-out")
         let nicknameCard:[String:Any] = ["brand":"amex","last4":"1000"]
         precondition(paymentMethodLabel(["nickname":" Gold ","card_details":nicknameCard]) == "Gold · amex …1000")
         precondition(paymentMethodLabel(["nickname":NSNull(),"card_details":nicknameCard]) == "amex …1000")

@@ -40,6 +40,63 @@ struct RequestItem: Identifiable {
     private var loadedTransactionFilter=""
     func clearWalletFeatures() {verification=nil;transactions=[];transactionsLoaded=false;transactionsNeedAuthorization=false;transactionsHaveMore=false}
 
+    @Published var templates:[MerchantTemplate]=[]
+    private var templateDefaults:UserDefaults?
+    private var templateKey=""
+    func configureTemplates(account:String,defaults:UserDefaults = .standard) {
+        templateDefaults=defaults;templateKey="linkCardMerchantTemplates."+account
+        templates=defaults.data(forKey:templateKey).flatMap{try? JSONDecoder().decode([MerchantTemplate].self,from:$0)} ?? []
+    }
+    func saveTemplate(_ template:MerchantTemplate) throws {
+        try template.validate()
+        var updated=templates
+        if let index=updated.firstIndex(where:{$0.id==template.id}) {updated[index]=template} else {updated.append(template)}
+        let data=try JSONEncoder().encode(updated)
+        templateDefaults?.set(data,forKey:templateKey);templates=updated
+        message="商家模板已保存。"
+    }
+    func deleteTemplate(_ id:UUID) {
+        templates.removeAll{$0.id==id}
+        templateDefaults?.set(try? JSONEncoder().encode(templates),forKey:templateKey)
+    }
+    var subscriptionRequests:[RequestItem] {requests.filter{RecurringSchedule.from($0.raw) != nil}}
+    private var eventTracker=RequestEventTracker()
+    var emitNotification:((RequestEvent,AppLanguage)->Void)?
+    private var notificationTask:Task<Void,Never>?
+    private var notificationGeneration=0
+    private var notificationSessionGeneration=0
+    private var notificationsEnabled=false
+    func observeEvents(_ items:[RequestItem]) {
+        for item in items {for event in eventTracker.observe(item) {if notificationsEnabled {emitNotification?(event,language)}}}
+    }
+    func setNotifications(_ enabled:Bool) {
+        notificationTask?.cancel();notificationGeneration += 1;notificationsEnabled=enabled
+        eventTracker=RequestEventTracker();observeEvents(requests)
+        guard enabled else {notificationTask=nil;return}
+        let generation=notificationGeneration
+        notificationTask=Task {[weak self] in
+            while !Task.isCancelled {
+                do {try await Task.sleep(nanoseconds:60_000_000_000)} catch {return}
+                guard let self=self,self.notificationGeneration==generation else {return}
+                guard self.isSignedIn,!self.checkingAccount,!self.loggingIn,!self.busy else {continue}
+                let sessionGeneration=self.notificationSessionGeneration
+                do {
+                    let result=try await self.api.list(history:true)
+                    guard !Task.isCancelled,self.notificationGeneration==generation else {return}
+                    guard self.isSignedIn,self.notificationSessionGeneration==sessionGeneration else {continue}
+                    var seen=Set<String>()
+                    let rows=objects(result).filter{str($0,"id").hasPrefix("lsrq_") && seen.insert(str($0,"id")).inserted}.map{RequestItem(raw:$0)}
+                    self.observeEvents(rows)
+                } catch {
+                    guard !Task.isCancelled,self.notificationGeneration==generation else {return}
+                    guard self.isSignedIn,self.notificationSessionGeneration==sessionGeneration else {continue}
+                    if (error as? LinkError)?.requiresLogin==true {self.handle(error)}
+                    else {self.message="状态通知检查暂时失败，请手动刷新列表。"}
+                }
+            }
+        }
+    }
+
     var loadingMessage:String? {
         if checkingAccount {return "正在检查登录并加载账户…"}
         if loggingIn {return "正在等待 Link 登录授权…"}
@@ -78,7 +135,7 @@ struct RequestItem: Identifiable {
         do {try ErrorLogStore.shared.append(ErrorReport(error:lastError));logWriteFailed=false}
         catch {logWriteFailed=true}
         if (error as? LinkError)?.requiresLogin == true {
-            isSignedIn=false;account=nil;spendLimits=nil;clearWalletFeatures();detail=[];methods=[];requests=[];createdIDs=[]
+            notificationSessionGeneration += 1;eventTracker=RequestEventTracker();isSignedIn=false;account=nil;spendLimits=nil;clearWalletFeatures();detail=[];methods=[];requests=[];createdIDs=[]
             approvalWatch?.cancel();pendingID="";approvalURL=""
         }
         message=error.localizedDescription
@@ -93,7 +150,7 @@ struct RequestItem: Identifiable {
         let expected=upgrade ? account : nil
         if upgrade && expected==nil {handle(LinkError(message:"请先刷新当前账户信息再授权交易读取。"));return}
         loggingIn=true;message="";loginURL=nil;loginPhrase=""
-        if !upgrade {approvalWatch?.cancel();detail=[];requests=[];createdIDs=[];approvalURL="";pendingID=""}
+        if !upgrade {notificationSessionGeneration += 1;eventTracker=RequestEventTracker();approvalWatch?.cancel();detail=[];requests=[];createdIDs=[];approvalURL="";pendingID=""}
         loginTask=Task {
             defer { self.loggingIn=false }
             do {
@@ -127,7 +184,7 @@ struct RequestItem: Identifiable {
             defer {busy=false}
             do {
                 try await api.logout()
-                isSignedIn=false;account=nil;spendLimits=nil;clearWalletFeatures();detail=[];methods=[];requests=[]
+                notificationSessionGeneration += 1;eventTracker=RequestEventTracker();isSignedIn=false;account=nil;spendLimits=nil;clearWalletFeatures();detail=[];methods=[];requests=[]
                 createdIDs=[];canceledIDs=[];lastCreatedID=nil
                 pendingID="";approvalURL="";loginURL=nil;loginPhrase=""
                 loggingIn=false;creationError=nil;lastError=""
@@ -161,6 +218,7 @@ struct RequestItem: Identifiable {
                     let result = try await self.api.retrieve(id)
                     guard !Task.isCancelled else { return }
                     let request = objects(result).first(where:{str($0,"id")==id}) ?? [:]
+                    self.observeEvents([RequestItem(raw:request)])
                     let status = str(request,"status")
                     if status == "approved" {
                         while self.busy { try await Task.sleep(nanoseconds:200_000_000) }
@@ -206,6 +264,7 @@ struct RequestItem: Identifiable {
             let item=RequestItem(raw:merged)
             if self.history || item.isActive {loaded.insert(item,at:0)}
         }
+        self.observeEvents(loaded)
         self.requests=loaded.map {item in
             guard self.terminalCancelIDs.contains(item.id) else {return item}
             var raw=item.raw;raw["_cancel_unavailable"]=true;return RequestItem(raw:raw)
@@ -310,6 +369,7 @@ struct RequestItem: Identifiable {
         let result = try await self.api.retrieve(id,card:true)
         guard !canceledIDs.contains(id) else {detail=[];message="该请求已取消，卡信息已清除。";return}
         let request = objects(result).first(where:{str($0,"id")==id}) ?? fallback
+        self.observeEvents([RequestItem(raw:request)])
         if let index=self.requests.firstIndex(where:{$0.id==id}) {
             var merged=self.requests[index].raw
             for (key,value) in request {merged[key]=value}
@@ -346,6 +406,7 @@ struct RequestItem: Identifiable {
         let result = try await self.api.create(body)
         guard let request = objects(result).first(where:{str($0,"id").hasPrefix("lsrq_")}) else { throw LinkError(message:"未返回 spend request ID") }
         let id = str(request,"id")
+        self.observeEvents([RequestItem(raw:request)])
         self.createdIDs.insert(id)
         self.requests.removeAll{$0.id==id}
         self.requests.insert(RequestItem(raw:request),at:0)

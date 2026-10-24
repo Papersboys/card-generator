@@ -241,3 +241,29 @@ In Create, enter the payment method, merchant, amount and item, then choose Paym
 Open the approval link after creation and approve in Link. Account/client support and recurrence rules are determined by Link; failures appear in the error banner. Review status and cancel eligible requests in the request list. The app does not schedule requests or initiate charges itself. Manage merchant subscriptions separately: canceling a Link request does not cancel a merchant subscription.
 
 Developer validation uses mocked APIs for all four intervals, one-time requests and invalid counts. No real recurring payment was created.
+
+
+## Merchant templates, subscriptions and status notifications (2.12.0)
+
+### Merchant templates
+
+1. In Create, enter the merchant, URL, item, amount, currency and one-time or recurring settings.
+2. Expand Merchant templates, name the template and choose Save current form.
+3. Select a saved template next time to populate purchase fields. Selecting a template replaces those fields.
+4. Save again to update the selected template, or delete it. Saving does not create a payment request.
+
+Templates are stored in local preferences per App account slot and survive restarts without cloud sync. They exclude payment method IDs, card numbers and CVCs. Logging out retains that slot's templates. Select a payment method and review/approve each new request in Link.
+
+### Subscription management
+
+Open Subscriptions to automatically load the current account's recurring requests. Select one to see its cadence, spending limit per period, currency, status and request expiry. View credentials, open an existing approval link, or cancel an eligible request. Include history shows ended recurring requests.
+
+A period limit is not a charge. This manages Link recurring payment credentials, not a complete merchant subscription inventory. It does not estimate the next billing date. Cancel merchant subscriptions separately after revoking credentials.
+
+### macOS status notifications
+
+Enable Status notifications at the bottom of the panel and grant macOS notification permission. While the app runs, it checks logged-in accounts' Link requests about once a minute; approval waiting also observes changes. Notifications cover observed approval/request-failure transitions and payment success/failure changes reported by Link. Initial historical records and duplicate results stay silent.
+
+Notifications exclude merchants, amounts, accounts, card numbers and CVCs. Turning off the option stops periodic checks; quitting the app stops monitoring. This is polling, not real-time webhooks. Sleep, network errors and Link data delays can delay notifications. Confirm final payment results against merchant records. Check macOS System Settings → Notifications → Link Card and Focus settings if delivery is missing.
+
+Offline mock regressions and app compilation were verified. No real payments or wallet changes were made, and system notification delivery has not been tested live.
