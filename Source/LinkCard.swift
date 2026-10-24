@@ -54,6 +54,18 @@ struct ContentView: View {
                 Spacer()
                 Picker("Language / 语言",selection:$model.language) {Text("中文").tag(AppLanguage.chinese);Text("English").tag(AppLanguage.english)}.pickerStyle(.segmented).labelsHidden().frame(width:145)
             }.padding(.bottom,2)
+            if let loading=model.loadingMessage {
+                HStack(spacing:12) {
+                    ProgressView().controlSize(.small)
+                    VStack(alignment:.leading,spacing:3) {
+                        Text(t(loading)).font(.callout.weight(.medium))
+                        Text(t("请稍候，完成后会自动更新。")).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }.padding(14).frame(maxWidth:.infinity,alignment:.leading)
+                    .background(Color.linkTeal.opacity(0.07),in:RoundedRectangle(cornerRadius:12))
+                    .accessibilityElement(children:.combine)
+            }
             VStack(alignment:.leading,spacing:12) {
             HStack {
                 Picker(t("账户"),selection:Binding(get:{accounts.activeID},set:{accounts.select($0)})) {
@@ -64,8 +76,8 @@ struct ContentView: View {
                 Button {accounts.add()} label: {Label(t("添加账户"),systemImage:"person.badge.plus")}.disabled(!accounts.canSwitch)
             }
             if !accounts.notice.isEmpty {Label(t(accounts.notice),systemImage:"person.crop.circle.badge.checkmark").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)}
-            HStack(spacing:12) { if model.busy { ProgressView().controlSize(.small) }; if model.checkingAccount {
-                ProgressView().controlSize(.small).help(t("正在检查登录…"))
+            HStack(spacing:12) { if model.checkingAccount {
+                Text(t("正在检查登录…")).font(.caption).foregroundStyle(.secondary)
             } else if model.isSignedIn {
                 HStack(spacing:6) {
                     Image(systemName:"checkmark.circle.fill").foregroundStyle(.green)
@@ -346,6 +358,10 @@ struct ContentView: View {
     main.addItem(editItem)
     NSApp.mainMenu=main
 }
+// Keep the status button clickable while its loading indicator is visible.
+final class MenuBarProgressIndicator:NSProgressIndicator {
+    override func hitTest(_ point:NSPoint)->NSView? {nil}
+}
 @MainActor final class AppDelegate:NSObject,NSApplicationDelegate,NSPopoverDelegate {
     let accounts:AccountManager
     var model:Model {accounts.activeModel}
@@ -356,6 +372,8 @@ struct ContentView: View {
     let popover=NSPopover()
     var contextMenu=NSMenu()
     var languageObserver:AnyCancellable?
+    var loadingObserver:AnyCancellable?
+    let statusProgress=MenuBarProgressIndicator()
     var outsideClickMonitor:Any?
     var localClickMonitor:Any?
     init(model:Model?=nil,startServices:Bool=true) {
@@ -365,6 +383,19 @@ struct ContentView: View {
         NSApp.setActivationPolicy(.accessory)
         status=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
         status.button?.image=menuBarMark()
+        statusProgress.style = .spinning
+        statusProgress.controlSize = .small
+        statusProgress.isDisplayedWhenStopped=false
+        statusProgress.translatesAutoresizingMaskIntoConstraints=false
+        if let button=status.button {
+            button.addSubview(statusProgress)
+            NSLayoutConstraint.activate([
+                statusProgress.centerXAnchor.constraint(equalTo:button.centerXAnchor),
+                statusProgress.centerYAnchor.constraint(equalTo:button.centerYAnchor),
+                statusProgress.widthAnchor.constraint(equalToConstant:16),
+                statusProgress.heightAnchor.constraint(equalToConstant:16)
+            ])
+        }
         status.button?.target=self;status.button?.action=#selector(togglePopover(_:))
         status.button?.sendAction(on:[.leftMouseUp,.rightMouseUp])
         popover.behavior = .transient
@@ -380,6 +411,20 @@ struct ContentView: View {
         if panels[accounts.activeID]==nil {panels[accounts.activeID]=NSHostingController(rootView:ContentView(model:model).environmentObject(accounts))}
         popover.contentViewController=panels[accounts.activeID]
         languageObserver=model.$language.sink {[weak self] language in self?.updateMenu(language)}
+        loadingObserver=model.$checkingAccount.combineLatest(model.$loggingIn,model.$busy,model.$language)
+            .sink {[weak self] checking,logging,busy,language in
+                guard let self=self else {return}
+                let key=checking ? "正在检查登录并加载账户…" : logging ? "正在等待 Link 登录授权…" : busy ? "正在加载或更新数据…" : "打开 Link Card"
+                self.status.button?.toolTip=L10n.text(key,language:language)
+                self.status.button?.setAccessibilityLabel(L10n.text(key,language:language))
+                if checking || logging || busy {
+                    self.status.button?.image=nil
+                    self.statusProgress.startAnimation(nil)
+                } else {
+                    self.statusProgress.stopAnimation(nil)
+                    self.status.button?.image=menuBarMark()
+                }
+            }
     }
     func switchAccount() {
         installAccountPanel()

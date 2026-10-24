@@ -40,6 +40,12 @@ struct RequestItem: Identifiable {
     private var loadedTransactionFilter=""
     func clearWalletFeatures() {verification=nil;transactions=[];transactionsLoaded=false;transactionsNeedAuthorization=false;transactionsHaveMore=false}
 
+    var loadingMessage:String? {
+        if checkingAccount {return "正在检查登录并加载账户…"}
+        if loggingIn {return "正在等待 Link 登录授权…"}
+        if busy {return "正在加载或更新数据…"}
+        return nil
+    }
     func start() {
         Task { await refreshAccount(); if isSignedIn { load() } }
     }

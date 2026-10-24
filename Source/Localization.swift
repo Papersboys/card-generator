@@ -8,6 +8,10 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "正在检查登录并加载账户…":"Checking sign-in and loading your account…",
+        "正在等待 Link 登录授权…":"Waiting for Link sign-in approval…",
+        "正在加载或更新数据…":"Loading or updating data…",
+        "请稍候，完成后会自动更新。":"Please wait. This will update automatically.",
         "刷新付款方式":"Refresh payment methods",
         "暂无付款方式，可点击右上角刷新按钮重试。":"No payment methods available. Use the refresh button at the top right to try again.",
         "付款周期":"Payment frequency", "单次付款":"One-time payment", "天":"Day", "周":"Week", "月":"Month", "年":"Year",

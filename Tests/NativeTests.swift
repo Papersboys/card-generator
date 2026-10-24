@@ -225,7 +225,13 @@ final class MockProtocol:URLProtocol {
         precondition(login.phrase=="MOCK PHRASE")
         let loggedIn=try await api.finishLogin(login);precondition(loggedIn)
         let model=Model(api:api)
+        precondition(model.loadingMessage=="正在检查登录并加载账户…")
         await model.refreshAccount()
+        precondition(model.loadingMessage==nil)
+        model.loggingIn=true;precondition(model.loadingMessage=="正在等待 Link 登录授权…")
+        model.loggingIn=false;model.busy=true;precondition(model.loadingMessage=="正在加载或更新数据…")
+        model.busy=false;precondition(model.loadingMessage==nil)
+        print("PASS: loading state distinguishes account checks, login authorization and data operations; clears when idle")
         precondition(model.isSignedIn && !model.checkingAccount)
         precondition(model.account?.name=="Example User" && model.account?.email=="example@example.com")
         // A temporary network error must not turn an existing session into a logged-out UI.
