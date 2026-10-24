@@ -19,6 +19,7 @@ struct ContentView: View {
     @State var confirmCreate = false
     @State var toCancel:RequestItem?
     @State var copiedField:String?
+    @State var showLimits=false
     var body: some View {
         GeometryReader { geometry in
         VStack(spacing:0) {
@@ -41,14 +42,23 @@ struct ContentView: View {
             }.padding(14).background(Color.red.opacity(0.08)).overlay(RoundedRectangle(cornerRadius:10).stroke(Color.red.opacity(0.25))).clipShape(RoundedRectangle(cornerRadius:10)).padding(.horizontal,24).padding(.top,16)
         }
         ScrollView { VStack(alignment:.leading,spacing:20) {
-            HStack(spacing:12) { Image(systemName:"creditcard.fill").foregroundStyle(.cyan); Text("Link Card").font(.title2.bold()); Spacer(); Picker("Language / 语言",selection:$model.language) { Text("中文").tag(AppLanguage.chinese); Text("English").tag(AppLanguage.english) }.pickerStyle(.segmented).labelsHidden().frame(width:145) }
+            HStack(spacing:12) {
+                LinkMark().frame(width:44,height:44)
+                VStack(alignment:.leading,spacing:2) {
+                    Text("Link Card").font(.system(size:23,weight:.bold,design:.rounded))
+                    Text(t("你的付款工作台")).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Picker("Language / 语言",selection:$model.language) {Text("中文").tag(AppLanguage.chinese);Text("English").tag(AppLanguage.english)}.pickerStyle(.segmented).labelsHidden().frame(width:145)
+            }.padding(.bottom,2)
+            VStack(alignment:.leading,spacing:12) {
             HStack {
                 Picker(t("账户"),selection:Binding(get:{accounts.activeID},set:{accounts.select($0)})) {
                     ForEach(Array(accounts.records.enumerated()),id:\.element.id) {index,record in
                         Text(record.label.isEmpty ? t("账户")+" "+String(index+1) : record.label).tag(record.id)
                     }
                 }.disabled(!accounts.canSwitch)
-                Button(t("添加账户")) {accounts.add()}.disabled(!accounts.canSwitch)
+                Button {accounts.add()} label: {Label(t("添加账户"),systemImage:"person.badge.plus")}.disabled(!accounts.canSwitch)
             }
             HStack(spacing:12) { if model.busy { ProgressView().controlSize(.small) }; if model.checkingAccount {
                 ProgressView().controlSize(.small).help(t("正在检查登录…"))
@@ -65,7 +75,9 @@ struct ContentView: View {
                 }.frame(maxWidth:200,alignment:.leading).help([model.account?.name,model.account?.email].compactMap{$0}.filter{!$0.isEmpty}.joined(separator:"\n"))
                 Button(t("退出登录")) {model.logout()}.disabled(model.busy || model.checkingAccount || model.loggingIn)
             } else { Button(t("登录 Link")) { model.login() }.disabled(model.loggingIn) }; Spacer(); Button(t("清除卡信息")) { model.detail=[] }.disabled(model.detail.isEmpty) }
+            }.panelSurface()
             if model.isSignedIn {
+                DisclosureGroup(t("消费限额"),isExpanded:$showLimits) {
                 VStack(alignment:.leading,spacing:10) {
                     HStack {
                         Label(t("消费限额"),systemImage:"gauge.with.dots.needle.50percent").font(.headline)
@@ -89,17 +101,28 @@ struct ContentView: View {
                     } else {
                         Text(t(model.checkingAccount ? "正在加载额度…" : "Link 暂未返回消费限额，请尝试刷新。")).font(.caption).foregroundStyle(.secondary)
                     }
-                }.padding(12).frame(maxWidth:.infinity,alignment:.leading).background(.quaternary.opacity(0.3)).clipShape(RoundedRectangle(cornerRadius:10))
+                }.padding(.top,10).frame(maxWidth:.infinity,alignment:.leading)
+                }.panelSurface()
             }
-            Picker("",selection:$tab) { Text(t("请求 / 历史")).tag(0); Text(t("创建 Generate")).tag(1); Text(t("待批准")).tag(2) }.pickerStyle(.segmented)
+            navigationTabs
+            if !detailValue("Card number").isEmpty {credentialPanel}
             if tab == 0 || tab == 2 {
                 HStack { if tab == 0 { Toggle(t("包含历史"),isOn:$model.history).onChange(of:model.history) { _ in model.load() } }; Spacer(); Button(t("刷新列表")) { model.load() } }.disabled(model.busy)
-                List(selection:$selected) { ForEach(tab == 2 ? model.requests.filter(\.needsApproval) : model.requests) { r in
-                    HStack { VStack(alignment:.leading) { Text(r.merchant.isEmpty ? t("Unknown merchant") : r.merchant).font(.headline); Text(r.id).font(.system(.caption,design:.monospaced)).lineLimit(1).truncationMode(.middle); Text("\(str(r.raw,"amount")) \(str(r.raw,"currency").uppercased()) \(t("最小单位"))").font(.caption) }; Spacer(); Text(L10n.status(r.status,language:model.language)).foregroundStyle(r.status == "approved" ? .green : .secondary); Button(t("取消请求"),role:.destructive) {toCancel=r}.buttonStyle(.borderless).disabled(model.busy || !r.canCancel) }.tag(r.id)
-                } }.frame(minHeight:145,maxHeight:220)
+                if visibleRequests.isEmpty {
+                    VStack(spacing:10) {
+                        Image(systemName:tab==2 ? "checkmark.seal" : "rectangle.stack").font(.system(size:28,weight:.light)).foregroundStyle(Color.linkTeal)
+                        Text(t(tab==2 ? "没有待批准的请求。" : "还没有请求")).font(.headline)
+                        Text(t(tab==2 ? "批准入口会在创建请求后显示。" : "创建付款请求，批准后即可查看卡信息。")).font(.caption).foregroundStyle(.secondary)
+                        if tab==0 {Button(t("创建付款请求")) {tab=1}.buttonStyle(.borderedProminent)}
+                    }.frame(maxWidth:.infinity).padding(.vertical,28).panelSurface()
+                } else {
+                List(selection:$selected) { ForEach(visibleRequests) { r in
+                    HStack { VStack(alignment:.leading) { Text(r.merchant.isEmpty ? t("Unknown merchant") : r.merchant).font(.headline); Text(r.id).font(.system(.caption,design:.monospaced)).lineLimit(1).truncationMode(.middle); Text("\(str(r.raw,"amount")) \(str(r.raw,"currency").uppercased()) \(t("最小单位"))").font(.caption) }; Spacer(); Text(L10n.status(r.status,language:model.language)).font(.caption.weight(.medium)).padding(.horizontal,9).padding(.vertical,5).foregroundStyle(r.status == "approved" ? Color.linkTeal : Color.secondary).background((r.status == "approved" ? Color.linkTeal : Color.secondary).opacity(0.1),in:Capsule()); Button(t("取消请求"),role:.destructive) {toCancel=r}.buttonStyle(.borderless).disabled(model.busy || !r.canCancel) }.tag(r.id)
+                } }.frame(height:min(220,CGFloat(visibleRequests.count)*78+16)).scrollContentBackground(.hidden).panelSurface()
+                }
                 if tab == 2 {
                     Text(t("选择请求查看详情，批准操作将在 Link 中完成。")).font(.caption).foregroundStyle(.secondary)
-                    if model.requests.filter(\.needsApproval).isEmpty {Text(t("没有待批准的请求。")).foregroundStyle(.secondary)}
+
                     if let request=model.requests.first(where:{$0.id==selected}),request.needsApproval {
                         VStack(alignment:.leading,spacing:8) {
                             Text(str(request.raw,"merchant_url")).textSelection(.enabled)
@@ -152,20 +175,11 @@ struct ContentView: View {
                 ScrollView { Grid(alignment:.leading,horizontalSpacing:12,verticalSpacing:10) { ForEach(displayedDetails.indices,id:\.self) { i in
                     let field=displayedDetails[i]
                     GridRow {
-                        Text(t(field.0)).foregroundStyle(.cyan).frame(width:112,alignment:.leading)
+                        Text(t(field.0)).foregroundStyle(.secondary).font(.caption.weight(.medium)).frame(width:100,alignment:.leading)
                         Text(field.0 == "Status" ? L10n.status(field.1,language:model.language) : display(field.1)).font(.system(.body,design:.monospaced)).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading).fixedSize(horizontal:false,vertical:true)
-                        if ["Card number","CVC","Expiration"].contains(field.0) {
-                            Button {
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(field.1,forType:.string)
-                                copiedField=field.0
-                                Task {try? await Task.sleep(nanoseconds:2_000_000_000);if copiedField==field.0 {copiedField=nil}}
-                            } label: {Label(t(copiedField==field.0 ? "已复制" : "复制"),systemImage:copiedField==field.0 ? "checkmark" : "doc.on.doc")}
-                            .controlSize(.small).disabled(field.1.isEmpty || field.1=="—")
-                            .accessibilityLabel(t("复制")+" "+t(field.0))
-                        } else {Color.clear.frame(width:1,height:1)}
+
                     }; Divider()
-                } }.padding(12) }.frame(height:300).background(.quaternary.opacity(0.3)).clipShape(RoundedRectangle(cornerRadius:8))
+                } }.padding(12) }.frame(height:220).panelSurface()
             }
             if !model.message.isEmpty { ScrollView { Text(t(model.message)).font(.caption).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading) }.frame(maxHeight:90) }
             Text(t("原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭面板会清除显示。")).font(.caption2).foregroundStyle(.secondary)
@@ -188,9 +202,9 @@ struct ContentView: View {
                 Button(t("退出")) {NSApp.terminate(nil)}.buttonStyle(.link).font(.caption)
             }
 
-        }.frame(width:min(1000,max(0,geometry.size.width-48))).padding(24).frame(maxWidth:.infinity) }
+        }.frame(width:min(1000,max(0,geometry.size.width-40))).padding(20).frame(maxWidth:.infinity) }
         }
-        }.background(Color(nsColor:.windowBackgroundColor)).frame(minWidth:520,minHeight:480)
+        }.background(Color(nsColor:.windowBackgroundColor)).tint(.linkTeal).frame(minWidth:420,minHeight:480)
         .onChange(of:model.lastCreatedID) {selected=$0;tab=2}
         .onChange(of:model.detail.first(where:{$0.0=="Card number"})?.1) {_ in copiedField=nil}
         .onChange(of:tab) { value in if value == 2 {model.load()} }
@@ -198,10 +212,58 @@ struct ContentView: View {
         .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context) } } message: { Text(createSummary) }
         .alert(t("取消这个请求？"),isPresented:Binding(get:{toCancel != nil},set:{if !$0 {toCancel=nil}})) { Button(t("返回"),role:.cancel){toCancel=nil}; Button(t("取消请求"),role:.destructive){if let r=toCancel {model.cancel(r)};toCancel=nil} } message:{Text("\(toCancel?.merchant ?? "")\n\(toCancel?.id ?? "")\n\(t("这不会撤销已完成的付款。"))")}
     }
+    var visibleRequests:[RequestItem] {tab==2 ? model.requests.filter(\.needsApproval) : model.requests}
+    func detailValue(_ key:String)->String {model.detail.first{$0.0==key}?.1 ?? ""}
+    var navigationTabs:some View {
+        HStack(spacing:4) {
+            ForEach([(0,"请求 / 历史","rectangle.stack"),(1,"创建 Generate","plus.circle"),(2,"待批准","checkmark.seal")],id:\.0) {index,title,icon in
+                Button {tab=index} label: {
+                    Label(t(title),systemImage:icon).font(.system(size:12,weight:.semibold)).frame(maxWidth:.infinity).padding(.vertical,10)
+                        .foregroundStyle(tab==index ? Color.white : Color.secondary)
+                        .background(tab==index ? Color.linkInk : Color.clear,in:RoundedRectangle(cornerRadius:10))
+                }.buttonStyle(.plain).accessibilityAddTraits(tab==index ? [.isSelected] : [])
+            }
+        }.padding(4).background(Color.primary.opacity(0.045),in:RoundedRectangle(cornerRadius:14))
+    }
+    func copyCredential(_ key:String)->some View {
+        Button {
+            NSPasteboard.general.clearContents();NSPasteboard.general.setString(detailValue(key),forType:.string)
+            copiedField=key
+            Task {try? await Task.sleep(nanoseconds:2_000_000_000);if copiedField==key {copiedField=nil}}
+        } label: {Label(t(copiedField==key ? "已复制" : "复制"),systemImage:copiedField==key ? "checkmark" : "doc.on.doc")}
+        .buttonStyle(.plain).font(.caption.weight(.medium)).padding(.horizontal,10).padding(.vertical,7)
+        .background(.white.opacity(0.12),in:RoundedRectangle(cornerRadius:8))
+        .disabled(detailValue(key).isEmpty).accessibilityLabel(t("复制")+" "+t(key))
+    }
+    var credentialPanel:some View {
+        VStack(alignment:.leading,spacing:18) {
+            HStack {
+                Label(t("虚拟卡"),systemImage:"creditcard").font(.caption.weight(.semibold)).foregroundStyle(Color.linkMint)
+                Spacer()
+                Text(detailValue("Brand").uppercased()).font(.system(.headline,design:.rounded)).italic()
+            }
+            VStack(alignment:.leading,spacing:7) {
+                Text(t("Card number")).font(.caption).foregroundStyle(.white.opacity(0.7))
+                HStack {
+                    Text(detailValue("Card number")).font(.system(size:23,weight:.medium,design:.monospaced)).textSelection(.enabled).minimumScaleFactor(0.65).lineLimit(1)
+                    Spacer(minLength:8);copyCredential("Card number")
+                }
+            }
+            HStack(spacing:24) {
+                ForEach(["CVC","Expiration"],id:\.self) {key in
+                    VStack(alignment:.leading,spacing:7) {
+                        Text(t(key)).font(.caption).foregroundStyle(.white.opacity(0.7))
+                        HStack {Text(display(detailValue(key))).font(.system(.body,design:.monospaced)).textSelection(.enabled);Spacer(minLength:6);copyCredential(key)}
+                    }.frame(maxWidth:.infinity,alignment:.leading)
+                }
+            }
+        }.foregroundStyle(.white).padding(22).background(LinearGradient(colors:[.linkInk,Color(red:0.08,green:0.28,blue:0.33)],startPoint:.topLeading,endPoint:.bottomTrailing))
+        .clipShape(RoundedRectangle(cornerRadius:20)).overlay(RoundedRectangle(cornerRadius:20).stroke(.white.opacity(0.12)))
+    }
     var displayedDetails:[(String,String)] {
         let priority=["Card number","CVC","Expiration","Billing address","Brand","Valid until"]
         if model.detail.first(where:{$0.0=="Card number"})?.1.isEmpty != false {return model.detail.filter{!priority.contains($0.0)}}
-        return priority.compactMap {key in model.detail.first{$0.0==key}} + model.detail.filter{!priority.contains($0.0)}
+        return model.detail.filter{!["Card number","CVC","Expiration"].contains($0.0)}
     }
     func placeholder(_ title:String)->String {
         switch title {
@@ -269,7 +331,7 @@ struct ContentView: View {
     func applicationDidFinishLaunching(_ notification:Notification) {
         NSApp.setActivationPolicy(.accessory)
         status=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
-        status.button?.image=NSImage(systemSymbolName:"creditcard",accessibilityDescription:"Link Card")
+        status.button?.image=menuBarMark()
         status.button?.target=self;status.button?.action=#selector(togglePopover(_:))
         status.button?.sendAction(on:[.leftMouseUp,.rightMouseUp])
         popover.behavior = .transient

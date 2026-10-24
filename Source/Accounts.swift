@@ -6,6 +6,7 @@ struct AccountRecord:Codable,Identifiable {
     var label:String
 }
 @MainActor final class AccountManager:ObservableObject {
+    private let persistAccounts:Bool
     private static let recordsKey="linkCardAccounts"
     private static let activeKey="linkCardActiveAccount"
     @Published var records:[AccountRecord]
@@ -15,6 +16,7 @@ struct AccountRecord:Codable,Identifiable {
     var onSwitch:(()->Void)?
     var activeModel:Model {models[activeID]!}
     init(initialModel:Model?=nil) {
+        persistAccounts=initialModel==nil
         let saved=UserDefaults.standard.data(forKey:Self.recordsKey).flatMap{try? JSONDecoder().decode([AccountRecord].self,from:$0)} ?? []
         var seen=Set<String>()
         var restored=initialModel == nil ? saved.filter{($0.id=="link" || UUID(uuidString:$0.id) != nil) && seen.insert($0.id).inserted} : []
@@ -40,6 +42,7 @@ struct AccountRecord:Codable,Identifiable {
         }
     }
     private func save() {
+        guard persistAccounts else {return}
         UserDefaults.standard.set(try? JSONEncoder().encode(records),forKey:Self.recordsKey)
         UserDefaults.standard.set(activeID,forKey:Self.activeKey)
     }

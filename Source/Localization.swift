@@ -27,6 +27,7 @@ enum L10n {
         "请求状态响应无效。":"Invalid request status response.",
         "此请求已结束，无法再次取消。已刷新服务端状态。":"This request is in a terminal state and cannot be canceled. Server status refreshed.",
         "此请求已结束，无法取消；刷新状态失败，请稍后刷新列表。":"This request is in a terminal state and cannot be canceled. Status refresh failed; refresh the list later.",
+        "你的付款工作台":"Your payment workspace", "虚拟卡":"Virtual card", "还没有请求":"No requests yet", "批准入口会在创建请求后显示。":"Approval links appear after you create a request.", "创建付款请求，批准后即可查看卡信息。":"Create a request and approve it to view card details.", "创建付款请求":"Create a request",
         "操作失败":"Action failed", "复制错误":"Copy error", "关闭错误提示":"Dismiss error",
         "无法创建付款请求":"Unable to create spend request",
         "无法确认新请求状态，请稍后刷新。":"Unable to confirm the new request status. Refresh again shortly.",

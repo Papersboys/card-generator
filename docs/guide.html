@@ -36,6 +36,7 @@
 <li><a href="#_9">已结束的请求无法取消</a></li>
 </ul>
 </li>
+<li><a href="#v290">新版界面 (v2.9.0)</a></li>
 </ul>
 </div>
 </aside><article id="article" class="guide-article"><p>Link Card 是 macOS 菜单栏 App，负责创建 Link 付款请求、读取批准后的虚拟卡信息和取消请求。它不会替你在商家网站下单，也不会自动提交商家付款表单。</p>
@@ -317,6 +318,8 @@
 <p>在账户信息上方的「账户」下拉框切换账户；点击「添加账户」启动新的 Link 授权，其他账户保持登录。在 Link 授权页面确认登录的是目标账户；Safari 可能仍登录着上一个账户。</p>
 <p>每个账户独立保存 Keychain 凭证、API 会话、请求和消费额度。「退出登录」只退出当前账户；旧版本已有的登录保留为第一个账户。已保存的登录可在 App 重启后继续使用，实际受 Link 授权过期或撤销影响。每个账户的表单草稿在本次运行期间独立保留，切换时清除显示的卡凭证；已开始的批准状态检查可在 App 运行期间继续。操作或登录进行中暂不允许切换，可先点击「停止等待」取消登录。CLI 仍为独立的单账户工具。各账户额度独立展示，不合并也不提高额度。</p>
 <h3 id="_9">已结束的请求无法取消</h3>
-<p>当 Link 返回终态取消冲突（HTTP 409 terminal state）时，App 会读取最新状态、禁用重复取消并清除该请求的卡信息显示。未包含历史时，已结束请求从活跃列表移除；勾选包含历史可查看最新状态。如果状态刷新失败，错误栏会明确提示，不会显示取消成功。</p></article></main>
+<p>当 Link 返回终态取消冲突（HTTP 409 terminal state）时，App 会读取最新状态、禁用重复取消并清除该请求的卡信息显示。未包含历史时，已结束请求从活跃列表移除；勾选包含历史可查看最新状态。如果状态刷新失败，错误栏会明确提示，不会显示取消成功。</p>
+<h2 id="v290">新版界面 (v2.9.0)</h2>
+<p>更新 App 和菜单栏图标；账户操作分组，额度可折叠；卡号、CVC 和有效期集中展示，各自提供复制按钮。早期截图用于说明流程，不代表最新样式。图标源文件： <code>scripts/draw-icon.swift</code>。</p></article></main>
 <footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>独立开源项目 · 非 Link / Stripe 官方产品</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
 </body></html>

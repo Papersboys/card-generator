@@ -217,3 +217,7 @@ Each account has its own Keychain token entry, API session, requests and spend l
 ### Canceling a terminal request
 
 A terminal-state HTTP 409 triggers a status refresh, disables repeat cancellation and clears displayed credentials for that request. Inactive requests are removed from the active list; enable history to inspect their status. A failed status refresh is reported explicitly, never as successful cancellation.
+
+## Refreshed interface (v2.9.0)
+
+New linked-card artwork in the app icon, menu bar and header; grouped account controls; collapsible spend limits; icon navigation; card number, CVC and expiration grouped with individual Copy buttons; actionable empty states. Earlier screenshots illustrate the workflow rather than the current styling. Reproducible icon source: `scripts/draw-icon.swift`.
