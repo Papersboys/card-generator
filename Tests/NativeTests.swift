@@ -10,6 +10,8 @@ final class MockProtocol:URLProtocol {
     static var force401=false
     static var pollCount=0
     static var profileUnavailable=false
+    static var profileID="user_mock"
+    static var profileEmail="example@example.com"
     static var rejectCancel=false
     static var terminalCancel=false
     static var conflictCancel=false
@@ -35,7 +37,7 @@ final class MockProtocol:URLProtocol {
         } else {
             precondition(request.value(forHTTPHeaderField:"Authorization")?.hasPrefix("Bearer MOCK_")==true)
             switch path {
-            case "/userinfo":payload=["name":"Example User","email":"example@example.com"]
+            case "/userinfo":payload=["id":Self.profileID,"name":"Example User","email":Self.profileEmail]
             case "/payment-details": payload=["payment_details":[["id":"csmrpd_mock","card_details":["brand":"visa","last4":"4242"]]]]
             case "/spend_requests":
                 if request.httpMethod=="POST" {
@@ -116,6 +118,31 @@ final class MockProtocol:URLProtocol {
         precondition((TokenStore.query("A")[kSecAttrAccount as String] as? String)=="A")
         precondition((TokenStore.query("B")[kSecAttrAccount as String] as? String)=="B")
         print("PASS: simultaneous account sessions use isolated tokens and Keychain keys; logout leaves the other session intact")
+        precondition(sameLinkAccount(id:"usr_1",email:"a@example.com",otherID:"usr_1",otherEmail:"changed@example.com"))
+        precondition(sameLinkAccount(id:"",email:" A@EXAMPLE.COM ",otherID:"usr_1",otherEmail:"a@example.com"))
+        precondition(!sameLinkAccount(id:"usr_1",email:"a@example.com",otherID:"usr_2",otherEmail:"a@example.com"))
+        precondition(!sameLinkAccount(id:"",email:"",otherID:"",otherEmail:""))
+        let original=Model(api:api);original.checkingAccount=false;original.isSignedIn=true
+        original.account=SignedInAccount(["id":"user_mock","email":"example@example.com"])
+        let manager=AccountManager(initialModel:original,makeModel:{slot in
+            Model(api:NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_CANDIDATE",refresh_token:nil,expires_at:Date().timeIntervalSince1970*1000+600000),persistTokens:false,storageAccount:slot))
+        })
+        manager.add(startLogin:false)
+        let duplicate=manager.activeModel
+        let beforeAdmission=MockProtocol.calls.count
+        duplicate.loadMethods()
+        precondition(MockProtocol.calls.count==beforeAdmission)
+        await duplicate.refreshAccount()
+        precondition(manager.records.count==1 && manager.activeModel===original && manager.notice.contains("已登录"))
+        let duplicateSession=await duplicate.api.hasSession();precondition(!duplicateSession)
+        let originalSession=await original.api.hasSession();precondition(originalSession)
+        manager.add(startLogin:false)
+        let distinct=manager.activeModel
+        MockProtocol.profileID="user_distinct";MockProtocol.profileEmail="other@example.com"
+        await distinct.refreshAccount()
+        precondition(manager.records.count==2 && manager.activeModel===distinct && distinct.isSignedIn && !distinct.awaitingAccountAdmission)
+        MockProtocol.profileID="user_mock";MockProtocol.profileEmail="example@example.com"
+        print("PASS: duplicate account admission is rejected, temporary session removed, original preserved; distinct users accepted; unverified operations blocked")
         let list=try await api.list(history:true)
         precondition(objects(list).contains{str($0,"id")=="lsrq_mock"})
         precondition(MockProtocol.calls.last!.url!.query=="include_history=true")

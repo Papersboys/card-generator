@@ -320,6 +320,7 @@
 <h3 id="_9">已结束的请求无法取消</h3>
 <p>当 Link 返回终态取消冲突（HTTP 409 terminal state）时，App 会读取最新状态、禁用重复取消并清除该请求的卡信息显示。未包含历史时，已结束请求从活跃列表移除；勾选包含历史可查看最新状态。如果状态刷新失败，错误栏会明确提示，不会显示取消成功。</p>
 <h2 id="v290">新版界面 (v2.9.0)</h2>
-<p>更新 App 和菜单栏图标；账户操作分组，额度可折叠；卡号、CVC 和有效期集中展示，各自提供复制按钮。早期截图用于说明流程，不代表最新样式。图标源文件： <code>scripts/draw-icon.swift</code>。</p></article></main>
+<p>更新 App 和菜单栏图标；账户操作分组，额度可折叠；卡号、CVC 和有效期集中展示，各自提供复制按钮。早期截图用于说明流程，不代表最新样式。图标源文件： <code>scripts/draw-icon.swift</code>。</p>
+<p>(v2.9.1) 添加账户时，Link 授权返回身份后检查重复登录：同一用户已登录时拒绝新增，仅清除本次新授权的本地凭证，返回原账户。优先比较用户 ID，缺失时比较邮箱；身份验证完成前不允许请求或付款操作。</p></article></main>
 <footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>独立开源项目 · 非 Link / Stripe 官方产品</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
 </body></html>

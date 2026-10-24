@@ -26,6 +26,8 @@ struct RequestItem: Identifiable {
     @Published var isSignedIn=false
     @Published var checkingAccount=true
     @Published var account:SignedInAccount?
+    @Published var awaitingAccountAdmission=false
+    var accountAdmission:((SignedInAccount) async throws -> Bool)?
     @Published var spendLimits:[String:Any]?
     func start() {
         Task { await refreshAccount(); if isSignedIn { load() } }
@@ -38,7 +40,12 @@ struct RequestItem: Identifiable {
         guard isSignedIn else { account=nil;spendLimits=nil;return }
         do {
             let profile=try await api.userInfo()
-            account=SignedInAccount(profile)
+            let identity=SignedInAccount(profile)
+            if let admission=accountAdmission {
+                isSignedIn=false
+                guard try await admission(identity) else {account=nil;return}
+            }
+            account=identity
             spendLimits=profile["agent_wallet_spend_limits"] as? [String:Any]
             isSignedIn=true
         } catch {
@@ -157,6 +164,7 @@ struct RequestItem: Identifiable {
         }
     }
     func perform(onFailure:((Error)->Void)?=nil,_ action: @escaping () async throws -> Void) {
+        guard !awaitingAccountAdmission else {message="正在验证新账户身份，请完成登录后重试。";return}
         guard !busy else { return }; busy = true; message = ""
         Task { do { try await action() } catch { handle(error);onFailure?(error) }; busy = false }
     }

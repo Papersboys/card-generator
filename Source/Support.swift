@@ -17,9 +17,11 @@ func find(_ value: Any, _ keys: [String]) -> String {
 struct LinkError: LocalizedError { let message: String; var requiresLogin=false; var httpStatus:Int?=nil; var errorDescription: String? { message } }
 
 struct SignedInAccount {
+    let id:String
     let name:String
     let email:String
     init(_ data:[String:Any]) {
+        id=str(data,"id")
         let fullName=str(data,"name").trimmingCharacters(in:.whitespacesAndNewlines)
         name=fullName.isEmpty ? [str(data,"first_name"),str(data,"last_name")].filter{!$0.isEmpty}.joined(separator:" ") : fullName
         email=str(data,"email")
@@ -42,4 +44,11 @@ func spendLimitValue(_ row:[String:Any]?,_ key:String)->String {
     if value is NSNull {return key=="used" ? "未返回" : "无限额"}
     guard let number=value as? NSNumber,CFGetTypeID(number) != CFBooleanGetTypeID() else {return "未返回"}
     return String(format:"USD %.2f",number.doubleValue/100)
+}
+
+func sameLinkAccount(id:String,email:String,otherID:String,otherEmail:String)->Bool {
+    if !id.isEmpty && !otherID.isEmpty {return id==otherID}
+    let email=email.trimmingCharacters(in:.whitespacesAndNewlines).lowercased()
+    let other=otherEmail.trimmingCharacters(in:.whitespacesAndNewlines).lowercased()
+    return !email.isEmpty && email==other
 }

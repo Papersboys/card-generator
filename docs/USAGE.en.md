@@ -221,3 +221,5 @@ A terminal-state HTTP 409 triggers a status refresh, disables repeat cancellatio
 ## Refreshed interface (v2.9.0)
 
 New linked-card artwork in the app icon, menu bar and header; grouped account controls; collapsible spend limits; icon navigation; card number, CVC and expiration grouped with individual Copy buttons; actionable empty states. Earlier screenshots illustrate the workflow rather than the current styling. Reproducible icon source: `scripts/draw-icon.swift`.
+
+Duplicate account protection (v2.9.1): after Link authorization returns the identity, Add account rejects an already-signed-in user, removes only the newly authorized local session, and returns to the existing account. User IDs are compared first, with normalized email as a fallback. Payment/request operations are blocked until the new identity is verified.

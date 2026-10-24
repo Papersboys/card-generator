@@ -60,6 +60,7 @@ struct ContentView: View {
                 }.disabled(!accounts.canSwitch)
                 Button {accounts.add()} label: {Label(t("添加账户"),systemImage:"person.badge.plus")}.disabled(!accounts.canSwitch)
             }
+            if !accounts.notice.isEmpty {Label(t(accounts.notice),systemImage:"person.crop.circle.badge.checkmark").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)}
             HStack(spacing:12) { if model.busy { ProgressView().controlSize(.small) }; if model.checkingAccount {
                 ProgressView().controlSize(.small).help(t("正在检查登录…"))
             } else if model.isSignedIn {
