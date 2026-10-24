@@ -37,6 +37,7 @@
 </ul>
 </li>
 <li><a href="#refreshed-interface-v290">Refreshed interface (v2.9.0)</a></li>
+<li><a href="#wallet-tools-v2100">Wallet tools (v2.10.0)</a></li>
 </ul>
 </div>
 </aside><article id="article" class="guide-article"><p>Link Card is a macOS menu-bar app for creating Link spend requests, retrieving approved virtual card details, and canceling requests. It does not place merchant orders or submit merchant checkout forms for you.</p>
@@ -321,6 +322,14 @@
 <p>A terminal-state HTTP 409 triggers a status refresh, disables repeat cancellation and clears displayed credentials for that request. Inactive requests are removed from the active list; enable history to inspect their status. A failed status refresh is reported explicitly, never as successful cancellation.</p>
 <h2 id="refreshed-interface-v290">Refreshed interface (v2.9.0)</h2>
 <p>New linked-card artwork in the app icon, menu bar and header; grouped account controls; collapsible spend limits; icon navigation; card number, CVC and expiration grouped with individual Copy buttons; actionable empty states. Earlier screenshots illustrate the workflow rather than the current styling. Reproducible icon source: <code>scripts/draw-icon.swift</code>.</p>
-<p>Duplicate account protection (v2.9.1): after Link authorization returns the identity, Add account rejects an already-signed-in user, removes only the newly authorized local session, and returns to the existing account. User IDs are compared first, with normalized email as a fallback. Payment/request operations are blocked until the new identity is verified.</p></article></main>
+<p>Duplicate account protection (v2.9.1): after Link authorization returns the identity, Add account rejects an already-signed-in user, removes only the newly authorized local session, and returns to the existing account. User IDs are compared first, with normalized email as a fallback. Payment/request operations are blocked until the new identity is verified.</p>
+<h2 id="wallet-tools-v2100">Wallet tools (v2.10.0)</h2>
+<ul>
+<li><strong>Activity:</strong> choose Link, external-connection, or all transactions; optionally enter YYYY-MM-DD start/end dates, refresh, and load subsequent pages. Empty results and insufficient permissions are distinct. Data comes from Link or connected financial accounts and is not a full merchant settlement ledger.</li>
+<li><strong>Authorize transactions:</strong> explicitly requests read_link_transactions and read_external_transactions in Link, merged with existing granted permissions. Confirm the current account in the browser. The previous local token is replaced only after the returned account matches. Canceling before approval keeps the existing local session; Link controls remote grant revocation. This public client/account may not support every requested permission, in which case the API error remains visible.</li>
+<li><strong>Cards:</strong> load wallet payment methods; Edit opens nickname/default controls. A second confirmation saves both fields to Link. Empty nickname clears it; choosing a new default replaces the previous wallet default. Failures preserve the last confirmed local values.</li>
+<li><strong>Verification:</strong> the account area shows the returned requirement or pending/completed status and a trusted Link action URL when provided. Complete verification on Link; this app does not collect identity documents or SSNs.</li>
+</ul>
+<p>All views remain isolated to the selected Link account. Transaction data stays in memory and is cleared on logout/session invalidation; it is not included in local error logs. Implementations follow the official stripe/link-cli SDK resources. Offline tests cover APIs and state transitions; no live permission grants, financial reads, or wallet updates were performed during development verification.</p></article></main>
 <footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>Independent open-source project · Not affiliated with Link or Stripe</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
 </body></html>

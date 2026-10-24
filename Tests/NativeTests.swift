@@ -12,6 +12,9 @@ final class MockProtocol:URLProtocol {
     static var profileUnavailable=false
     static var profileID="user_mock"
     static var profileEmail="example@example.com"
+    static var methodBody:[String:Any]=[:]
+    static var transactionForbidden=false
+    static var rejectMethodUpdate=false
     static var rejectCancel=false
     static var terminalCancel=false
     static var conflictCancel=false
@@ -39,6 +42,18 @@ final class MockProtocol:URLProtocol {
             switch path {
             case "/userinfo":payload=["id":Self.profileID,"name":"Example User","email":Self.profileEmail]
             case "/payment-details": payload=["payment_details":[["id":"csmrpd_mock","card_details":["brand":"visa","last4":"4242"]]]]
+            case "/payment-details/csmrpd_mock":
+                var bytes=request.httpBody ?? Data()
+                if bytes.isEmpty,let stream=request.httpBodyStream {stream.open();defer{stream.close()};var buffer=[UInt8](repeating:0,count:4096);while true {let n=stream.read(&buffer,maxLength:buffer.count);if n<=0 {break};bytes.append(contentsOf:buffer.prefix(n))}}
+                Self.methodBody=(try? JSONSerialization.jsonObject(with:bytes)) as? [String:Any] ?? [:]
+                if Self.rejectMethodUpdate {status=400;payload=["message":"Mock update rejected"]}
+                else {payload=["id":"csmrpd_mock","nickname":Self.methodBody["nickname"] ?? "","is_default":Self.methodBody["is_default"] ?? false,"card_details":["brand":"visa","last4":"4242"]]}
+            case "/transactions":
+                if Self.transactionForbidden {status=403;payload=["message":"Missing transaction permissions"]}
+                else {
+                    let more=URLComponents(url:request.url!,resolvingAgainstBaseURL:false)?.queryItems?.contains(where:{$0.name=="starting_after"}) == true
+                    payload=["data":[["id":more ? "txn_second" : "txn_first","source_id":NSNull(),"amount":-1500,"currency":"usd","created_date":"2026-10-20","description":"Example merchant","origin":"link","status":"posted"]],"has_more":!more]
+                }
             case "/spend_requests":
                 if request.httpMethod=="POST" {
                     var body=request.httpBody ?? Data()
@@ -143,6 +158,52 @@ final class MockProtocol:URLProtocol {
         precondition(manager.records.count==2 && manager.activeModel===distinct && distinct.isSignedIn && !distinct.awaitingAccountAdmission)
         MockProtocol.profileID="user_mock";MockProtocol.profileEmail="example@example.com"
         print("PASS: duplicate account admission is rejected, temporary session removed, original preserved; distinct users accepted; unverified operations blocked")
+        precondition(VerificationInfo(["agent_wallet_step_up":["status":"identity_verification","action_url":"https://app.link.com/finish_setup"]]).actionURL != nil)
+        precondition(VerificationInfo(["agent_wallet_step_up":["status":"pending","action_url":"https://app.link.com.evil.example/verify"]]).actionURL == nil)
+        let tools=Model(api:api)
+        tools.transactionStart="2026-10-01";tools.transactionEnd="2026-10-24";tools.transactionOrigin="link"
+        tools.loadTransactions();try await idle(tools)
+        precondition(tools.transactions.count==1 && tools.transactionsHaveMore)
+        let query=URLComponents(url:MockProtocol.calls.last!.url!,resolvingAgainstBaseURL:false)!.queryItems!
+        precondition(query.contains{$0.name=="date_start" && $0.value=="2026-10-01"})
+        tools.loadTransactions(more:true);try await idle(tools)
+        precondition(tools.transactions.count==2 && !tools.transactionsHaveMore)
+        tools.transactionStart="bad-date"
+        let beforeInvalidDate=MockProtocol.calls.count
+        tools.loadTransactions();try await idle(tools)
+        precondition(MockProtocol.calls.count==beforeInvalidDate)
+        tools.transactionStart="2026-10-01";MockProtocol.transactionForbidden=true
+        tools.loadTransactions();try await idle(tools)
+        precondition(tools.transactionsNeedAuthorization && tools.lastError.contains("403"))
+        MockProtocol.transactionForbidden=false
+        tools.methods=[["id":"csmrpd_mock"],["id":"csmrpd_other","is_default":true]]
+        tools.updateMethod("csmrpd_mock",nickname:" Work ",isDefault:true);try await idle(tools)
+        precondition(MockProtocol.methodBody["nickname"] as? String=="Work" && tools.methods[0]["nickname"] as? String=="Work")
+        precondition(tools.methods[1]["is_default"] as? Bool==false)
+        MockProtocol.rejectMethodUpdate=true
+        tools.updateMethod("csmrpd_mock",nickname:"Should not persist",isDefault:false);try await idle(tools)
+        precondition(tools.methods[0]["nickname"] as? String=="Work")
+        MockProtocol.rejectMethodUpdate=false
+        let usd=WalletTransaction(raw:["amount":-1500,"currency":"usd"])
+        precondition(usd.formattedAmount.contains("15.00"))
+        let yen=WalletTransaction(raw:["amount":100,"currency":"jpy"])
+        precondition(yen.formattedAmount.contains("100") && !yen.formattedAmount.contains("1.00"))
+        print("PASS: filtered transaction pagination, dates, permission errors, payment updates and verification URL validation")
+        let upgradeAPI=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_UPGRADE_OLD",refresh_token:nil,expires_at:Date().timeIntervalSince1970*1000+600000,scope:"userinfo:read payment_methods.agentic extra:read",authorization_details:[AuthorizationGrant(type:"source",actions:["read_balances"])]),persistTokens:false)
+        let upgradeFlow=try await upgradeAPI.beginLogin(upgradeFor:SignedInAccount(["id":"user_mock","email":"example@example.com"]))
+        precondition(upgradeFlow.requestedScope?.contains("extra:read")==true && upgradeFlow.requestedScope?.contains("payment_methods.agentic")==true)
+        precondition(Set(upgradeFlow.requestedGrants!.flatMap(\.actions))==Set(["read_balances","read_link_transactions","read_external_transactions"]))
+        _ = try await upgradeAPI.methods()
+        precondition(MockProtocol.calls.last!.value(forHTTPHeaderField:"Authorization")=="Bearer MOCK_UPGRADE_OLD")
+        MockProtocol.profileID="different_account"
+        do {_ = try await upgradeAPI.finishLogin(upgradeFlow);fatalError("Wrong-account upgrade accepted")} catch {}
+        _ = try await upgradeAPI.methods()
+        precondition(MockProtocol.calls.last!.value(forHTTPHeaderField:"Authorization")=="Bearer MOCK_UPGRADE_OLD")
+        MockProtocol.profileID="user_mock"
+        let upgraded=try await upgradeAPI.finishLogin(upgradeFlow);precondition(upgraded)
+        _ = try await upgradeAPI.methods()
+        precondition(MockProtocol.calls.last!.value(forHTTPHeaderField:"Authorization")=="Bearer MOCK_NEW")
+        print("PASS: explicit authorization upgrade preserves scopes and old session until verified; wrong-account grants rejected")
         let list=try await api.list(history:true)
         precondition(objects(list).contains{str($0,"id")=="lsrq_mock"})
         precondition(MockProtocol.calls.last!.url!.query=="include_history=true")

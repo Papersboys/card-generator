@@ -29,12 +29,23 @@ struct RequestItem: Identifiable {
     @Published var awaitingAccountAdmission=false
     var accountAdmission:((SignedInAccount) async throws -> Bool)?
     @Published var spendLimits:[String:Any]?
+    @Published var verification:VerificationInfo?
+    @Published var transactions:[WalletTransaction]=[]
+    @Published var transactionsLoaded=false
+    @Published var transactionsNeedAuthorization=false
+    @Published var transactionsHaveMore=false
+    @Published var transactionStart=""
+    @Published var transactionEnd=""
+    @Published var transactionOrigin=""
+    private var loadedTransactionFilter=""
+    func clearWalletFeatures() {verification=nil;transactions=[];transactionsLoaded=false;transactionsNeedAuthorization=false;transactionsHaveMore=false}
+
     func start() {
         Task { await refreshAccount(); if isSignedIn { load() } }
     }
     func refreshAccount() async {
         checkingAccount=true
-        spendLimits=nil
+        spendLimits=nil;verification=nil
         defer { checkingAccount=false }
         isSignedIn=await api.hasSession()
         guard isSignedIn else { account=nil;spendLimits=nil;return }
@@ -47,6 +58,7 @@ struct RequestItem: Identifiable {
             }
             account=identity
             spendLimits=profile["agent_wallet_spend_limits"] as? [String:Any]
+            verification=VerificationInfo(profile)
             isSignedIn=true
         } catch {
             handle(error)
@@ -60,7 +72,7 @@ struct RequestItem: Identifiable {
         do {try ErrorLogStore.shared.append(ErrorReport(error:lastError));logWriteFailed=false}
         catch {logWriteFailed=true}
         if (error as? LinkError)?.requiresLogin == true {
-            isSignedIn=false;account=nil;spendLimits=nil;detail=[];methods=[];requests=[];createdIDs=[]
+            isSignedIn=false;account=nil;spendLimits=nil;clearWalletFeatures();detail=[];methods=[];requests=[];createdIDs=[]
             approvalWatch?.cancel();pendingID="";approvalURL=""
         }
         message=error.localizedDescription
@@ -69,14 +81,16 @@ struct RequestItem: Identifiable {
     @Published var loginPhrase=""
     @Published var loggingIn=false
     var loginTask:Task<Void,Never>?
-    func login() {
-        guard !loggingIn else { return }
+    func login(upgrade:Bool=false) {
+        guard !loggingIn && !busy else { return }
+        let expected=upgrade ? account : nil
+        if upgrade && expected==nil {handle(LinkError(message:"请先刷新当前账户信息再授权交易读取。"));return}
         loggingIn=true;message="";loginURL=nil;loginPhrase=""
-        approvalWatch?.cancel();detail=[];requests=[];createdIDs=[];approvalURL="";pendingID=""
+        if !upgrade {approvalWatch?.cancel();detail=[];requests=[];createdIDs=[];approvalURL="";pendingID=""}
         loginTask=Task {
             defer { self.loggingIn=false }
             do {
-                let flow=try await api.beginLogin()
+                let flow=try await api.beginLogin(upgradeFor:expected)
                 self.loginURL=flow.url;self.loginPhrase=flow.phrase
                 self.message="打开登录链接，在 Link 中输入授权短语。"
                 var interval=flow.interval
@@ -85,7 +99,7 @@ struct RequestItem: Identifiable {
                     guard !Task.isCancelled else { return }
                     do {
                         if try await api.finishLogin(flow) {
-                            self.loginURL=nil;self.loginPhrase="";self.isSignedIn=true;self.lastError="";self.message="Link 登录成功。";await self.refreshAccount();if self.isSignedIn {self.load()};return
+                            self.loginURL=nil;self.loginPhrase="";self.isSignedIn=true;self.lastError="";self.message="Link 登录成功。";await self.refreshAccount();self.loggingIn=false;if self.isSignedIn {if upgrade {self.loadTransactions()} else {self.load()}};return
                         }
                     } catch is LoginSlowDown { interval += 5 }
                 }
@@ -104,7 +118,7 @@ struct RequestItem: Identifiable {
             defer {busy=false}
             do {
                 try await api.logout()
-                isSignedIn=false;account=nil;spendLimits=nil;detail=[];methods=[];requests=[]
+                isSignedIn=false;account=nil;spendLimits=nil;clearWalletFeatures();detail=[];methods=[];requests=[]
                 createdIDs=[];canceledIDs=[];lastCreatedID=nil
                 pendingID="";approvalURL="";loginURL=nil;loginPhrase=""
                 loggingIn=false;creationError=nil;lastError=""
@@ -189,6 +203,34 @@ struct RequestItem: Identifiable {
         }
 
         if self.requests.isEmpty { self.message = self.history ? "没有历史请求。" : "没有活跃请求；可打开包含历史，或创建新请求。" }
+    } }
+    func loadTransactions(more:Bool=false) {perform {
+        let formatter=DateFormatter();formatter.locale=Locale(identifier:"en_US_POSIX");formatter.dateFormat="yyyy-MM-dd";formatter.isLenient=false
+        for date in [self.transactionStart,self.transactionEnd] where !date.isEmpty {
+            guard date.count==10,let parsed=formatter.date(from:date),formatter.string(from:parsed)==date else {throw LinkError(message:"日期请使用 YYYY-MM-DD 格式。")}
+        }
+        guard self.transactionStart.isEmpty || self.transactionEnd.isEmpty || self.transactionStart<=self.transactionEnd else {throw LinkError(message:"开始日期不能晚于结束日期。")}
+        let filter=[self.transactionStart,self.transactionEnd,self.transactionOrigin].joined(separator:"|")
+        if more && filter != self.loadedTransactionFilter {throw LinkError(message:"筛选已更改，请先刷新流水。")}
+        guard ["","link","external_connection"].contains(self.transactionOrigin) else {throw LinkError(message:"流水来源无效。")}
+        let result:Any
+        do {result=try await self.api.transactions(start:self.transactionStart,end:self.transactionEnd,origin:self.transactionOrigin,cursor:more ? self.transactions.last?.id : nil)}
+        catch {
+            if (error as? LinkError)?.httpStatus==403 {self.transactionsNeedAuthorization=true}
+            throw error
+        }
+        let page=result as? [String:Any]
+        guard let rows=(page?["data"] ?? result) as? [[String:Any]],rows.allSatisfy({!str($0,"id").isEmpty}) else {throw LinkError(message:"交易流水响应无效。")}
+        var seen=Set<String>()
+        self.transactions=((more ? self.transactions : [])+rows.map{WalletTransaction(raw:$0)}).filter{seen.insert($0.id).inserted}
+        self.transactionsHaveMore=page?["has_more"] as? Bool == true && !rows.isEmpty
+        self.transactionsLoaded=true;self.transactionsNeedAuthorization=false;self.loadedTransactionFilter=filter
+    } }
+    func updateMethod(_ id:String,nickname:String,isDefault:Bool) {perform {
+        let updated=try await self.api.updateMethod(id,nickname:nickname.trimmingCharacters(in:.whitespacesAndNewlines),isDefault:isDefault)
+        if isDefault {self.methods=self.methods.map {value in var result=value;result["is_default"]=false;return result}}
+        if let index=self.methods.firstIndex(where:{str($0,"id")==id}) {self.methods[index]=updated}
+        self.message="付款方式已更新。"
     } }
     func loadMethods() { perform {
         let result = try await self.api.methods()

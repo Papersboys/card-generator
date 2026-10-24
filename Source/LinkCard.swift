@@ -77,6 +77,13 @@ struct ContentView: View {
                 Button(t("退出登录")) {model.logout()}.disabled(model.busy || model.checkingAccount || model.loggingIn)
             } else { Button(t("登录 Link")) { model.login() }.disabled(model.loggingIn) }; Spacer(); Button(t("清除卡信息")) { model.detail=[] }.disabled(model.detail.isEmpty) }
             }.panelSurface()
+            if model.isSignedIn,let verification=model.verification {
+                HStack {
+                    Label(t(verification.label),systemImage:verification.status=="complete" ? "checkmark.shield" : "person.crop.rectangle.badge.checkmark").font(.caption)
+                    Spacer()
+                    if let url=verification.actionURL {Link(t("在 Link 中验证"),destination:url)}
+                }.panelSurface()
+            }
             if model.isSignedIn {
                 DisclosureGroup(t("消费限额"),isExpanded:$showLimits) {
                 VStack(alignment:.leading,spacing:10) {
@@ -134,7 +141,9 @@ struct ContentView: View {
                     }
                 }
                 HStack { Button(t(tab == 2 ? "查看请求" : "显示卡信息 Show")) { if let id=selected { model.show(id) } }; Button(t("取消请求 Cancel"),role:.destructive) { toCancel=model.requests.first{$0.id==selected} }.disabled(model.requests.first{$0.id==selected}?.canCancel != true) }.disabled(selected == nil || model.busy)
-            } else {
+            } else if tab==3 {TransactionsView(model:model)}
+            else if tab==4 {PaymentMethodsView(model:model)}
+            else {
                 VStack(alignment:.leading,spacing:20) {
                     HStack {
                         Label(t("付款方式"),systemImage:"wallet.pass").font(.headline)
@@ -217,9 +226,9 @@ struct ContentView: View {
     func detailValue(_ key:String)->String {model.detail.first{$0.0==key}?.1 ?? ""}
     var navigationTabs:some View {
         HStack(spacing:4) {
-            ForEach([(0,"请求 / 历史","rectangle.stack"),(1,"创建 Generate","plus.circle"),(2,"待批准","checkmark.seal")],id:\.0) {index,title,icon in
+            ForEach([(0,"请求","rectangle.stack"),(1,"创建","plus.circle"),(2,"批准","checkmark.seal"),(3,"流水","list.bullet.rectangle"),(4,"付款卡","wallet.pass")],id:\.0) {index,title,icon in
                 Button {tab=index} label: {
-                    Label(t(title),systemImage:icon).font(.system(size:12,weight:.semibold)).frame(maxWidth:.infinity).padding(.vertical,10)
+                    VStack(spacing:5) {Image(systemName:icon).font(.system(size:15));Text(t(title)).font(.system(size:11,weight:.semibold))}.frame(maxWidth:.infinity).padding(.vertical,10)
                         .foregroundStyle(tab==index ? Color.white : Color.secondary)
                         .background(tab==index ? Color.linkInk : Color.clear,in:RoundedRectangle(cornerRadius:10))
                 }.buttonStyle(.plain).accessibilityAddTraits(tab==index ? [.isSelected] : [])

@@ -37,6 +37,7 @@
 </ul>
 </li>
 <li><a href="#v290">新版界面 (v2.9.0)</a></li>
+<li><a href="#v2100">钱包工具（v2.10.0）</a></li>
 </ul>
 </div>
 </aside><article id="article" class="guide-article"><p>Link Card 是 macOS 菜单栏 App，负责创建 Link 付款请求、读取批准后的虚拟卡信息和取消请求。它不会替你在商家网站下单，也不会自动提交商家付款表单。</p>
@@ -321,6 +322,14 @@
 <p>当 Link 返回终态取消冲突（HTTP 409 terminal state）时，App 会读取最新状态、禁用重复取消并清除该请求的卡信息显示。未包含历史时，已结束请求从活跃列表移除；勾选包含历史可查看最新状态。如果状态刷新失败，错误栏会明确提示，不会显示取消成功。</p>
 <h2 id="v290">新版界面 (v2.9.0)</h2>
 <p>更新 App 和菜单栏图标；账户操作分组，额度可折叠；卡号、CVC 和有效期集中展示，各自提供复制按钮。早期截图用于说明流程，不代表最新样式。图标源文件： <code>scripts/draw-icon.swift</code>。</p>
-<p>(v2.9.1) 添加账户时，Link 授权返回身份后检查重复登录：同一用户已登录时拒绝新增，仅清除本次新授权的本地凭证，返回原账户。优先比较用户 ID，缺失时比较邮箱；身份验证完成前不允许请求或付款操作。</p></article></main>
+<p>(v2.9.1) 添加账户时，Link 授权返回身份后检查重复登录：同一用户已登录时拒绝新增，仅清除本次新授权的本地凭证，返回原账户。优先比较用户 ID，缺失时比较邮箱；身份验证完成前不允许请求或付款操作。</p>
+<h2 id="v2100">钱包工具（v2.10.0）</h2>
+<ul>
+<li><strong>流水</strong>：选择 Link／外部连接／全部来源，填写可选的 YYYY-MM-DD 起止日期后刷新；支持加载下一页。空结果与权限不足分别提示。此处是 Link 或已连接金融账户返回的流水，不保证包含商家端完整结算明细。</li>
+<li><strong>授权交易读取</strong>：用户点击并确认后，在 Link 请求读取 Link 和外部连接交易，保留原有授权范围。浏览器中必须授权当前账户；返回身份匹配后才替换本地凭证。未完成批准时原本地会话保留，远程授权撤销由 Link 控制。当前公开客户端或账户可能不支持部分权限，失败时展示 API 错误。</li>
+<li><strong>付款卡</strong>：加载钱包付款方式，编辑昵称和默认状态，二次确认后保存到 Link。空昵称表示清空；新默认卡替换原默认卡。失败时保留上次已确认的本地显示值。</li>
+<li><strong>身份验证</strong>：账户区展示需要验证／验证中／完成等状态，有官方操作链接时可跳转 Link。App 不收集身份证件或 SSN。</li>
+</ul>
+<p>各页数据仅属于当前选中的 Link 账户。流水保留在内存，退出登录或会话失效时清除，不写入错误日志。开发验证仅使用模拟接口，没有授予真实权限、读取真实流水或修改真实钱包。</p></article></main>
 <footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>独立开源项目 · 非 Link / Stripe 官方产品</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
 </body></html>

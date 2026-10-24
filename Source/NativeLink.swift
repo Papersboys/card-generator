@@ -6,6 +6,8 @@ struct LinkTokens: Codable {
     var refresh_token:String?
     var expires_in:Double?
     var expires_at:Double?
+    var scope:String?
+    var authorization_details:[AuthorizationGrant]?
 }
 struct LoginSlowDown:Error {}
 struct DeviceLogin {
@@ -14,6 +16,9 @@ struct DeviceLogin {
     let url:URL
     let interval:Double
     let expires:Date
+    var expectedIdentity:SignedInAccount?=nil
+    var requestedScope:String?=nil
+    var requestedGrants:[AuthorizationGrant]?=nil
 }
 enum TokenStore {
     static let service="local.yuanxili.linkcard.oauth"
@@ -93,7 +98,7 @@ actor NativeLink {
         let task=Task<LinkTokens,Error> {
             let (status,data)=try await self.form("/device/token",["grant_type":"refresh_token","refresh_token":refresh,"client_id":self.clientID])
             guard (200..<300).contains(status) else { throw self.error(status,data) }
-            return try self.decodeTokens(data,previousRefresh:refresh)
+            return try self.decodeTokens(data,previousRefresh:refresh,previous:current)
         }
         refreshTask=task
         defer { refreshTask=nil }
@@ -107,10 +112,14 @@ actor NativeLink {
         if ownsSession && persistTokens { try TokenStore.save(renewed,account:storageAccount) }
         tokens=renewed; return renewed.access_token
     }
-    private func decodeTokens(_ data:[String:Any],previousRefresh:String?=nil) throws -> LinkTokens {
+    private func decodeTokens(_ data:[String:Any],previousRefresh:String?=nil,previous:LinkTokens?=nil) throws -> LinkTokens {
         guard let token=data["access_token"] as? String,!token.isEmpty else { throw LinkError(message:"Link 未返回登录凭证") }
         let ttl=data["expires_in"] as? Double ?? 3600
-        return LinkTokens(access_token:token,refresh_token:data["refresh_token"] as? String ?? previousRefresh,expires_in:ttl,expires_at:Date().timeIntervalSince1970*1000+ttl*1000)
+        var result=LinkTokens(access_token:token,refresh_token:data["refresh_token"] as? String ?? previousRefresh,expires_in:ttl,expires_at:Date().timeIntervalSince1970*1000+ttl*1000)
+        result.scope=data["scope"] as? String ?? previous?.scope
+        if let grants=data["authorization_details"],let encoded=try? JSONSerialization.data(withJSONObject:grants) {result.authorization_details=try? JSONDecoder().decode([AuthorizationGrant].self,from:encoded)}
+        else {result.authorization_details=previous?.authorization_details}
+        return result
     }
     private func error(_ status:Int,_ data:[String:Any]) -> LinkError {
         let nested=data["error"] as? [String:Any] ?? [:]
@@ -122,20 +131,32 @@ actor NativeLink {
         let guidance=revokedRefresh ? "\nLink 登录授权已失效，请重新登录。" : ""
         return LinkError(message:"Link HTTP \(status): \(message)"+guidance,requiresLogin:needsLogin,httpStatus:status)
     }
-    private func form(_ path:String,_ fields:[String:String]) async throws -> (Int,[String:Any]) {
+    private func form(_ path:String,_ fields:[String:String],extra:[(String,String)]=[]) async throws -> (Int,[String:Any]) {
         var request=URLRequest(url:URL(string:"https://login.link.com"+path)!)
         request.httpMethod="POST";request.setValue("application/x-www-form-urlencoded",forHTTPHeaderField:"Content-Type")
         let allowed=CharacterSet.alphanumerics.union(CharacterSet(charactersIn:"-._~"))
-        request.httpBody=fields.sorted{$0.key<$1.key}.map{($0.key.addingPercentEncoding(withAllowedCharacters:allowed) ?? "")+"="+($0.value.addingPercentEncoding(withAllowedCharacters:allowed) ?? "")}.joined(separator:"&").data(using:.utf8)
+        request.httpBody=(fields.sorted{$0.key<$1.key}.map{($0.key,$0.value)}+extra).map{($0.0.addingPercentEncoding(withAllowedCharacters:allowed) ?? "")+"="+($0.1.addingPercentEncoding(withAllowedCharacters:allowed) ?? "")}.joined(separator:"&").data(using:.utf8)
         let (data,response)=try await session.data(for:request)
         guard let http=response as? HTTPURLResponse,let json=try JSONSerialization.jsonObject(with:data) as? [String:Any] else { throw LinkError(message:"Link 登录返回无效数据") }
         return (http.statusCode,json)
     }
-    func beginLogin() async throws -> DeviceLogin {
-        let (status,data)=try await form("/device/code",["client_id":clientID,"scope":"userinfo:read payment_methods.agentic","connection_label":"Link Card","client_hint":"Link Card"])
+    func beginLogin(upgradeFor identity:SignedInAccount?=nil) async throws -> DeviceLogin {
+        var scope="userinfo:read payment_methods.agentic"
+        var grants:[AuthorizationGrant]=[]
+        if identity != nil {
+            let current=try readTokens()
+            scope=Set(((current.scope ?? scope)+" userinfo:read payment_methods.agentic").split(separator:" ").map(String.init)).sorted().joined(separator:" ")
+            grants=current.authorization_details ?? []
+            guard grants.allSatisfy({$0.type=="source"}) else {throw LinkError(message:"无法安全合并现有授权，请联系支持。")}
+            let actions=Set(grants.flatMap(\.actions)+["read_link_transactions","read_external_transactions"])
+            grants=[AuthorizationGrant(type:"source",actions:actions.sorted())]
+        }
+        var extra:[(String,String)]=[]
+        for grant in grants {extra.append(("authorization_details[][type]",grant.type));for action in grant.actions {extra.append(("authorization_details[][actions][]",action))}}
+        let (status,data)=try await form("/device/code",["client_id":clientID,"scope":scope,"connection_label":"Link Card","client_hint":"Link Card"],extra:extra)
         guard (200..<300).contains(status) else { throw error(status,data) }
         guard let code=data["device_code"] as? String,let phrase=data["user_code"] as? String,let value=(data["verification_uri_complete"] ?? data["verification_uri"]) as? String,let url=URL(string:value),url.scheme=="https",["app.link.com","login.link.com","link.com"].contains(url.host ?? "") else { throw LinkError(message:"Link 授权信息无效") }
-        return DeviceLogin(deviceCode:code,phrase:phrase,url:url,interval:max(1,data["interval"] as? Double ?? 5),expires:Date().addingTimeInterval(data["expires_in"] as? Double ?? 600))
+        return DeviceLogin(deviceCode:code,phrase:phrase,url:url,interval:max(1,data["interval"] as? Double ?? 5),expires:Date().addingTimeInterval(data["expires_in"] as? Double ?? 600),expectedIdentity:identity,requestedScope:scope,requestedGrants:grants)
     }
     func finishLogin(_ login:DeviceLogin) async throws -> Bool {
         let generation=sessionGeneration
@@ -146,7 +167,18 @@ actor NativeLink {
         }
         guard (200..<300).contains(status) else { throw error(status,data) }
         guard generation==sessionGeneration else {throw CancellationError()}
-        let saved=try decodeTokens(data)
+        var saved=try decodeTokens(data)
+        saved.scope=saved.scope ?? login.requestedScope
+        saved.authorization_details=saved.authorization_details ?? login.requestedGrants
+        if let expected=login.expectedIdentity {
+            var request=URLRequest(url:URL(string:"https://api.link.com/userinfo")!)
+            request.setValue("Bearer "+saved.access_token,forHTTPHeaderField:"Authorization")
+            let (body,response)=try await session.data(for:request)
+            guard (response as? HTTPURLResponse)?.statusCode==200,let profile=try JSONSerialization.jsonObject(with:body) as? [String:Any] else {throw LinkError(message:"无法验证升级授权的账户，原本地登录未替换。")}
+            let actual=SignedInAccount(profile)
+            guard sameLinkAccount(id:expected.id,email:expected.email,otherID:actual.id,otherEmail:actual.email) else {throw LinkError(message:"授权账户不匹配，原本地登录未替换。请使用当前账户授权。")}
+            guard generation==sessionGeneration else {throw CancellationError()}
+        }
         if persistTokens {try TokenStore.save(saved,account:storageAccount);UserDefaults.standard.set(false,forKey:signedOutPreference)}
         tokens=saved;ownsSession=true;sessionRevoked=false;return true
     }
@@ -182,6 +214,21 @@ actor NativeLink {
     }
     func list(history:Bool) async throws -> Any { try await request("/spend_requests"+(history ? "?include_history=true" : "")) }
     func methods() async throws -> Any { try await request("/payment-details") }
+    func updateMethod(_ id:String,nickname:String,isDefault:Bool) async throws -> [String:Any] {
+        guard (id.hasPrefix("csmrpd_") || id.hasPrefix("pm_")),id.allSatisfy({$0.isASCII && ($0.isLetter || $0.isNumber || $0=="_")}) else {throw LinkError(message:"付款方式 ID 无效。")}
+        guard let result=try await request("/payment-details/"+id,method:"POST",body:["nickname":nickname,"is_default":isDefault]) as? [String:Any],str(result,"id")==id else {throw LinkError(message:"付款方式更新响应无效。")}
+        return result
+    }
+    func transactions(start:String,end:String,origin:String,cursor:String?) async throws -> Any {
+        var url=URLComponents();url.path="/transactions"
+        var query=[URLQueryItem(name:"limit",value:"25")]
+        if !start.isEmpty {query.append(URLQueryItem(name:"date_start",value:start))}
+        if !end.isEmpty {query.append(URLQueryItem(name:"date_end",value:end))}
+        if !origin.isEmpty {query.append(URLQueryItem(name:"origin",value:origin))}
+        if let cursor=cursor {query.append(URLQueryItem(name:"starting_after",value:cursor))}
+        url.queryItems=query
+        return try await request(url.string!)
+    }
     func retrieve(_ id:String,card:Bool=false) async throws -> Any { try await request("/spend_requests/"+(try safeID(id))+(card ? "?include=card" : "")) }
     func requestApproval(_ id:String) async throws -> Any { try await request("/spend_requests/"+(try safeID(id))+"/request_approval",method:"POST") }
     func cancel(_ id:String) async throws -> Any { try await request("/spend_requests/"+(try safeID(id))+"/cancel",method:"POST") }

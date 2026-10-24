@@ -192,3 +192,12 @@ Each account has its own Keychain token entry, API session, requests and spend l
 New linked-card artwork in the app icon, menu bar and header; grouped account controls; collapsible spend limits; icon navigation; card number, CVC and expiration grouped with individual Copy buttons; actionable empty states. Earlier screenshots illustrate the workflow rather than the current styling. Reproducible icon source: `scripts/draw-icon.swift`.
 
 Duplicate account protection (v2.9.1): after Link authorization returns the identity, Add account rejects an already-signed-in user, removes only the newly authorized local session, and returns to the existing account. User IDs are compared first, with normalized email as a fallback. Payment/request operations are blocked until the new identity is verified.
+
+## Wallet tools (v2.10.0)
+
+- **Activity:** choose Link, external-connection, or all transactions; optionally enter YYYY-MM-DD start/end dates, refresh, and load subsequent pages. Empty results and insufficient permissions are distinct. Data comes from Link or connected financial accounts and is not a full merchant settlement ledger.
+- **Authorize transactions:** explicitly requests read_link_transactions and read_external_transactions in Link, merged with existing granted permissions. Confirm the current account in the browser. The previous local token is replaced only after the returned account matches. Canceling before approval keeps the existing local session; Link controls remote grant revocation. This public client/account may not support every requested permission, in which case the API error remains visible.
+- **Cards:** load wallet payment methods; Edit opens nickname/default controls. A second confirmation saves both fields to Link. Empty nickname clears it; choosing a new default replaces the previous wallet default. Failures preserve the last confirmed local values.
+- **Verification:** the account area shows the returned requirement or pending/completed status and a trusted Link action URL when provided. Complete verification on Link; this app does not collect identity documents or SSNs.
+
+All views remain isolated to the selected Link account. Transaction data stays in memory and is cleared on logout/session invalidation; it is not included in local error logs. Implementations follow the official stripe/link-cli SDK resources. Offline tests cover APIs and state transitions; no live permission grants, financial reads, or wallet updates were performed during development verification.
