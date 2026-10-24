@@ -174,3 +174,7 @@ API 和授权实现参考 Stripe 的开源 Link SDK 与 CLI；原始 MIT 版权�
 这是独立项目，不是 Stripe 或 Link 官方 App。
 
 自动更新采用 [Sparkle](https://sparkle-project.org/)，许可声明保留在 [ThirdParty/Sparkle-LICENSE.txt](ThirdParty/Sparkle-LICENSE.txt)。维护者发布流程见[更新发布说明](docs/UPDATES.md)。
+
+## 本地错误日志
+
+错误记录在 `~/Library/Logs/LinkCard/error-log.jsonl`，最多 200 条／256 KiB，仅当前用户可访问。日志包含时间、App/macOS 版本、HTTP 状态码及固定错误分类，不包含原始错误、账户、卡信息或凭证。点击错误栏的「发送错误日志」打开 macOS 分享菜单，自行选择发送渠道；不会自动上传，也不直传 S3。

@@ -174,3 +174,7 @@ The Link API and authentication implementation follows Stripe's open-source Link
 This is an independent project and is not an official Stripe or Link application.
 
 Automatic updates use [Sparkle](https://sparkle-project.org/); its license is preserved in [ThirdParty/Sparkle-LICENSE.txt](ThirdParty/Sparkle-LICENSE.txt). See [update publishing](docs/UPDATES.md) for maintainers.
+
+## Local error logs
+
+Errors are recorded locally at `~/Library/Logs/LinkCard/error-log.jsonl` (up to 200 entries / 256 KiB, owner-only access). Records contain time, app/macOS versions, HTTP status, and a fixed error category; raw errors, account details, card data and credentials are excluded. Click **Send error logs** in the error banner to open the macOS share menu and choose a destination. Nothing is uploaded automatically or sent directly to S3.

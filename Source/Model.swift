@@ -43,8 +43,11 @@ struct RequestItem: Identifiable {
         }
     }
     @Published var lastError=""
+    @Published var logWriteFailed=false
     func handle(_ error:Error) {
         lastError=error.localizedDescription
+        do {try ErrorLogStore.shared.append(ErrorReport(error:lastError));logWriteFailed=false}
+        catch {logWriteFailed=true}
         if (error as? LinkError)?.requiresLogin == true {
             isSignedIn=false;account=nil;detail=[];methods=[];requests=[];createdIDs=[]
             approvalWatch?.cancel();pendingID="";approvalURL=""

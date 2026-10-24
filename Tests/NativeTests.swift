@@ -64,6 +64,15 @@ final class MockProtocol:URLProtocol {
         for value in ["SECRET","user@example.com","4242424242424242","cvc"] {precondition(!report.preview.contains(value))}
         let payload=try JSONSerialization.jsonObject(with:report.json) as! [String:Any]
         precondition(Set(payload.keys)==Set(["schema","app_version","os_version","category","http_status"]))
+        let logDirectory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer {try? FileManager.default.removeItem(at:logDirectory)}
+        let log=ErrorLogStore(directory:logDirectory)
+        for _ in 0..<205 {try log.append(report)}
+        let logText=try String(contentsOf:log.fileURL,encoding:.utf8)
+        precondition(logText.split(separator:"\n").count==200 && !logText.contains("SECRET"))
+        let attributes=try FileManager.default.attributesOfItem(atPath:log.fileURL.path)
+        precondition((attributes[.posixPermissions] as? NSNumber)?.intValue==0o600)
+        print("PASS: bounded private local logs, sensitive fields excluded")
         print("PASS: report payload contains only allowlisted fields, no raw error text or credentials")
         let nicknameCard:[String:Any] = ["brand":"amex","last4":"1000"]
         precondition(paymentMethodLabel(["nickname":" Gold ","card_details":nicknameCard]) == "Gold · amex …1000")

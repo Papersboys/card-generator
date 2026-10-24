@@ -1,6 +1,6 @@
 import Foundation
 
-struct ErrorReport:Codable {
+struct ErrorReport:Encodable {
     let schema=1
     let app_version:String
     let os_version:String
@@ -25,28 +25,27 @@ struct ErrorReport:Codable {
     var json:Data {let encoder=JSONEncoder();encoder.outputFormatting=[.prettyPrinted,.sortedKeys];return (try? encoder.encode(self)) ?? Data()}
     var preview:String {String(data:json,encoding:.utf8) ?? ""}
 }
-final class ReportNoRedirect:NSObject,URLSessionTaskDelegate {
-    func urlSession(_ session:URLSession,task:URLSessionTask,willPerformHTTPRedirection response:HTTPURLResponse,newRequest request:URLRequest,completionHandler:@escaping(URLRequest?)->Void) {completionHandler(nil)}
-}
-@MainActor final class ErrorReporter:ObservableObject {
-    @Published var sending=false
-    @Published var feedback=""
-    func send(_ report:ErrorReport) {
-        guard !sending else {return}
-        guard let value=Bundle.main.object(forInfoDictionaryKey:"ErrorReportURL") as? String,let url=URL(string:value),url.scheme=="https",url.host?.hasSuffix(".lambda-url.us-west-2.on.aws")==true else {feedback="错误报告接收服务尚未配置。";return}
-        sending=true;feedback=""
-        Task {
-            let config=URLSessionConfiguration.ephemeral
-            config.urlCache=nil;config.httpCookieStorage=nil
-            let session=URLSession(configuration:config,delegate:ReportNoRedirect(),delegateQueue:nil)
-            defer {session.invalidateAndCancel();sending=false}
-            do {
-                var request=URLRequest(url:url);request.httpMethod="POST";request.timeoutInterval=15
-                request.setValue("application/json",forHTTPHeaderField:"Content-Type");request.httpBody=report.json
-                let (data,response)=try await session.data(for:request)
-                guard (response as? HTTPURLResponse)?.statusCode==201,let object=try JSONSerialization.jsonObject(with:data) as? [String:Any],let id=object["report_id"] as? String,UUID(uuidString:id) != nil else {throw URLError(.badServerResponse)}
-                feedback="错误报告已发送。"
-            } catch {feedback="发送失败，请稍后重试。"}
-        }
+
+struct ErrorLogStore {
+    static let shared=ErrorLogStore()
+    let directory:URL
+    init(directory:URL?=nil) {
+        self.directory=directory ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/LinkCard",isDirectory:true)
+    }
+    var fileURL:URL {directory.appendingPathComponent("error-log.jsonl")}
+    func append(_ report:ErrorReport) throws {
+        let fm=FileManager.default
+        try fm.createDirectory(at:directory,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
+        try fm.setAttributes([.posixPermissions:0o700],ofItemAtPath:directory.path)
+        var lines=(try? String(contentsOf:fileURL,encoding:.utf8))?.split(separator:"\n").map(String.init) ?? []
+        let encoder=JSONEncoder();encoder.outputFormatting=[.sortedKeys]
+        struct Entry:Encodable {let timestamp:String;let report:ErrorReport}
+        let entry=Entry(timestamp:ISO8601DateFormatter().string(from:Date()),report:report)
+        lines.append(String(decoding:try encoder.encode(entry),as:UTF8.self))
+        lines=Array(lines.suffix(200))
+        while lines.joined(separator:"\n").utf8.count>256*1024 && lines.count>1 {lines.removeFirst()}
+        let data=Data((lines.joined(separator:"\n")+"\n").utf8)
+        try data.write(to:fileURL,options:[.atomic])
+        try fm.setAttributes([.posixPermissions:0o600],ofItemAtPath:fileURL.path)
     }
 }

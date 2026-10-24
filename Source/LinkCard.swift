@@ -18,8 +18,6 @@ struct ContentView: View {
     @State var confirmCreate = false
     @State var toCancel:RequestItem?
     @State var copiedField:String?
-    @StateObject var errorReporter=ErrorReporter()
-    @State var reportPreview:ErrorReport?
     var body: some View {
         GeometryReader { geometry in
         VStack(spacing:0) {
@@ -28,7 +26,7 @@ struct ContentView: View {
                 HStack {
                     Label(t("操作失败"),systemImage:"exclamationmark.triangle.fill").foregroundStyle(.red).font(.headline)
                     Spacer()
-                    Button(t(errorReporter.sending ? "发送中…" : "发送错误报告")) {reportPreview=ErrorReport(error:model.lastError);errorReporter.feedback=""}.disabled(errorReporter.sending)
+                    ShareLink(item:ErrorLogStore.shared.fileURL) {Label(t("发送错误日志"),systemImage:"square.and.arrow.up")}.disabled(model.logWriteFailed)
                     Button(t("复制错误")) {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(t(model.lastError),forType:.string)
@@ -38,7 +36,7 @@ struct ContentView: View {
                 ScrollView {
                     Text(t(model.lastError)).font(.callout).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading).fixedSize(horizontal:false,vertical:true)
                 }.frame(maxHeight:80)
-                if !errorReporter.feedback.isEmpty {Text(t(errorReporter.feedback)).font(.caption)}
+                Text(t(model.logWriteFailed ? "本地日志保存失败，请使用复制错误。" : "错误日志已保存在本地；点击发送后选择分享渠道。日志不包含原始错误文本或付款凭证。")).font(.caption).foregroundStyle(.secondary)
             }.padding(14).background(Color.red.opacity(0.08)).overlay(RoundedRectangle(cornerRadius:10).stroke(Color.red.opacity(0.25))).clipShape(RoundedRectangle(cornerRadius:10)).padding(.horizontal,24).padding(.top,16)
         }
         ScrollView { VStack(alignment:.leading,spacing:20) {
@@ -163,14 +161,6 @@ struct ContentView: View {
         .onChange(of:tab) { value in if value == 2 {model.load()} }
         .environment(\.locale,model.language.locale)
         .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context) } } message: { Text(createSummary) }
-        .sheet(isPresented:Binding(get:{reportPreview != nil},set:{if !$0 {reportPreview=nil}})) {
-            VStack(alignment:.leading,spacing:16) {
-                Text(t("发送错误报告")).font(.headline)
-                Text(t("仅发送以下版本、状态码和错误分类到开发者的 AWS S3。不会发送原始错误文本、账户、卡信息或登录凭证。"))
-                Text(reportPreview?.preview ?? "").font(.system(.caption,design:.monospaced)).textSelection(.enabled)
-                HStack {Button(t("返回")) {reportPreview=nil};Spacer();Button(t("确认发送")) {if let report=reportPreview {errorReporter.send(report)};reportPreview=nil}.buttonStyle(.borderedProminent)}
-            }.padding(24).frame(width:440)
-        }
         .alert(t("取消这个请求？"),isPresented:Binding(get:{toCancel != nil},set:{if !$0 {toCancel=nil}})) { Button(t("返回"),role:.cancel){toCancel=nil}; Button(t("取消请求"),role:.destructive){if let r=toCancel {model.cancel(r)};toCancel=nil} } message:{Text("\(toCancel?.merchant ?? "")\n\(toCancel?.id ?? "")\n\(t("这不会撤销已完成的付款。"))")}
     }
     var displayedDetails:[(String,String)] {
