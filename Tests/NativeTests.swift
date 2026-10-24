@@ -59,6 +59,12 @@ final class MockProtocol:URLProtocol {
 }
 @main struct Tests {
     @MainActor static func main() async throws {
+        let report=ErrorReport(error:"Link HTTP 401: token SECRET user@example.com card 4242424242424242 cvc 123",version:"2.7.4")
+        precondition(report.http_status==401 && report.category=="authorization")
+        for value in ["SECRET","user@example.com","4242424242424242","cvc"] {precondition(!report.preview.contains(value))}
+        let payload=try JSONSerialization.jsonObject(with:report.json) as! [String:Any]
+        precondition(Set(payload.keys)==Set(["schema","app_version","os_version","category","http_status"]))
+        print("PASS: report payload contains only allowlisted fields, no raw error text or credentials")
         let nicknameCard:[String:Any] = ["brand":"amex","last4":"1000"]
         precondition(paymentMethodLabel(["nickname":" Gold ","card_details":nicknameCard]) == "Gold · amex …1000")
         precondition(paymentMethodLabel(["nickname":NSNull(),"card_details":nicknameCard]) == "amex …1000")
