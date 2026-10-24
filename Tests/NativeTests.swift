@@ -20,6 +20,7 @@ final class MockProtocol:URLProtocol {
     static var conflictCancel=false
     static var failTerminalRefresh=false
     static var lastCreateBody:[String:Any]=[:]
+    static var lastDeviceScope:String?
     override class func canInit(with request:URLRequest)->Bool {true}
     override class func canonicalRequest(for request:URLRequest)->URLRequest {request}
     override func startLoading() {
@@ -31,6 +32,13 @@ final class MockProtocol:URLProtocol {
         var status=200
         var payload:[String:Any]=[:]
         if path=="/device/code" {
+            var bytes=request.httpBody ?? Data()
+            if bytes.isEmpty,let stream=request.httpBodyStream {
+                stream.open();defer{stream.close()};var buffer=[UInt8](repeating:0,count:4096)
+                while true {let n=stream.read(&buffer,maxLength:buffer.count);if n<=0 {break};bytes.append(contentsOf:buffer.prefix(n))}
+            }
+            let wire=String(data:bytes,encoding:.utf8) ?? ""
+            Self.lastDeviceScope=URLComponents(string:"https://example.com/?"+wire)?.queryItems?.first(where:{$0.name=="scope"})?.value
             payload=["device_code":"mock_device","user_code":"MOCK PHRASE","verification_uri":"https://app.link.com/login","expires_in":600,"interval":1]
         } else if path=="/device/token" {
             if Self.revokeRefresh {status=400;payload=["message":"refresh_token is not active: status: revoked"]}
@@ -189,9 +197,10 @@ final class MockProtocol:URLProtocol {
         let yen=WalletTransaction(raw:["amount":100,"currency":"jpy"])
         precondition(yen.formattedAmount.contains("100") && !yen.formattedAmount.contains("1.00"))
         print("PASS: filtered transaction pagination, dates, permission errors, payment updates and verification URL validation")
-        let upgradeAPI=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_UPGRADE_OLD",refresh_token:nil,expires_at:Date().timeIntervalSince1970*1000+600000,scope:"userinfo:read payment_methods.agentic extra:read",authorization_details:[AuthorizationGrant(type:"source",actions:["read_balances"])]),persistTokens:false)
+        let upgradeAPI=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_UPGRADE_OLD",refresh_token:nil,expires_at:Date().timeIntervalSince1970*1000+600000,scope:"payment_methods.agentic,userinfo:read, extra:read\tuserinfo:read",authorization_details:[AuthorizationGrant(type:"source",actions:["read_balances"])]),persistTokens:false)
         let upgradeFlow=try await upgradeAPI.beginLogin(upgradeFor:SignedInAccount(["id":"user_mock","email":"example@example.com"]))
-        precondition(upgradeFlow.requestedScope?.contains("extra:read")==true && upgradeFlow.requestedScope?.contains("payment_methods.agentic")==true)
+        precondition(upgradeFlow.requestedScope=="extra:read payment_methods.agentic userinfo:read")
+        precondition(MockProtocol.lastDeviceScope=="extra:read payment_methods.agentic userinfo:read")
         precondition(Set(upgradeFlow.requestedGrants!.flatMap(\.actions))==Set(["read_balances","read_link_transactions","read_external_transactions"]))
         _ = try await upgradeAPI.methods()
         precondition(MockProtocol.calls.last!.value(forHTTPHeaderField:"Authorization")=="Bearer MOCK_UPGRADE_OLD")
@@ -222,6 +231,9 @@ final class MockProtocol:URLProtocol {
         _ = try await api.methods()
         precondition(MockProtocol.calls.contains{$0.url!.path=="/device/token"})
         let login=try await api.beginLogin()
+        precondition(login.requestedScope=="userinfo:read payment_methods.agentic")
+        precondition(MockProtocol.lastDeviceScope=="userinfo:read payment_methods.agentic")
+        print("PASS: normal and upgrade login send separate space-delimited scopes; comma/whitespace scopes normalized and deduplicated")
         precondition(login.phrase=="MOCK PHRASE")
         let loggedIn=try await api.finishLogin(login);precondition(loggedIn)
         let model=Model(api:api)

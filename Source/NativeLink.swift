@@ -145,7 +145,7 @@ actor NativeLink {
         var grants:[AuthorizationGrant]=[]
         if identity != nil {
             let current=try readTokens()
-            scope=Set(((current.scope ?? scope)+" userinfo:read payment_methods.agentic").split(separator:" ").map(String.init)).sorted().joined(separator:" ")
+            scope=Set(((current.scope ?? scope)+" userinfo:read payment_methods.agentic").split(whereSeparator:{$0.isWhitespace || $0 == ","}).map(String.init)).sorted().joined(separator:" ")
             grants=current.authorization_details ?? []
             guard grants.allSatisfy({$0.type=="source"}) else {throw LinkError(message:"无法安全合并现有授权，请联系支持。")}
             let actions=Set(grants.flatMap(\.actions)+["read_link_transactions","read_external_transactions"])
