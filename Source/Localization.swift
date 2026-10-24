@@ -8,6 +8,22 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "填写金额超过当前额度":"Entered amount exceeds the current allowance",
+        "当前额度为零":"Current allowance is zero",
+        "剩余额度不足 20%":"Less than 20% remaining",
+        "仅依据 Link 返回的美元等值额度；其他币种不自动换算，最终以 Link 批准结果为准。":"Based only on USD-equivalent limits returned by Link. Other currencies are not converted; final approval is determined by Link.",
+        "搜索商家、网址、请求 ID 或用途":"Search merchant, URL, request ID or context",
+        "清空筛选":"Clear filters",
+        "全部状态":"All statuses",
+        "全部付款卡":"All funding cards",
+        "请求类型":"Request type",
+        "全部类型":"All types",
+        "周期付款":"Recurring payment",
+        "筛选当前已加载的请求；包含历史由上方开关控制。":"Filters apply to loaded requests. Use Include history above for historical requests.",
+        "显示请求":"Requests shown",
+        "没有符合筛选的请求":"No matching requests",
+        "请调整条件或清空筛选。":"Adjust the filters or clear them.",
+
         "填入 Safari…":"Fill in Safari…",
         "先确认网站，再填写；不会提交付款。跨域付款框可能需要手动复制。":"Confirm the website before filling. Payment is never submitted. Cross-origin payment fields may require manual copying.",
         "已尝试填写，请在 Safari 核对后自行付款。":"Filling attempted. Review the fields in Safari and submit payment yourself.",

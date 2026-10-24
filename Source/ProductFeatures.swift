@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 
 struct MerchantTemplate:Codable,Identifiable,Equatable {
     var id=UUID()
@@ -57,5 +58,55 @@ struct RequestEventTracker {
         }
         payments[request.id]=known
         return events
+    }
+}
+
+
+struct SpendLimitAlert:Identifiable {
+    let scope:String
+    let level:String
+    let amount:Double
+    var id:String {scope+level}
+    var message:String {level=="insufficient" ? "填写金额超过当前额度" : level=="exhausted" ? "当前额度为零" : "剩余额度不足 20%"}
+    var scopeLabel:String {["per_transaction":"单笔","daily":"每日","thirty_day":"滚动30天"][scope] ?? scope}
+    static func evaluate(_ limits:[String:Any]?,amount:Int?=nil,currency:String="usd")->[SpendLimitAlert] {
+        func finite(_ value:Any?)->Double? {
+            guard let n=value as? NSNumber,CFGetTypeID(n) != CFBooleanGetTypeID(),n.doubleValue.isFinite,n.doubleValue>=0 else {return nil}
+            return n.doubleValue
+        }
+        var alerts:[SpendLimitAlert]=[]
+        for scope in ["per_transaction","daily","thirty_day"] {
+            guard let row=limits?[scope] as? [String:Any],let limit=finite(row["limit"]) else {continue}
+            guard let remaining=scope=="per_transaction" ? limit : finite(row["remaining"]) else {continue}
+            let level:String?
+            if let amount=amount,amount>0,currency.lowercased()=="usd",Double(amount)>remaining {level="insufficient"}
+            else if remaining==0 {level="exhausted"}
+            else if scope != "per_transaction",limit>0,remaining/limit<0.2 {level="near"}
+            else {level=nil}
+            if let level=level {alerts.append(SpendLimitAlert(scope:scope,level:level,amount:remaining))}
+        }
+        return alerts
+    }
+}
+struct RequestFilter:Equatable {
+    var query=""
+    var status=""
+    var paymentID=""
+    var kind=""
+    var isActive:Bool {!query.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || !status.isEmpty || !paymentID.isEmpty || !kind.isEmpty}
+    static func fundingID(_ request:RequestItem)->String {
+        for key in ["payment_details","payment_method"] {
+            if let id=request.raw[key] as? String,!id.isEmpty {return id}
+            if let method=request.raw[key] as? [String:Any],!str(method,"id").isEmpty {return str(method,"id")}
+        }
+        return ""
+    }
+    func matches(_ request:RequestItem)->Bool {
+        if !status.isEmpty && request.status != status {return false}
+        if !paymentID.isEmpty && Self.fundingID(request) != paymentID {return false}
+        let recurring=RecurringSchedule.from(request.raw) != nil
+        if kind=="single" && recurring || kind=="recurring" && !recurring {return false}
+        let text=[request.merchant,request.id,str(request.raw,"merchant_url"),str(request.raw,"context")].joined(separator:" ")
+        return query.split(whereSeparator:{$0.isWhitespace}).allSatisfy{text.range(of:String($0),options:[.caseInsensitive,.diacriticInsensitive]) != nil}
     }
 }

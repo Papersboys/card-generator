@@ -248,3 +248,62 @@ struct SafariAutofillView:View {
         t(["number":"Card number","cvc":"CVC","expiry":"Expiration","month":"有效期月份","year":"有效期年份","name":"持卡人姓名","street":"Billing address","line1":"账单地址第一行","line2":"账单地址第二行","city":"城市","state":"州／省","postal":"邮编","country":"国家"][key] ?? key)
     }
 }
+
+
+struct SpendLimitAlertsView:View {
+    let alerts:[SpendLimitAlert]
+    let language:AppLanguage
+    func t(_ key:String)->String {L10n.text(key,language:language)}
+    var body:some View {
+        if !alerts.isEmpty {
+            VStack(alignment:.leading,spacing:8) {
+                ForEach(alerts) {alert in
+                    HStack(alignment:.top,spacing:8) {
+                        Image(systemName:alert.level=="near" ? "exclamationmark.triangle.fill" : "exclamationmark.circle.fill")
+                        VStack(alignment:.leading,spacing:3) {
+                            Text(t(alert.scopeLabel)+" · "+t(alert.message)).font(.callout.weight(.medium))
+                            Text(t(alert.scope=="per_transaction" ? "上限" : "剩余")+": "+String(format:"USD %.2f",alert.amount/100)).font(.caption)
+                        }
+                    }.foregroundStyle(alert.level=="near" ? Color.orange : Color.red)
+                }
+                Text(t("仅依据 Link 返回的美元等值额度；其他币种不自动换算，最终以 Link 批准结果为准。")).font(.caption2).foregroundStyle(.secondary)
+            }.padding(14).frame(maxWidth:.infinity,alignment:.leading).background(Color.orange.opacity(0.07),in:RoundedRectangle(cornerRadius:12))
+        }
+    }
+}
+struct RequestFilterView:View {
+    @Binding var filter:RequestFilter
+    let requests:[RequestItem]
+    let methods:[[String:Any]]
+    let language:AppLanguage
+    func t(_ key:String)->String {L10n.text(key,language:language)}
+    var statuses:[String] {Array(Set(requests.map(\.status).filter{!$0.isEmpty}+(filter.status.isEmpty ? [] : [filter.status]))).sorted()}
+    var paymentIDs:[String] {Array(Set(requests.map{RequestFilter.fundingID($0)}.filter{!$0.isEmpty}+(filter.paymentID.isEmpty ? [] : [filter.paymentID]))).sorted()}
+    var body:some View {
+        VStack(alignment:.leading,spacing:10) {
+            HStack {
+                Image(systemName:"magnifyingglass").foregroundStyle(.secondary)
+                TextField(t("搜索商家、网址、请求 ID 或用途"),text:$filter.query).textFieldStyle(.roundedBorder)
+                if filter.isActive {Button(t("清空筛选")) {filter=RequestFilter()}}
+            }
+            LazyVGrid(columns:[GridItem(.adaptive(minimum:145),spacing:12)],spacing:10) {
+                Picker(t("状态"),selection:$filter.status) {
+                    Text(t("全部状态")).tag("")
+                    ForEach(statuses,id:\.self) {status in Text(L10n.status(status,language:language)).tag(status)}
+                }
+                Picker(t("付款卡"),selection:$filter.paymentID) {
+                    Text(t("全部付款卡")).tag("")
+                    ForEach(paymentIDs,id:\.self) {id in Text(paymentLabel(id)).tag(id)}
+                }
+                Picker(t("请求类型"),selection:$filter.kind) {
+                    Text(t("全部类型")).tag("");Text(t("单次付款")).tag("single");Text(t("周期付款")).tag("recurring")
+                }
+            }
+            Text(t("筛选当前已加载的请求；包含历史由上方开关控制。")).font(.caption2).foregroundStyle(.secondary)
+        }.panelSurface()
+    }
+    func paymentLabel(_ id:String)->String {
+        if let method=methods.first(where:{str($0,"id")==id}) {return paymentMethodLabel(method)}
+        return id
+    }
+}

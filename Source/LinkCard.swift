@@ -9,6 +9,7 @@ struct ContentView: View {
     @ObservedObject var updates=UpdateManager.shared
     @ObservedObject var notifications=NotificationManager.shared
     @State var tab = 0
+    @State var requestFilter=RequestFilter()
     @State var selected:String?
     @State var payment = ""
 @State var merchant = "Costco"
@@ -128,16 +129,20 @@ struct ContentView: View {
                 }.padding(.top,10).frame(maxWidth:.infinity,alignment:.leading)
                 }.panelSurface()
             }
+            if model.isSignedIn {SpendLimitAlertsView(alerts:SpendLimitAlert.evaluate(model.spendLimits),language:model.language)}
             navigationTabs
             if !detailValue("Card number").isEmpty {credentialPanel}
             if tab == 0 || tab == 2 || tab == 5 {
                 HStack { if tab == 0 || tab == 5 { Toggle(t("包含历史"),isOn:$model.history).onChange(of:model.history) { _ in model.load() } }; Spacer(); Button(t("刷新列表")) { model.load() } }.disabled(model.busy)
+                RequestFilterView(filter:$requestFilter,requests:baseRequests,methods:model.methods,language:model.language)
+                Text(t("显示请求")+": \(visibleRequests.count) / \(baseRequests.count)").font(.caption).foregroundStyle(.secondary)
                 if visibleRequests.isEmpty {
                     VStack(spacing:10) {
                         Image(systemName:tab==2 ? "checkmark.seal" : "rectangle.stack").font(.system(size:28,weight:.light)).foregroundStyle(Color.linkTeal)
-                        Text(t(tab==2 ? "没有待批准的请求。" : tab==5 ? "还没有周期请求" : "还没有请求")).font(.headline)
-                        Text(t(tab==2 ? "批准入口会在创建请求后显示。" : "创建付款请求，批准后即可查看卡信息。")).font(.caption).foregroundStyle(.secondary)
-                        if tab==0 || tab==5 {Button(t("创建付款请求")) {if tab==5 {recurringInterval="month"};tab=1}.buttonStyle(.borderedProminent)}
+                        Text(t(requestFilter.isActive ? "没有符合筛选的请求" : tab==2 ? "没有待批准的请求。" : tab==5 ? "还没有周期请求" : "还没有请求")).font(.headline)
+                        Text(t(requestFilter.isActive ? "请调整条件或清空筛选。" : tab==2 ? "批准入口会在创建请求后显示。" : "创建付款请求，批准后即可查看卡信息。")).font(.caption).foregroundStyle(.secondary)
+                        if requestFilter.isActive {Button(t("清空筛选")) {requestFilter=RequestFilter()}}
+                        else if tab==0 || tab==5 {Button(t("创建付款请求")) {if tab==5 {recurringInterval="month"};tab=1}.buttonStyle(.borderedProminent)}
                     }.frame(maxWidth:.infinity).padding(.vertical,28).panelSurface()
                 } else {
                 List(selection:$selected) { ForEach(visibleRequests) { r in
@@ -147,7 +152,7 @@ struct ContentView: View {
                 if tab == 2 {
                     Text(t("选择请求查看详情，批准操作将在 Link 中完成。")).font(.caption).foregroundStyle(.secondary)
 
-                    if let request=model.requests.first(where:{$0.id==selected}),request.needsApproval {
+                    if let request=visibleRequests.first(where:{$0.id==selected}),request.needsApproval {
                         VStack(alignment:.leading,spacing:8) {
                             Text(str(request.raw,"merchant_url")).textSelection(.enabled)
                             Text(str(request.raw,"context")).font(.callout).textSelection(.enabled)
@@ -157,7 +162,7 @@ struct ContentView: View {
                     }
                 }
                 if tab==5,let request=visibleRequests.first(where:{$0.id==selected}) {SubscriptionTermsView(request:request,language:model.language)}
-                HStack { Button(t(tab == 2 ? "查看请求" : "显示卡信息 Show")) { if let id=selected { model.show(id) } }; Button(t("取消请求 Cancel"),role:.destructive) { toCancel=model.requests.first{$0.id==selected} }.disabled(model.requests.first{$0.id==selected}?.canCancel != true) }.disabled(selected == nil || model.busy)
+                HStack { Button(t(tab == 2 ? "查看请求" : "显示卡信息 Show")) { if let id=selected { model.show(id) } }; Button(t("取消请求 Cancel"),role:.destructive) { toCancel=visibleRequests.first{$0.id==selected} }.disabled(visibleRequests.first{$0.id==selected}?.canCancel != true) }.disabled(!visibleRequests.contains(where:{$0.id==selected}) || model.busy)
             } else if tab==3 {TransactionsView(model:model)}
             else if tab==4 {PaymentMethodsView(model:model)}
             else {
@@ -187,6 +192,7 @@ struct ContentView: View {
                         field("金额（最小单位，如 $15 = 1500）",text:$amount)
                         field("币种",text:$currency)
                     }
+                    SpendLimitAlertsView(alerts:SpendLimitAlert.evaluate(model.spendLimits,amount:Int(amount),currency:currency).filter{$0.level=="insufficient"},language:model.language)
                     field("商品（数量 1）",text:$item)
                     Picker(t("付款周期"),selection:$recurringInterval) {
                         Text(t("单次付款")).tag("")
@@ -249,25 +255,34 @@ struct ContentView: View {
         }.frame(width:min(1000,max(0,geometry.size.width-40))).padding(20).frame(maxWidth:.infinity) }
         }
         }.background(Color(nsColor:.windowBackgroundColor)).tint(.linkTeal).frame(minWidth:420,minHeight:480)
-        .onChange(of:model.lastCreatedID) {selected=$0;tab=2}
+        .onChange(of:visibleRequests.map(\.id)) {ids in
+            if let id=selected,!ids.contains(id) {selected=nil;model.detail=[]}
+        }
+        .onChange(of:model.lastCreatedID) {requestFilter=RequestFilter();selected=$0;tab=2}
         .onChange(of:model.detail.first(where:{$0.0=="Card number"})?.1) {_ in copiedField=nil}
         .onChange(of:tab) { value in if value == 2 {model.load()} }
         .task(id:"\(tab)-\(model.isSignedIn)") {
-            guard [1,4,5].contains(tab),model.isSignedIn else {return}
+            guard [0,1,2,4,5].contains(tab),model.isSignedIn else {return}
             // A request refresh may still be finishing when the user opens Create or Cards.
             // Wait for that operation instead of silently dropping the automatic load.
             do {
-                while model.busy {try await Task.sleep(nanoseconds:100_000_000)}
+                while model.busy || model.checkingAccount {try await Task.sleep(nanoseconds:100_000_000)}
                 try Task.checkCancellation()
-                guard [1,4,5].contains(tab),model.isSignedIn else {return}
-                if tab==5 {model.load()} else {model.loadMethods()}
+                guard [0,1,2,4,5].contains(tab),model.isSignedIn else {return}
+                if tab==5 {
+                    model.load()
+                    while model.busy {try await Task.sleep(nanoseconds:100_000_000)}
+                    try Task.checkCancellation()
+                }
+                if [1,4].contains(tab) || model.methods.isEmpty {model.loadMethods()}
             } catch is CancellationError {} catch {}
         }
         .environment(\.locale,model.language.locale)
         .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context,recurringInterval:recurringInterval,recurringCount:recurringCount) } } message: { Text(createSummary) }
         .alert(t("取消这个请求？"),isPresented:Binding(get:{toCancel != nil},set:{if !$0 {toCancel=nil}})) { Button(t("返回"),role:.cancel){toCancel=nil}; Button(t("取消请求"),role:.destructive){if let r=toCancel {model.cancel(r)};toCancel=nil} } message:{Text("\(toCancel?.merchant ?? "")\n\(toCancel?.id ?? "")\n\(t("这不会撤销已完成的付款。"))")}
     }
-    var visibleRequests:[RequestItem] {tab==5 ? model.subscriptionRequests : tab==2 ? model.requests.filter(\.needsApproval) : model.requests}
+    var baseRequests:[RequestItem] {tab==5 ? model.subscriptionRequests : tab==2 ? model.requests.filter(\.needsApproval) : model.requests}
+    var visibleRequests:[RequestItem] {baseRequests.filter{requestFilter.matches($0)}}
     func detailValue(_ key:String)->String {model.detail.first{$0.0==key}?.1 ?? ""}
     var navigationTabs:some View {
         LazyVGrid(columns:[GridItem(.adaptive(minimum:95),spacing:4)],spacing:4) {

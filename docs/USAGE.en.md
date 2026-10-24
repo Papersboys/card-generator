@@ -293,3 +293,22 @@ Common card-number, CVC, combined/separate expiry, month/year selects and explic
 Credentials travel to Safari in memory, never through files, the clipboard, shell arguments or error logs. Closing the panel clears card details and structured billing fields. Confirmation URLs come from Safari itself. Page scripts return only field types and fill results, not field values.
 
 DOM mock tests cover HTTPS/page-change checks, field formats, billing selection and credential cleanup. Safari permissions and real merchant checkout filling have not been tested live. Running the app needs no Node.js; developers need Node.js 18+ for the DOM regressions in `./test.sh`.
+
+
+## Limit alerts and request search/filtering (2.14.0)
+
+### Limit alerts
+
+When signed in and Link returns explicit limits, the panel warns when daily or rolling 30-day remaining allowance is below 20% of its limit, or the returned allowance is zero. When creating a USD request, the form warns if the entered amount exceeds the returned per-transaction cap, daily remaining allowance or rolling 30-day remaining allowance.
+
+Alerts use only USD-equivalent data returned by Link. Missing remaining amounts are not derived from usage; accounts are not combined; other currencies are not converted. Unlimited, missing or invalid data does not produce speculative warnings. Alerts do not block submission; limits may change and Link determines final approval. Refresh through Spend limits → Refresh limits. These are in-app alerts, not additional system notifications.
+
+### Search and filters
+
+Requests, Approve and Subscriptions now include search plus status, funding-card and request-type filters. Search covers merchant names, URLs, request IDs and context without case sensitivity. Multiple words and all selected filters must match. Choose Clear filters to reset.
+
+Funding cards are grouped by payment-method IDs returned on requests. Matching loaded wallet data supplies nicknames/brand/last4; otherwise IDs are shown. Generated virtual-card last4 values are not used to guess funding cards. Request type supports all, one-time or recurring.
+
+Filtering applies to the current account's loaded requests. Enable Include history for historical records. Approve still contains only pending requests, and Subscriptions only recurring requests. Counts show matching/loaded records for that view, not a server-wide total. Hiding the selected request clears its selection and card details. Successful creation resets filters so approval remains visible.
+
+English/Chinese are synchronized. Limit boundaries and compound filters passed offline tests; real account limits and UI interactions have not been tested live.
