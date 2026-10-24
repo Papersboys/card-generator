@@ -286,6 +286,21 @@ final class MockProtocol:URLProtocol {
         try await idle(model)
         precondition(MockProtocol.lastCreateBody["expires_at"]==nil)
         precondition(model.lastCreatedID=="lsrq_mock" && !model.detail.isEmpty)
+        precondition(MockProtocol.lastCreateBody["recurring"]==nil)
+        for interval in ["day","week","month","year"] {
+            model.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context,recurringInterval:interval,recurringCount:2)
+            try await idle(model)
+            let recurring=MockProtocol.lastCreateBody["recurring"] as! [String:Any]
+            precondition(str(recurring,"interval")==interval && recurring["interval_count"] as? Int==2)
+            precondition(MockProtocol.lastCreateBody["request_approval"] as? Bool==true)
+        }
+        let callsBefore=MockProtocol.calls.count
+        model.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context,recurringInterval:"month",recurringCount:0)
+        try await idle(model)
+        precondition(MockProtocol.calls.count==callsBefore && model.creationError != nil)
+        precondition(RecurringSchedule.from(["recurring":["interval":"month"]])?.count==1)
+        precondition(RecurringSchedule(interval:"hour",count:1)==nil)
+        print("PASS: recurring day/week/month/year payloads require approval; one-time omits recurrence; invalid schedules make no request")
         model.history=true
         MockProtocol.rejectCancel=true
         model.cancel(model.requests[0]);try await idle(model)

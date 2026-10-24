@@ -232,3 +232,12 @@ Duplicate account protection (v2.9.1): after Link authorization returns the iden
 - **Verification:** the account area shows the returned requirement or pending/completed status and a trusted Link action URL when provided. Complete verification on Link; this app does not collect identity documents or SSNs.
 
 All views remain isolated to the selected Link account. Transaction data stays in memory and is cleared on logout/session invalidation; it is not included in local error logs. Implementations follow the official stripe/link-cli SDK resources. Offline tests cover APIs and state transitions; no live permission grants, financial reads, or wallet updates were performed during development verification.
+
+
+## Recurring payment requests
+
+In Create, enter the payment method, merchant, amount and item, then choose Payment frequency. One-time is the default; day, week, month and year support an interval count (for example every 1 month or every 2 weeks). The generated context, confirmation and request list show the schedule. Enter amounts in the selected currency's minor units; check the amount, merchant, schedule and final terms on Link's approval page.
+
+Open the approval link after creation and approve in Link. Account/client support and recurrence rules are determined by Link; failures appear in the error banner. Review status and cancel eligible requests in the request list. The app does not schedule requests or initiate charges itself. Manage merchant subscriptions separately: canceling a Link request does not cancel a merchant subscription.
+
+Developer validation uses mocked APIs for all four intervals, one-time requests and invalid counts. No real recurring payment was created.

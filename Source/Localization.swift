@@ -8,6 +8,9 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "付款周期":"Payment frequency", "单次付款":"One-time payment", "天":"Day", "周":"Week", "月":"Month", "年":"Year",
+        "周期必须为天、周、月或年，间隔必须为正整数。":"Choose day, week, month or year with a positive interval count.",
+        "周期请求仍需在 Link 批准；App 不会定时发起扣款。商家订阅请在商家处单独管理。":"Recurring requests still need approval in Link. This app does not schedule charges. Manage merchant subscriptions separately.",
         "已复制":"Copied", "请求已批准，打开菜单栏面板查看卡信息。":"Request approved. Open the menu bar panel to view card details.",
         "检查更新…":"Check for Updates…", "自动检查更新":"Automatically check for updates",
         "退出登录":"Log out", "已退出登录。":"Logged out.",

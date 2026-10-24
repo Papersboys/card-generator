@@ -38,6 +38,7 @@
 </li>
 <li><a href="#v290">新版界面 (v2.9.0)</a></li>
 <li><a href="#v2100">钱包工具（v2.10.0）</a></li>
+<li><a href="#_10">周期付款请求</a></li>
 </ul>
 </div>
 </aside><article id="article" class="guide-article"><p>Link Card 是 macOS 菜单栏 App，负责创建 Link 付款请求、读取批准后的虚拟卡信息和取消请求。它不会替你在商家网站下单，也不会自动提交商家付款表单。</p>
@@ -330,6 +331,10 @@
 <li><strong>付款卡</strong>：加载钱包付款方式，编辑昵称和默认状态，二次确认后保存到 Link。空昵称表示清空；新默认卡替换原默认卡。失败时保留上次已确认的本地显示值。</li>
 <li><strong>身份验证</strong>：账户区展示需要验证／验证中／完成等状态，有官方操作链接时可跳转 Link。App 不收集身份证件或 SSN。</li>
 </ul>
-<p>各页数据仅属于当前选中的 Link 账户。流水保留在内存，退出登录或会话失效时清除，不写入错误日志。开发验证仅使用模拟接口，没有授予真实权限、读取真实流水或修改真实钱包。</p></article></main>
+<p>各页数据仅属于当前选中的 Link 账户。流水保留在内存，退出登录或会话失效时清除，不写入错误日志。开发验证仅使用模拟接口，没有授予真实权限、读取真实流水或修改真实钱包。</p>
+<h2 id="_10">周期付款请求</h2>
+<p>在「创建」中填写付款方式、商家、金额与商品，再选择「付款周期」：默认单次，也可以选择天、周、月、年，并设置每 N 个周期（例如每 1 月、每 2 周）。用途自动加入周期说明，确认弹窗和请求列表也会显示周期。金额仍按所选币种的最小单位填写；创建前请核对金额、商家和周期，并在 Link 批准页面检查最终条款。</p>
+<p>创建后打开批准链接，在 Link 完成批准。是否支持当前账户/客户端及周期规则，以 Link 返回为准；失败会显示在错误栏。可在请求列表查看状态并对可取消请求执行取消。App 不会自行定时创建请求或发起扣款；商家订阅需要在商家处单独管理，取消 Link 请求不会替你取消商家订阅。</p>
+<p>开发验证使用模拟接口覆盖四种周期、单次请求及非法间隔，没有创建真实周期付款。</p></article></main>
 <footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>独立开源项目 · 非 Link / Stripe 官方产品</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
 </body></html>

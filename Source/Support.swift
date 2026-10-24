@@ -52,3 +52,24 @@ func sameLinkAccount(id:String,email:String,otherID:String,otherEmail:String)->B
     let other=otherEmail.trimmingCharacters(in:.whitespacesAndNewlines).lowercased()
     return !email.isEmpty && email==other
 }
+
+
+struct RecurringSchedule {
+    let interval:String
+    let count:Int
+    init?(interval:String,count:Int) {
+        guard ["day","week","month","year"].contains(interval),count>0 else {return nil}
+        self.interval=interval;self.count=count
+    }
+    var body:[String:Any] {["interval":interval,"interval_count":count]}
+    var context:String {"This is a recurring payment request, every \(count) \(interval)(s)."}
+    func label(_ language:AppLanguage)->String {
+        if language == .english {return "Every \(count) \(interval)"+(count==1 ? "" : "s")}
+        return "每 \(count) \(["day":"天","week":"周","month":"月","year":"年"][interval] ?? interval)"
+    }
+    static func from(_ raw:[String:Any])->RecurringSchedule? {
+        guard let recurring=raw["recurring"] as? [String:Any] else {return nil}
+        let count=recurring["interval_count"] as? Int ?? 1
+        return RecurringSchedule(interval:str(recurring,"interval"),count:count)
+    }
+}

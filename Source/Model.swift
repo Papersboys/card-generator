@@ -324,12 +324,16 @@ struct RequestItem: Identifiable {
     static func purchaseContext(merchant:String,url:String,amount:String,currency:String,item:String)->String {
         "Purchase of 1 unit of \(item) from \(merchant) at \(url). The requested checkout total is \(amount) minor units in \(currency.uppercased()), funded by the selected payment method saved in Link. The user will review and approve this spend request in Link before payment credentials are issued."
     }
-    func create(payment:String,merchant:String,url:String,amount:String,currency:String,item:String,context:String) {
+    func create(payment:String,merchant:String,url:String,amount:String,currency:String,item:String,context:String,recurringInterval:String="",recurringCount:Int=1) {
         guard !busy else {return}
         creationError=nil
         perform(onFailure:{self.creationError=$0.localizedDescription}) {
         guard let cents = Int(amount), cents > 0, context.count >= 100, let u = URL(string:url), ["http","https"].contains(u.scheme ?? ""), !merchant.isEmpty, !payment.isEmpty, !item.contains(",") else { throw LinkError(message:"检查付款方式、商家 URL、正整数金额和至少 100 字符的用途；商品名不能包含逗号。") }
-        let body:[String:Any] = ["idempotency_key":UUID().uuidString,"payment_details":payment,"credential_type":"card","merchant_name":merchant,"merchant_url":url,"amount":cents,"currency":currency,"context":context,"line_items":[["name":item,"unit_amount":cents,"quantity":1]],"totals":[["type":"total","display_text":"Total","amount":cents]],"request_approval":true]
+        var body:[String:Any] = ["idempotency_key":UUID().uuidString,"payment_details":payment,"credential_type":"card","merchant_name":merchant,"merchant_url":url,"amount":cents,"currency":currency,"context":context,"line_items":[["name":item,"unit_amount":cents,"quantity":1]],"totals":[["type":"total","display_text":"Total","amount":cents]],"request_approval":true]
+        if !recurringInterval.isEmpty {
+            guard let schedule=RecurringSchedule(interval:recurringInterval,count:recurringCount) else {throw LinkError(message:"周期必须为天、周、月或年，间隔必须为正整数。")}
+            body["recurring"]=schedule.body
+        }
         let result = try await self.api.create(body)
         guard let request = objects(result).first(where:{str($0,"id").hasPrefix("lsrq_")}) else { throw LinkError(message:"未返回 spend request ID") }
         let id = str(request,"id")

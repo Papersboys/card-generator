@@ -38,6 +38,7 @@
 </li>
 <li><a href="#refreshed-interface-v290">Refreshed interface (v2.9.0)</a></li>
 <li><a href="#wallet-tools-v2100">Wallet tools (v2.10.0)</a></li>
+<li><a href="#recurring-payment-requests">Recurring payment requests</a></li>
 </ul>
 </div>
 </aside><article id="article" class="guide-article"><p>Link Card is a macOS menu-bar app for creating Link spend requests, retrieving approved virtual card details, and canceling requests. It does not place merchant orders or submit merchant checkout forms for you.</p>
@@ -330,6 +331,10 @@
 <li><strong>Cards:</strong> load wallet payment methods; Edit opens nickname/default controls. A second confirmation saves both fields to Link. Empty nickname clears it; choosing a new default replaces the previous wallet default. Failures preserve the last confirmed local values.</li>
 <li><strong>Verification:</strong> the account area shows the returned requirement or pending/completed status and a trusted Link action URL when provided. Complete verification on Link; this app does not collect identity documents or SSNs.</li>
 </ul>
-<p>All views remain isolated to the selected Link account. Transaction data stays in memory and is cleared on logout/session invalidation; it is not included in local error logs. Implementations follow the official stripe/link-cli SDK resources. Offline tests cover APIs and state transitions; no live permission grants, financial reads, or wallet updates were performed during development verification.</p></article></main>
+<p>All views remain isolated to the selected Link account. Transaction data stays in memory and is cleared on logout/session invalidation; it is not included in local error logs. Implementations follow the official stripe/link-cli SDK resources. Offline tests cover APIs and state transitions; no live permission grants, financial reads, or wallet updates were performed during development verification.</p>
+<h2 id="recurring-payment-requests">Recurring payment requests</h2>
+<p>In Create, enter the payment method, merchant, amount and item, then choose Payment frequency. One-time is the default; day, week, month and year support an interval count (for example every 1 month or every 2 weeks). The generated context, confirmation and request list show the schedule. Enter amounts in the selected currency's minor units; check the amount, merchant, schedule and final terms on Link's approval page.</p>
+<p>Open the approval link after creation and approve in Link. Account/client support and recurrence rules are determined by Link; failures appear in the error banner. Review status and cancel eligible requests in the request list. The app does not schedule requests or initiate charges itself. Manage merchant subscriptions separately: canceling a Link request does not cancel a merchant subscription.</p>
+<p>Developer validation uses mocked APIs for all four intervals, one-time requests and invalid counts. No real recurring payment was created.</p></article></main>
 <footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>Independent open-source project · Not affiliated with Link or Stripe</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
 </body></html>

@@ -15,7 +15,10 @@ struct ContentView: View {
 @State var amount = ""
 @State var currency = "usd"
 @State var item = ""
-    var context:String { Model.purchaseContext(merchant:merchant,url:url,amount:amount,currency:currency,item:item) }
+    @State var recurringInterval=""
+    @State var recurringCount=1
+    var schedule:RecurringSchedule? {RecurringSchedule(interval:recurringInterval,count:recurringCount)}
+    var context:String { Model.purchaseContext(merchant:merchant,url:url,amount:amount,currency:currency,item:item)+(schedule.map{" "+$0.context} ?? "") }
     @State var confirmCreate = false
     @State var toCancel:RequestItem?
     @State var copiedField:String?
@@ -125,7 +128,7 @@ struct ContentView: View {
                     }.frame(maxWidth:.infinity).padding(.vertical,28).panelSurface()
                 } else {
                 List(selection:$selected) { ForEach(visibleRequests) { r in
-                    HStack { VStack(alignment:.leading) { Text(r.merchant.isEmpty ? t("Unknown merchant") : r.merchant).font(.headline); Text(r.id).font(.system(.caption,design:.monospaced)).lineLimit(1).truncationMode(.middle); Text("\(str(r.raw,"amount")) \(str(r.raw,"currency").uppercased()) \(t("最小单位"))").font(.caption) }; Spacer(); Text(L10n.status(r.status,language:model.language)).font(.caption.weight(.medium)).padding(.horizontal,9).padding(.vertical,5).foregroundStyle(r.status == "approved" ? Color.linkTeal : Color.secondary).background((r.status == "approved" ? Color.linkTeal : Color.secondary).opacity(0.1),in:Capsule()); Button(t("取消请求"),role:.destructive) {toCancel=r}.buttonStyle(.borderless).disabled(model.busy || !r.canCancel) }.tag(r.id)
+                    HStack { VStack(alignment:.leading) { Text(r.merchant.isEmpty ? t("Unknown merchant") : r.merchant).font(.headline); if let schedule=RecurringSchedule.from(r.raw) {Label(schedule.label(model.language),systemImage:"repeat").font(.caption).foregroundStyle(Color.linkTeal)}; Text(r.id).font(.system(.caption,design:.monospaced)).lineLimit(1).truncationMode(.middle); Text("\(str(r.raw,"amount")) \(str(r.raw,"currency").uppercased()) \(t("最小单位"))").font(.caption) }; Spacer(); Text(L10n.status(r.status,language:model.language)).font(.caption.weight(.medium)).padding(.horizontal,9).padding(.vertical,5).foregroundStyle(r.status == "approved" ? Color.linkTeal : Color.secondary).background((r.status == "approved" ? Color.linkTeal : Color.secondary).opacity(0.1),in:Capsule()); Button(t("取消请求"),role:.destructive) {toCancel=r}.buttonStyle(.borderless).disabled(model.busy || !r.canCancel) }.tag(r.id)
                 } }.frame(height:min(220,CGFloat(visibleRequests.count)*78+16)).scrollContentBackground(.hidden).panelSurface()
                 }
                 if tab == 2 {
@@ -167,6 +170,15 @@ struct ContentView: View {
                         field("币种",text:$currency)
                     }
                     field("商品（数量 1）",text:$item)
+                    Picker(t("付款周期"),selection:$recurringInterval) {
+                        Text(t("单次付款")).tag("")
+                        Text(t("天")).tag("day");Text(t("周")).tag("week")
+                        Text(t("月")).tag("month");Text(t("年")).tag("year")
+                    }
+                    if let schedule=schedule {
+                        Stepper(value:$recurringCount,in:1...999) {Text(schedule.label(model.language))}
+                        Text(t("周期请求仍需在 Link 批准；App 不会定时发起扣款。商家订阅请在商家处单独管理。")).font(.caption).foregroundStyle(.secondary)
+                    }
                     Divider()
                     VStack(alignment:.leading,spacing:8) {
                         Text(t("用途说明（自动生成）")).font(.subheadline.weight(.medium))
@@ -219,7 +231,7 @@ struct ContentView: View {
         .onChange(of:model.detail.first(where:{$0.0=="Card number"})?.1) {_ in copiedField=nil}
         .onChange(of:tab) { value in if value == 2 {model.load()} }
         .environment(\.locale,model.language.locale)
-        .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context) } } message: { Text(createSummary) }
+        .alert(t("创建付款请求？"),isPresented:$confirmCreate) { Button(t("返回"),role:.cancel){}; Button(t("创建并请求批准")) { model.create(payment:payment,merchant:merchant,url:url,amount:amount,currency:currency,item:item,context:context,recurringInterval:recurringInterval,recurringCount:recurringCount) } } message: { Text(createSummary) }
         .alert(t("取消这个请求？"),isPresented:Binding(get:{toCancel != nil},set:{if !$0 {toCancel=nil}})) { Button(t("返回"),role:.cancel){toCancel=nil}; Button(t("取消请求"),role:.destructive){if let r=toCancel {model.cancel(r)};toCancel=nil} } message:{Text("\(toCancel?.merchant ?? "")\n\(toCancel?.id ?? "")\n\(t("这不会撤销已完成的付款。"))")}
     }
     var visibleRequests:[RequestItem] {tab==2 ? model.requests.filter(\.needsApproval) : model.requests}
@@ -296,7 +308,7 @@ struct ContentView: View {
         }.frame(maxWidth:.infinity,alignment:.leading)
     }
     func t(_ key:String)->String { L10n.text(key,language:model.language) }
-    var createSummary:String { "\(merchant)\n\(url)\n\(t("金额")): \(amount) \(currency.uppercased()) \(t("最小单位"))\n\(t("商品")): \(item)\n\(context)\n\(t("创建后仍需要在 Link 中批准。"))" }
+    var createSummary:String { "\(merchant)\n\(url)\n\(t("金额")): \(amount) \(currency.uppercased()) \(t("最小单位"))\n\(t("商品")): \(item)\n\(schedule?.label(model.language) ?? t("单次付款"))\n\(context)\n\(t("创建后仍需要在 Link 中批准。"))" }
     func display(_ s:String)->String { if s.isEmpty {return "—"}; if let timestamp=Double(s),timestamp>1_000_000_000,timestamp<10_000_000_000 { return Date(timeIntervalSince1970:timestamp).formatted(Date.FormatStyle(date:.abbreviated,time:.standard).locale(model.language.locale)) }; return s }
 }
 @MainActor func installMainMenu(language:AppLanguage) {
