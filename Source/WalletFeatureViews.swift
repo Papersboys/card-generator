@@ -42,9 +42,9 @@ struct PaymentMethodsView:View {
     func t(_ key:String)->String {L10n.text(key,language:model.language)}
     var body:some View {
         VStack(alignment:.leading,spacing:14) {
-            HStack {Label(t("付款卡管理"),systemImage:"wallet.pass").font(.headline);Spacer();Button(t("加载")) {model.loadMethods()}.disabled(model.busy || model.loggingIn)}
+            HStack {Label(t("付款卡管理"),systemImage:"wallet.pass").font(.headline);Spacer();PaymentMethodsReloadButton(model:model)}
             Text(t("修改会同步到 Link 钱包。清空昵称将移除昵称；设为默认会替换原默认付款方式。")).font(.caption).foregroundStyle(.secondary)
-            if model.methods.isEmpty {Text(t("点击加载读取 Link 钱包中的付款方式。")).font(.caption).foregroundStyle(.secondary)}
+            if model.methods.isEmpty {Text(t("暂无付款方式，可点击右上角刷新按钮重试。")).font(.caption).foregroundStyle(.secondary)}
             ForEach(model.methods.indices,id:\.self) {index in
                 let method=model.methods[index]
                 HStack {
@@ -81,5 +81,26 @@ struct MethodEditor:View {
             Button(t("返回"),role:.cancel){}
             Button(t("确认保存")) {model.updateMethod(original.id,nickname:nickname,isDefault:isDefault);dismiss()}
         } message: {Text(t("这会修改 Link 钱包中的昵称和默认付款方式。"))}
+    }
+}
+
+
+struct PaymentMethodsReloadButton:View {
+    @ObservedObject var model:Model
+    var label:String {L10n.text("刷新付款方式",language:model.language)}
+    var body:some View {
+        Button {model.loadMethods()} label: {
+            Image(systemName:"arrow.clockwise")
+                .font(.system(size:14,weight:.semibold))
+                .frame(width:28,height:28)
+                .foregroundStyle(Color.linkTeal)
+                .background(Color.linkTeal.opacity(0.09),in:RoundedRectangle(cornerRadius:9))
+                .contentShape(RoundedRectangle(cornerRadius:9))
+        }
+        .buttonStyle(.plain)
+        .help(label)
+        .accessibilityLabel(label)
+        .disabled(model.busy || model.loggingIn || !model.isSignedIn)
+        .opacity(model.busy || model.loggingIn || !model.isSignedIn ? 0.45 : 1)
     }
 }

@@ -151,7 +151,7 @@ struct ContentView: View {
                     HStack {
                         Label(t("付款方式"),systemImage:"wallet.pass").font(.headline)
                         Spacer()
-                        Button(t("加载")) { model.loadMethods() }
+                        PaymentMethodsReloadButton(model:model)
                     }
                     Picker(t("付款方式"),selection:$payment) {
                         Text(t("选择或填写下方 ID")).tag("")
