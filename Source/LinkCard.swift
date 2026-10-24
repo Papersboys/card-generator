@@ -413,6 +413,7 @@ final class MenuBarProgressIndicator:NSProgressIndicator {
         else {openPopover()}
     }
     func installAccountPanel() {
+        model.openLoginPage={NSWorkspace.shared.open($0)}
         if panels[accounts.activeID]==nil {panels[accounts.activeID]=NSHostingController(rootView:ContentView(model:model).environmentObject(accounts))}
         popover.contentViewController=panels[accounts.activeID]
         languageObserver=model.$language.sink {[weak self] language in self?.updateMenu(language)}

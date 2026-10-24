@@ -83,6 +83,7 @@ struct RequestItem: Identifiable {
         }
         message=error.localizedDescription
     }
+    var openLoginPage:((URL)->Bool)?
     @Published var loginURL:URL?
     @Published var loginPhrase=""
     @Published var loggingIn=false
@@ -98,7 +99,9 @@ struct RequestItem: Identifiable {
             do {
                 let flow=try await api.beginLogin(upgradeFor:expected)
                 self.loginURL=flow.url;self.loginPhrase=flow.phrase
-                self.message="打开登录链接，在 Link 中输入授权短语。"
+                // Open only after an explicitly requested login returns a validated official URL.
+                let opened=self.openLoginPage?(flow.url) ?? false
+                self.message=opened ? "已打开浏览器，请在 Link 中完成登录授权；如需短语，请使用下方授权短语。" : "无法自动打开浏览器，请点击下方登录链接完成授权。"
                 var interval=flow.interval
                 while Date()<flow.expires {
                     try await Task.sleep(nanoseconds:UInt64(interval*1_000_000_000))

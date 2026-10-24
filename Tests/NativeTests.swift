@@ -266,13 +266,21 @@ final class MockProtocol:URLProtocol {
         let hasRevokedSession=await revokedAPI.hasSession()
         precondition(!hasRevokedSession)
         MockProtocol.revokeRefresh=false
-        revokedModel.login();await revokedModel.loginTask?.value
+        revokedModel.openLoginPage={_ in false}
+        revokedModel.login()
+        while revokedModel.loginURL==nil {try await Task.sleep(nanoseconds:10_000_000)}
+        precondition(revokedModel.message=="无法自动打开浏览器，请点击下方登录链接完成授权。" && revokedModel.loginURL != nil)
+        await revokedModel.loginTask?.value
         while revokedModel.busy {try await Task.sleep(nanoseconds:10_000_000)}
         precondition(revokedModel.isSignedIn && revokedModel.account?.email=="example@example.com" && revokedModel.lastError.isEmpty)
         print("PASS: revoked refresh token restores login and fresh authorization recovers the session")
         // Successful device authorization loads the verified profile immediately.
+        var openedLoginPages:[URL]=[]
+        model.openLoginPage={url in openedLoginPages.append(url);return true}
         model.login()
         await model.loginTask?.value
+        precondition(openedLoginPages.count==1 && openedLoginPages[0].absoluteString=="https://app.link.com/login")
+        print("PASS: explicit login automatically opens its validated authorization page exactly once")
         while model.busy { try await Task.sleep(nanoseconds:10_000_000) }
         precondition(model.isSignedIn && model.account?.email=="example@example.com" && !model.loggingIn)
         func idle(_ model:Model) async throws {while model.busy {try await Task.sleep(nanoseconds:10_000_000)}}

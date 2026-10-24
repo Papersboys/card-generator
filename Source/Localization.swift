@@ -8,6 +8,8 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "已打开浏览器，请在 Link 中完成登录授权；如需短语，请使用下方授权短语。":"Browser opened. Complete sign-in approval in Link; use the authorization phrase below if prompted.",
+        "无法自动打开浏览器，请点击下方登录链接完成授权。":"Could not open the browser automatically. Use the sign-in link below to authorize.",
         "正在检查登录并加载账户…":"Checking sign-in and loading your account…",
         "正在等待 Link 登录授权…":"Waiting for Link sign-in approval…",
         "正在加载或更新数据…":"Loading or updating data…",
