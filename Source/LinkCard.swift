@@ -231,13 +231,13 @@ struct ContentView: View {
         .onChange(of:model.detail.first(where:{$0.0=="Card number"})?.1) {_ in copiedField=nil}
         .onChange(of:tab) { value in if value == 2 {model.load()} }
         .task(id:"\(tab)-\(model.isSignedIn)") {
-            guard tab==1,model.isSignedIn else {return}
-            // A request refresh may still be finishing when the user opens Create.
+            guard [1,4].contains(tab),model.isSignedIn else {return}
+            // A request refresh may still be finishing when the user opens Create or Cards.
             // Wait for that operation instead of silently dropping the automatic load.
             do {
                 while model.busy {try await Task.sleep(nanoseconds:100_000_000)}
                 try Task.checkCancellation()
-                guard tab==1,model.isSignedIn else {return}
+                guard [1,4].contains(tab),model.isSignedIn else {return}
                 model.loadMethods()
             } catch is CancellationError {} catch {}
         }
