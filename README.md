@@ -180,3 +180,9 @@ Automatic updates use [Sparkle](https://sparkle-project.org/); its license is pr
 Errors are recorded locally at `~/Library/Logs/LinkCard/error-log.jsonl` (up to 200 entries / 256 KiB, owner-only access). Records contain time, app/macOS versions, HTTP status, and a fixed error category; raw errors, account details, card data and credentials are excluded. Click **Send error logs** in the error banner to open the macOS share menu and choose a destination. Nothing is uploaded automatically or sent directly to S3.
 
 The signed-in account area shows **Spend limits** returned by Link: per-purchase limit, daily and rolling 30-day limits, usage and remaining amounts. Click Refresh limits to reload. Missing fields show Not provided; explicit null limits show Unlimited. No account limits are estimated or combined.
+
+## Multiple Link accounts
+
+Use the Account picker above the account header to switch accounts. **Add account** starts a new Link authorization without logging out the others. On the Link authorization page, choose or sign in to the intended account; Safari may already be signed in to another account.
+
+Each account has its own Keychain token entry, API session, requests and spend limits. Log out affects only the selected account. Existing login is retained as the first account. Saved logins survive app restarts, subject to Link expiry or revocation. Form drafts are preserved per account during the current app session; displayed card credentials clear on switching. Pending approval checks already started can continue for other accounts while the app runs. Switching is disabled during an active operation or login; use Stop waiting to cancel login first. The CLI remains a separate single-account tool. Account limits are displayed independently and are not pooled or increased.

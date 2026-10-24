@@ -207,3 +207,9 @@ If `refresh_token is not active: status: revoked` appears, the saved refresh cre
 ### Missing approval link or phone notification
 
 Update to v2.7.4 or later. Refresh the Approve tab, select the request, and click Get approval link. Requests in created, pending_approval, or requires_action are included. Open the returned Link approval URL, approve in Link, then refresh card details. If recovery fails, inspect the error banner before creating a duplicate request.
+
+## Multiple Link accounts
+
+Use the Account picker above the account header to switch accounts. **Add account** starts a new Link authorization without logging out the others. On the Link authorization page, choose or sign in to the intended account; Safari may already be signed in to another account.
+
+Each account has its own Keychain token entry, API session, requests and spend limits. Log out affects only the selected account. Existing login is retained as the first account. Saved logins survive app restarts, subject to Link expiry or revocation. Form drafts are preserved per account during the current app session; displayed card credentials clear on switching. Pending approval checks already started can continue for other accounts while the app runs. Switching is disabled during an active operation or login; use Stop waiting to cancel login first. The CLI remains a separate single-account tool. Account limits are displayed independently and are not pooled or increased.

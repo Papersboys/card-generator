@@ -23,6 +23,7 @@ enum L10n {
         "消费限额":"Spend limits", "刷新额度":"Refresh limits", "上限":"Limit", "已用":"Used", "剩余":"Remaining", "单笔":"Per purchase", "每日":"Daily", "滚动30天":"Rolling 30 days", "未返回":"Not provided", "无限额":"Unlimited",
         "正在加载额度…":"Loading limits…", "Link 暂未返回消费限额，请尝试刷新。":"Link has not returned spend limits. Try refreshing.",
         "以 Link 当前返回的美元等值额度为准；此处不会推算或叠加账户额度。":"USD-equivalent limits returned by Link. Account limits are not estimated or combined.",
+        "账户":"Account", "添加账户":"Add account", "请登录此 Link 账户。":"Please log in to this Link account.",
         "操作失败":"Action failed", "复制错误":"Copy error", "关闭错误提示":"Dismiss error",
         "无法创建付款请求":"Unable to create spend request",
         "无法确认新请求状态，请稍后刷新。":"Unable to confirm the new request status. Refresh again shortly.",

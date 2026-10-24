@@ -17,25 +17,25 @@ struct DeviceLogin {
 }
 enum TokenStore {
     static let service="local.yuanxili.linkcard.oauth"
-    static var query:[String:Any] { [kSecClass as String:kSecClassGenericPassword,kSecAttrService as String:service,kSecAttrAccount as String:"link"] }
-    static func load() throws -> LinkTokens? {
-        var q=query; q[kSecReturnData as String]=true; q[kSecMatchLimit as String]=kSecMatchLimitOne
+    static func query(_ account:String)->[String:Any] { [kSecClass as String:kSecClassGenericPassword,kSecAttrService as String:service,kSecAttrAccount as String:account] }
+    static func load(account:String="link") throws -> LinkTokens? {
+        var q=query(account); q[kSecReturnData as String]=true; q[kSecMatchLimit as String]=kSecMatchLimitOne
         var result:CFTypeRef?
         let status=SecItemCopyMatching(q as CFDictionary,&result)
         if status==errSecItemNotFound { return nil }
         guard status==errSecSuccess,let data=result as? Data else { throw LinkError(message:"无法读取 Keychain 登录凭证（\(status)）") }
         return try JSONDecoder().decode(LinkTokens.self,from:data)
     }
-    static func delete() throws {
-        let status=SecItemDelete(query as CFDictionary)
+    static func delete(account:String="link") throws {
+        let status=SecItemDelete(query(account) as CFDictionary)
         guard status==errSecSuccess || status==errSecItemNotFound else {throw LinkError(message:"无法清除 Keychain 登录凭证（\(status)）")}
     }
-    static func save(_ tokens:LinkTokens) throws {
+    static func save(_ tokens:LinkTokens,account:String="link") throws {
         let data=try JSONEncoder().encode(tokens)
         let attrs=[kSecValueData as String:data]
-        var status=SecItemUpdate(query as CFDictionary,attrs as CFDictionary)
+        var status=SecItemUpdate(query(account) as CFDictionary,attrs as CFDictionary)
         if status==errSecItemNotFound {
-            var q=query; q[kSecValueData as String]=data; q[kSecAttrAccessible as String]=kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            var q=query(account); q[kSecValueData as String]=data; q[kSecAttrAccessible as String]=kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
             status=SecItemAdd(q as CFDictionary,nil)
         }
         guard status==errSecSuccess else { throw LinkError(message:"无法保存 Keychain 登录凭证（\(status)）") }
@@ -53,9 +53,12 @@ actor NativeLink {
     private var sessionGeneration=0
     private static let signedOutKey="linkCardExplicitlySignedOut"
     private let persistTokens:Bool
+    private let storageAccount:String
+    private var signedOutPreference:String {storageAccount=="link" ? Self.signedOutKey : Self.signedOutKey+"."+storageAccount}
     private var refreshTask:Task<LinkTokens,Error>?
     private let clientID="lwlpk_U7Qy7ThG69STZk" // Public device-flow client from Stripe's MIT-licensed Link CLI.
-    init(session:URLSession?=nil,testTokens:LinkTokens?=nil,persistTokens:Bool=true) {
+    init(session:URLSession?=nil,testTokens:LinkTokens?=nil,persistTokens:Bool=true,storageAccount:String="link") {
+        self.storageAccount=storageAccount
         self.persistTokens=persistTokens
         if let session=session { self.session=session }
         else {
@@ -66,9 +69,10 @@ actor NativeLink {
         self.tokens=testTokens
     }
     private func readTokens() throws -> LinkTokens {
-        guard !sessionRevoked && !(persistTokens && UserDefaults.standard.bool(forKey:Self.signedOutKey)) else {throw LinkError(message:"Link 登录授权已失效，请重新登录。",requiresLogin:true)}
+        guard !sessionRevoked && !(persistTokens && UserDefaults.standard.bool(forKey:signedOutPreference)) else {throw LinkError(message:"Link 登录授权已失效，请重新登录。",requiresLogin:true)}
         if let tokens=tokens { return tokens }
-        if let saved=try TokenStore.load() { tokens=saved; ownsSession=true; return saved }
+        if let saved=try TokenStore.load(account:storageAccount) { tokens=saved; ownsSession=true; return saved }
+        guard storageAccount=="link" else {throw LinkError(message:"请登录此 Link 账户。",requiresLogin:true)}
         // Read-only compatibility: never rotate or write the CLI's shared refresh token.
         let file=FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Preferences/link-cli-nodejs/config.json")
         if let data=try? Data(contentsOf:file),let obj=try? JSONSerialization.jsonObject(with:data) as? [String:Any],let auth=obj["auth"] as? [String:Any],let access=auth["access_token"] as? String {
@@ -100,7 +104,7 @@ actor NativeLink {
             throw error
         }
         guard generation==sessionGeneration && !sessionRevoked else {throw CancellationError()}
-        if ownsSession && persistTokens { try TokenStore.save(renewed) }
+        if ownsSession && persistTokens { try TokenStore.save(renewed,account:storageAccount) }
         tokens=renewed; return renewed.access_token
     }
     private func decodeTokens(_ data:[String:Any],previousRefresh:String?=nil) throws -> LinkTokens {
@@ -143,7 +147,7 @@ actor NativeLink {
         guard (200..<300).contains(status) else { throw error(status,data) }
         guard generation==sessionGeneration else {throw CancellationError()}
         let saved=try decodeTokens(data)
-        if persistTokens {try TokenStore.save(saved);UserDefaults.standard.set(false,forKey:Self.signedOutKey)}
+        if persistTokens {try TokenStore.save(saved,account:storageAccount);UserDefaults.standard.set(false,forKey:signedOutPreference)}
         tokens=saved;ownsSession=true;sessionRevoked=false;return true
     }
     func request(_ path:String,method:String="GET",body:[String:Any]?=nil,retry:Bool=true) async throws -> Any {
@@ -163,9 +167,9 @@ actor NativeLink {
     }
     func logout() throws {
         if persistTokens {
-            try TokenStore.delete()
+            try TokenStore.delete(account:storageAccount)
             // Do not silently re-import the CLI login after an explicit app logout.
-            UserDefaults.standard.set(true,forKey:Self.signedOutKey)
+            UserDefaults.standard.set(true,forKey:signedOutPreference)
         }
         sessionGeneration += 1
         refreshTask?.cancel();refreshTask=nil

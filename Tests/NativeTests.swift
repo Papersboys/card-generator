@@ -1,4 +1,5 @@
 import Foundation
+import Security
 
 final class MockProtocol:URLProtocol {
     static var calls:[URLRequest]=[]
@@ -94,6 +95,19 @@ final class MockProtocol:URLProtocol {
         print("PASS: generated purchase context, pending approval filtering, and trusted approval links")
         let config=URLSessionConfiguration.ephemeral;config.protocolClasses=[MockProtocol.self]
         let api=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_OLD",refresh_token:"MOCK_REFRESH",expires_at:Date().timeIntervalSince1970*1000+600000),persistTokens:false)
+        let accountA=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_ACCOUNT_A",refresh_token:nil,expires_at:Date().timeIntervalSince1970*1000+600000),persistTokens:false,storageAccount:"test-A")
+        let accountB=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_ACCOUNT_B",refresh_token:nil,expires_at:Date().timeIntervalSince1970*1000+600000),persistTokens:false,storageAccount:"test-B")
+        _ = try await accountA.methods()
+        precondition(MockProtocol.calls.last!.value(forHTTPHeaderField:"Authorization")=="Bearer MOCK_ACCOUNT_A")
+        _ = try await accountB.methods()
+        precondition(MockProtocol.calls.last!.value(forHTTPHeaderField:"Authorization")=="Bearer MOCK_ACCOUNT_B")
+        try await accountA.logout()
+        let stillSignedIn=await accountB.hasSession();precondition(stillSignedIn)
+        _ = try await accountB.methods()
+        precondition(MockProtocol.calls.last!.value(forHTTPHeaderField:"Authorization")=="Bearer MOCK_ACCOUNT_B")
+        precondition((TokenStore.query("A")[kSecAttrAccount as String] as? String)=="A")
+        precondition((TokenStore.query("B")[kSecAttrAccount as String] as? String)=="B")
+        print("PASS: simultaneous account sessions use isolated tokens and Keychain keys; logout leaves the other session intact")
         let list=try await api.list(history:true)
         precondition(objects(list).contains{str($0,"id")=="lsrq_mock"})
         precondition(MockProtocol.calls.last!.url!.query=="include_history=true")

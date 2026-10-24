@@ -5,6 +5,7 @@ import Sparkle
 
 struct ContentView: View {
     @ObservedObject var model:Model
+    @EnvironmentObject var accounts:AccountManager
     @ObservedObject var updates=UpdateManager.shared
     @State var tab = 0
     @State var selected:String?
@@ -41,6 +42,14 @@ struct ContentView: View {
         }
         ScrollView { VStack(alignment:.leading,spacing:20) {
             HStack(spacing:12) { Image(systemName:"creditcard.fill").foregroundStyle(.cyan); Text("Link Card").font(.title2.bold()); Spacer(); Picker("Language / 语言",selection:$model.language) { Text("中文").tag(AppLanguage.chinese); Text("English").tag(AppLanguage.english) }.pickerStyle(.segmented).labelsHidden().frame(width:145) }
+            HStack {
+                Picker(t("账户"),selection:Binding(get:{accounts.activeID},set:{accounts.select($0)})) {
+                    ForEach(Array(accounts.records.enumerated()),id:\.element.id) {index,record in
+                        Text(record.label.isEmpty ? t("账户")+" "+String(index+1) : record.label).tag(record.id)
+                    }
+                }.disabled(!accounts.canSwitch)
+                Button(t("添加账户")) {accounts.add()}.disabled(!accounts.canSwitch)
+            }
             HStack(spacing:12) { if model.busy { ProgressView().controlSize(.small) }; if model.checkingAccount {
                 ProgressView().controlSize(.small).help(t("正在检查登录…"))
             } else if model.isSignedIn {
@@ -243,7 +252,10 @@ struct ContentView: View {
     NSApp.mainMenu=main
 }
 @MainActor final class AppDelegate:NSObject,NSApplicationDelegate,NSPopoverDelegate {
-    let model:Model
+    let accounts:AccountManager
+    var model:Model {accounts.activeModel}
+    var panels:[String:NSViewController]=[:]
+    var accountRefreshTask:Task<Void,Never>?
     let startServices:Bool
     var status:NSStatusItem!
     let popover=NSPopover()
@@ -252,7 +264,7 @@ struct ContentView: View {
     var outsideClickMonitor:Any?
     var localClickMonitor:Any?
     init(model:Model?=nil,startServices:Bool=true) {
-        self.model=model ?? Model();self.startServices=startServices;super.init()
+        self.accounts=AccountManager(initialModel:model);self.startServices=startServices;super.init()
     }
     func applicationDidFinishLaunching(_ notification:Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -262,11 +274,24 @@ struct ContentView: View {
         status.button?.sendAction(on:[.leftMouseUp,.rightMouseUp])
         popover.behavior = .transient
         popover.delegate=self
-        popover.contentViewController=NSHostingController(rootView:ContentView(model:model))
+        accounts.onSwitch={[weak self] in self?.switchAccount()}
+        installAccountPanel()
         languageObserver=model.$language.sink {[weak self] language in self?.updateMenu(language)}
         model.displayCredentials=false
-        if startServices {model.start();UpdateManager.shared.start()}
+        if startServices {accounts.startActive();UpdateManager.shared.start()}
         else {openPopover()}
+    }
+    func installAccountPanel() {
+        if panels[accounts.activeID]==nil {panels[accounts.activeID]=NSHostingController(rootView:ContentView(model:model).environmentObject(accounts))}
+        popover.contentViewController=panels[accounts.activeID]
+        languageObserver=model.$language.sink {[weak self] language in self?.updateMenu(language)}
+    }
+    func switchAccount() {
+        installAccountPanel()
+        model.displayCredentials=popover.isShown
+        accountRefreshTask?.cancel()
+        let selected=model
+        accountRefreshTask=Task {await selected.refreshAccount();if selected.isSignedIn {selected.load()}}
     }
     func updateMenu(_ language:AppLanguage) {
         installMainMenu(language:language)

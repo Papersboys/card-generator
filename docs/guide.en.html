@@ -32,6 +32,7 @@
 <li><a href="#missing-approval-link-or-phone-notification">Missing approval link or phone notification</a></li>
 </ul>
 </li>
+<li><a href="#multiple-link-accounts">Multiple Link accounts</a></li>
 </ul>
 </div>
 </aside><article id="article" class="guide-article"><p>Link Card is a macOS menu-bar app for creating Link spend requests, retrieving approved virtual card details, and canceling requests. It does not place merchant orders or submit merchant checkout forms for you.</p>
@@ -308,6 +309,9 @@
 </ul>
 <p>If <code>refresh_token is not active: status: revoked</code> appears, the saved refresh credential is no longer valid. From v2.5.7 onward, Log in to Link becomes available again; use it to authorize a fresh session. Do not share tokens.</p>
 <h3 id="missing-approval-link-or-phone-notification">Missing approval link or phone notification</h3>
-<p>Update to v2.7.4 or later. Refresh the Approve tab, select the request, and click Get approval link. Requests in created, pending_approval, or requires_action are included. Open the returned Link approval URL, approve in Link, then refresh card details. If recovery fails, inspect the error banner before creating a duplicate request.</p></article></main>
+<p>Update to v2.7.4 or later. Refresh the Approve tab, select the request, and click Get approval link. Requests in created, pending_approval, or requires_action are included. Open the returned Link approval URL, approve in Link, then refresh card details. If recovery fails, inspect the error banner before creating a duplicate request.</p>
+<h2 id="multiple-link-accounts">Multiple Link accounts</h2>
+<p>Use the Account picker above the account header to switch accounts. <strong>Add account</strong> starts a new Link authorization without logging out the others. On the Link authorization page, choose or sign in to the intended account; Safari may already be signed in to another account.</p>
+<p>Each account has its own Keychain token entry, API session, requests and spend limits. Log out affects only the selected account. Existing login is retained as the first account. Saved logins survive app restarts, subject to Link expiry or revocation. Form drafts are preserved per account during the current app session; displayed card credentials clear on switching. Pending approval checks already started can continue for other accounts while the app runs. Switching is disabled during an active operation or login; use Stop waiting to cancel login first. The CLI remains a separate single-account tool. Account limits are displayed independently and are not pooled or increased.</p></article></main>
 <footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>Independent open-source project · Not affiliated with Link or Stripe</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
 </body></html>
