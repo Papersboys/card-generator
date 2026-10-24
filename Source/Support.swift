@@ -14,7 +14,7 @@ func find(_ value: Any, _ keys: [String]) -> String {
     for d in objects(value) { for key in keys { let s = str(d,key); if !s.isEmpty { return s } } }
     return ""
 }
-struct LinkError: LocalizedError { let message: String; var requiresLogin=false; var errorDescription: String? { message } }
+struct LinkError: LocalizedError { let message: String; var requiresLogin=false; var httpStatus:Int?=nil; var errorDescription: String? { message } }
 
 struct SignedInAccount {
     let name:String

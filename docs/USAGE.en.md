@@ -213,3 +213,7 @@ Update to v2.7.4 or later. Refresh the Approve tab, select the request, and clic
 Use the Account picker above the account header to switch accounts. **Add account** starts a new Link authorization without logging out the others. On the Link authorization page, choose or sign in to the intended account; Safari may already be signed in to another account.
 
 Each account has its own Keychain token entry, API session, requests and spend limits. Log out affects only the selected account. Existing login is retained as the first account. Saved logins survive app restarts, subject to Link expiry or revocation. Form drafts are preserved per account during the current app session; displayed card credentials clear on switching. Pending approval checks already started can continue for other accounts while the app runs. Switching is disabled during an active operation or login; use Stop waiting to cancel login first. The CLI remains a separate single-account tool. Account limits are displayed independently and are not pooled or increased.
+
+### Canceling a terminal request
+
+A terminal-state HTTP 409 triggers a status refresh, disables repeat cancellation and clears displayed credentials for that request. Inactive requests are removed from the active list; enable history to inspect their status. A failed status refresh is reported explicitly, never as successful cancellation.

@@ -120,7 +120,7 @@ actor NativeLink {
         let revokedRefresh=(status==400 || status==401) && lower.contains("refresh_token") && (lower.contains("not active") || lower.contains("revoked"))
         let needsLogin=status==401 || ["invalid_grant","invalid_token","expired_token"].contains(code) || revokedRefresh
         let guidance=revokedRefresh ? "\nLink 登录授权已失效，请重新登录。" : ""
-        return LinkError(message:"Link HTTP \(status): \(message)"+guidance,requiresLogin:needsLogin)
+        return LinkError(message:"Link HTTP \(status): \(message)"+guidance,requiresLogin:needsLogin,httpStatus:status)
     }
     private func form(_ path:String,_ fields:[String:String]) async throws -> (Int,[String:Any]) {
         var request=URLRequest(url:URL(string:"https://login.link.com"+path)!)

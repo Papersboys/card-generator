@@ -9,9 +9,9 @@
 	<key>CFBundleName</key>
 	<string>Link Card</string>
 	<key>CFBundleVersion</key>
-	<string>27</string>
+	<string>28</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.8.0</string>
+	<string>2.8.1</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>

@@ -11,6 +11,9 @@ final class MockProtocol:URLProtocol {
     static var pollCount=0
     static var profileUnavailable=false
     static var rejectCancel=false
+    static var terminalCancel=false
+    static var conflictCancel=false
+    static var failTerminalRefresh=false
     static var lastCreateBody:[String:Any]=[:]
     override class func canInit(with request:URLRequest)->Bool {true}
     override class func canonicalRequest(for request:URLRequest)->URLRequest {request}
@@ -45,10 +48,15 @@ final class MockProtocol:URLProtocol {
                     if Self.rejectCreate {status=400;payload=["error":["message":"Mock creation rejected"]]}
                     else {payload=["id":"lsrq_mock","status":Self.requestStatus,"approval_url":"https://app.link.com/activity/approve/lsrq_mock"]}}
                 else {payload=["data":Self.emptyList ? [] : [["id":"lsrq_mock","status":"approved"]]]}
-            case "/spend_requests/lsrq_mock":payload=["id":"lsrq_mock","status":Self.requestStatus,"card":["number":"MOCK_NUMBER","cvc":"MOCK_CVC","exp_month":12,"exp_year":2030]]
+            case "/spend_requests/lsrq_mock":
+                if Self.failTerminalRefresh {status=503;payload=["message":"Mock refresh failed"];break}
+                payload=["id":"lsrq_mock","status":Self.requestStatus,"card":["number":"MOCK_NUMBER","cvc":"MOCK_CVC","exp_month":12,"exp_year":2030]]
             case "/spend_requests/lsrq_mock/request_approval":
                 precondition(request.httpMethod=="POST");Self.requestStatus="pending_approval";payload=["id":"lsrq_mock","approval_link":"https://app.link.com/activity/approve/lsrq_mock"]
-            case "/spend_requests/lsrq_mock/cancel":payload=["id":"lsrq_mock","status":Self.rejectCancel ? "approved" : "canceled"]
+            case "/spend_requests/lsrq_mock/cancel":
+                if Self.terminalCancel {status=409;Self.requestStatus="expired";payload=["message":"Spend request is in a terminal state and cannot be canceled"];break}
+                if Self.conflictCancel {status=409;payload=["message":"Unrelated conflict"];break}
+                payload=["id":"lsrq_mock","status":Self.rejectCancel ? "approved" : "canceled"]
             default:status=404;payload=["message":"Not found"]
             }
         }
@@ -206,6 +214,31 @@ final class MockProtocol:URLProtocol {
         fresh.cancel(fresh.requests[0]);try await idle(fresh)
         precondition(fresh.requests.isEmpty && fresh.detail.isEmpty)
         precondition(!RequestItem(raw:["status":"expired"]).canCancel)
+        precondition(!RequestItem(raw:["status":"approved","expires_at":1]).canCancel)
+        let terminal=Model(api:api);terminal.history=true
+        terminal.requests=[RequestItem(raw:["id":"lsrq_mock","status":"approved"])]
+        terminal.detail=[("Spend request ID","lsrq_mock"),("Card number","MOCK")]
+        MockProtocol.terminalCancel=true
+        terminal.cancel(terminal.requests[0]);try await idle(terminal)
+        precondition(terminal.requests[0].status=="expired" && !terminal.requests[0].canCancel)
+        precondition(terminal.detail.isEmpty && terminal.lastError.isEmpty && terminal.message.contains("已结束"))
+        let cancelCount=MockProtocol.calls.filter{$0.url?.path.hasSuffix("/cancel")==true}.count
+        terminal.cancel(terminal.requests[0]);try await idle(terminal)
+        precondition(MockProtocol.calls.filter{$0.url?.path.hasSuffix("/cancel")==true}.count==cancelCount)
+        let noHistory=Model(api:api);noHistory.requests=[RequestItem(raw:["id":"lsrq_mock","status":"approved"])]
+        noHistory.cancel(noHistory.requests[0]);try await idle(noHistory)
+        precondition(noHistory.requests.isEmpty)
+        let failedRefresh=Model(api:api);failedRefresh.requests=[RequestItem(raw:["id":"lsrq_mock","status":"approved"])]
+        MockProtocol.failTerminalRefresh=true
+        failedRefresh.cancel(failedRefresh.requests[0]);try await idle(failedRefresh)
+        precondition(!failedRefresh.requests[0].canCancel && failedRefresh.lastError.contains("刷新状态失败"))
+        MockProtocol.failTerminalRefresh=false;MockProtocol.terminalCancel=false;MockProtocol.requestStatus="approved"
+        let unrelated=Model(api:api);unrelated.requests=[RequestItem(raw:["id":"lsrq_mock","status":"approved"])]
+        MockProtocol.conflictCancel=true
+        unrelated.cancel(unrelated.requests[0]);try await idle(unrelated)
+        precondition(unrelated.lastError.contains("Unrelated conflict") && unrelated.requests[0].canCancel)
+        MockProtocol.conflictCancel=false
+        print("PASS: terminal 409 refreshes status, disables repeat cancel, clears credentials; refresh failures and unrelated conflicts stay explicit")
         let rejected=Model(api:api)
         MockProtocol.rejectCreate=true
         rejected.create(payment:"csmrpd_mock",merchant:"Mock",url:"https://example.com",amount:"1500",currency:"usd",item:"Mock item",context:context)

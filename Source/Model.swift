@@ -17,7 +17,7 @@ struct RequestItem: Identifiable {
         guard needsApproval, let url=URL(string:str(raw,"approval_url","approval_link")), url.scheme == "https", url.host == "app.link.com" else {return nil}
         return url
     }
-    var canCancel:Bool { ["created","pending_approval","approved"].contains(status) }
+    var canCancel:Bool { isActive && raw["_cancel_unavailable"] as? Bool != true && ["created","pending_approval","approved"].contains(status) }
 }
 @MainActor final class Model: ObservableObject {
     let api:NativeLink
@@ -118,6 +118,7 @@ struct RequestItem: Identifiable {
     @Published var lastCreatedID:String?
     @Published var creationError:String?
     private var canceledIDs=Set<String>()
+    private var terminalCancelIDs=Set<String>()
     private var createdIDs=Set<String>()
     var approvalWatch: Task<Void,Never>?
     func watchApproval(_ id:String) {
@@ -174,7 +175,10 @@ struct RequestItem: Identifiable {
             let item=RequestItem(raw:merged)
             if self.history || item.isActive {loaded.insert(item,at:0)}
         }
-        self.requests=loaded
+        self.requests=loaded.map {item in
+            guard self.terminalCancelIDs.contains(item.id) else {return item}
+            var raw=item.raw;raw["_cancel_unavailable"]=true;return RequestItem(raw:raw)
+        }
 
         if self.requests.isEmpty { self.message = self.history ? "没有历史请求。" : "没有活跃请求；可打开包含历史，或创建新请求。" }
     } }
@@ -185,8 +189,30 @@ struct RequestItem: Identifiable {
         if self.methods.isEmpty { self.message = "没有找到付款方式；可手动填写付款方式 ID。" }
     } }
     func cancel(_ item:RequestItem) { perform {
-        guard item.canCancel else {throw LinkError(message:"当前状态无法取消该请求。")}
-        let result=try await self.api.cancel(item.id)
+        guard (self.requests.first(where:{$0.id==item.id}) ?? item).canCancel,!self.terminalCancelIDs.contains(item.id) else {throw LinkError(message:"当前状态无法取消该请求。")}
+        let result:Any
+        do {result=try await self.api.cancel(item.id)}
+        catch {
+            guard let linkError=error as? LinkError,linkError.httpStatus==409,linkError.message.lowercased().contains("terminal state") else {throw error}
+            self.terminalCancelIDs.insert(item.id)
+            if let index=self.requests.firstIndex(where:{$0.id==item.id}) {
+                var raw=self.requests[index].raw;raw["_cancel_unavailable"]=true;self.requests[index]=RequestItem(raw:raw)
+            }
+            if self.pendingID==item.id {self.approvalWatch?.cancel();self.pendingID="";self.approvalURL=""}
+            if self.detail.contains(where:{$0.0=="Spend request ID" && $0.1==item.id}) {self.detail=[]}
+            do {
+                let response=try await self.api.retrieve(item.id)
+                guard let fresh=objects(response).first(where:{str($0,"id")==item.id}) else {throw LinkError(message:"请求状态响应无效。")}
+                self.requests=self.requests.compactMap {existing in
+                    guard existing.id==item.id else {return existing}
+                    var raw=existing.raw;for (key,value) in fresh {raw[key]=value};raw["_cancel_unavailable"]=true
+                    let updated=RequestItem(raw:raw)
+                    return self.history || updated.isActive ? updated : nil
+                }
+                self.lastError="";self.message="此请求已结束，无法再次取消。已刷新服务端状态。"
+            } catch {throw LinkError(message:"此请求已结束，无法取消；刷新状态失败，请稍后刷新列表。")}
+            return
+        }
         guard let updated=objects(result).first(where:{str($0,"id")==item.id}), ["canceled","cancelled"].contains(str(updated,"status")) else {throw LinkError(message:"Link 尚未确认取消，请刷新列表检查状态。")}
         self.canceledIDs.insert(item.id)
         if self.pendingID == item.id { self.approvalWatch?.cancel(); self.pendingID=""; self.approvalURL="" }
