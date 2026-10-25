@@ -8,6 +8,16 @@ enum L10n {
     static let preferenceKey="appLanguage"
     static var selected:AppLanguage { AppLanguage(rawValue:UserDefaults.standard.string(forKey:preferenceKey) ?? "zh") ?? .chinese }
     static let english:[String:String] = [
+        "本地 MCP 操作失败，请在 App 查看错误。":"Local MCP operation failed. Review the error in the App.",
+        "本地 MCP":"Local MCP",
+        "允许本机 AI 工具创建、查询和取消请求；不提供卡号或 CVC。每次启动默认关闭。":"Allow local AI tools to create, inspect and cancel requests, without PAN/CVC access. Off at every launch.",
+        "AI 接入指南":"AI integration guide",
+        "本地 MCP 已关闭。":"Local MCP disabled.",
+        "本地 MCP 已开启，仅允许当前 macOS 用户访问。":"Local MCP enabled for processes running as the current macOS user only.",
+        "本地 MCP 启动失败，请检查是否有其他 Link Card 实例正在运行。":"Could not start Local MCP. Check for another running Link Card instance.",
+        "AI 正在使用本地 MCP。":"AI is using Local MCP.",
+        "本地 MCP 操作已完成。":"Local MCP operation completed.",
+
         "填写金额超过当前额度":"Entered amount exceeds the current allowance",
         "当前额度为零":"Current allowance is zero",
         "剩余额度不足 20%":"Less than 20% remaining",

@@ -6,10 +6,12 @@ if [[ $# -ne 1 || ! -f "$1" ]]; then
   exit 1
 fi
 notes=$1
+python3 scripts/build-agent-assets.py
 ./test.sh
 ./package.sh
 ./scripts/package-cli.sh
+bash scripts/package-mcp.sh
 ./scripts/generate-appcast.sh
 version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' dist/LinkCard.app/Contents/Info.plist)
-gh release create "v$version" dist/LinkCard-macos-arm64.zip dist/SHA256SUMS.txt dist/appcast.xml dist/link-card-cli.tar.gz dist/link-card-cli-SHA256SUMS.txt \
+gh release create "v$version" dist/LinkCard-macos-arm64.zip dist/SHA256SUMS.txt dist/appcast.xml dist/link-card-cli.tar.gz dist/link-card-cli-SHA256SUMS.txt dist/link-card-agent-macos-arm64.zip dist/link-card-agent-SHA256SUMS.txt \
   --title "Link Card v$version" --notes-file "$notes" --latest --verify-tag

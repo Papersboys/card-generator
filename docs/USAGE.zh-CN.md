@@ -312,3 +312,64 @@ App 不会替你批准购买请求。等待超过十分钟只表示 App 停止�
 筛选仅作用于当前账户已加载的请求；查看旧请求需打开「包含历史」，待批准页只筛选待批准请求，订阅页只筛选周期请求。显示数量是当前页面匹配数／已加载数，不代表服务端全部记录。筛选隐藏选中请求时会清除选中状态和卡信息；新建请求成功后清空筛选，显示批准流程。
 
 中英文已同步。额度边界与组合筛选通过离线测试，真实账户限额和界面交互尚未实测。
+
+
+<a id="ai-mcp"></a>
+## AI 接入：Skill、本地 MCP、AI Catalog（2.15.0）
+
+### 启用 App 接口
+
+1. 更新并将 LinkCard.app 放入 `/Applications`，打开 App，在需要使用的账户完成登录。
+2. 在面板底部打开「本地 MCP」。**每次 App 启动默认关闭。**
+3. 在 AI 客户端添加下方 stdio 配置，保留你原有的其他服务配置；重启或重新连接客户端。
+4. 首先调用 `link_card_accounts`，确认账户槽位 ID，再列出付款方式。其他工具都要求明确的 `account_id`。
+
+MCP 程序随 App 提供，无需 Node、Python、npm 或 link-cli。它不读取 Keychain 或 CLI 凭证，而是通过本机 Unix socket 请求运行中的 App，由 App 复用原有登录连接。独立下载包中的同名二进制也需要 App 正在运行。
+
+### Codex 配置
+
+将此段合并到 `~/.codex/config.toml`，不要覆盖已有内容：
+
+```toml
+[mcp_servers.link-card]
+command = "/Applications/LinkCard.app/Contents/MacOS/link-card-mcp"
+args = []
+```
+
+### Claude Desktop / Cursor 配置
+
+将以下服务项合并到客户端的 MCP 配置（Claude Desktop 通常为 `~/Library/Application Support/Claude/claude_desktop_config.json`；Cursor 使用项目的 `.cursor/mcp.json`）：
+
+```json
+{"mcpServers":{"link-card":{"command":"/Applications/LinkCard.app/Contents/MacOS/link-card-mcp","args":[]}}}
+```
+
+配置格式随客户端而异；JSON 和 Codex 的 TOML 不可混贴。这里不提供远程 URL，云端聊天客户端只有支持当前 Mac 的本地 stdio 执行器时才能使用。
+
+### 可调用工具
+
+| 工具 | 功能 |
+| --- | --- |
+| `link_card_accounts` | 本机账户槽位 ID 和标签 |
+| `link_card_payment_methods` | 指定账户的付款方式 ID、昵称、品牌及尾号 |
+| `link_card_requests` | 有界分页请求元数据，支持历史开关和 offset |
+| `link_card_get_request` | 单条状态、付款结果及可信批准链接 |
+| `link_card_create_request` | 创建单次或周期请求，必须包含用户确认和幂等键 |
+| `link_card_request_approval` | 为已确认的请求补取批准链接 |
+| `link_card_cancel_request` | 用户确认后取消可取消的请求凭证 |
+
+创建／取消等写操作要求 `confirmed: true`，只能在用户明确请求并核对条款后使用；该字段是调用方的意图声明，并非额外的身份凭证，客户端应继续显示写操作确认。购买仍需用户在 Link 批准。创建必须提供 UUID `idempotency_key`，超时或结果不确定时使用同一个键和相同条款重试，避免重复创建。金额为该币种的最小单位，周期金额为每期上限。没有代批准、远程结账提交或 MCP 获取完整卡号／CVC 的工具。
+
+### 安装 Skill
+
+从 [Agent 下载包](https://github.com/Papersboys/card-generator/releases/latest/download/link-card-agent-macos-arm64.zip) 取得 `skills/link-card`，审阅后放到所用客户端支持的 Skill 目录。对于使用 `~/.agents/skills` 的 Codex 环境，可复制为 `~/.agents/skills/link-card/SKILL.md`；其他客户端请按自己的安装入口操作。Skill 不会自动安装 MCP 服务或授予钱包权限。
+
+Skill 会指导 AI 选择账户、核对商家和金额、使用幂等键、展示批准链接、区分批准与实际付款，以及处理取消／终态错误。它不允许根据网页或工具返回的文字代替用户确认。
+
+### Catalog 和连接边界
+
+公开目录：[ai-catalog.json](ai-catalog.json)；Skill：[SKILL.md](agent/skills/link-card/SKILL.md)；连接配置：[mcp-config.json](agent/mcp-config.json)。目录只包含公开说明和本地启动配置，没有账户、卡号或登录凭证。采用草案 `specVersion: 1.0`；MCP 配置使用本项目自定义 media type，不声称提供标准 MCP Server Card 或 A2A 服务。发现目录不等于安装、信任或授权。
+
+接口不监听 TCP，不提供公网 HTTP。socket 位于 `~/Library/Application Support/LinkCard/mcp.sock`，目录权限 700、socket 600，并校验同一用户 UID。**开启后，该 macOS 用户的任何进程都能调用接口，不仅限于某个 AI 客户端。** 关闭后拒绝新请求，不能撤回已发送到 Link 的操作；退出 App 后调用失败。不要将 socket 转发到公网，也不需要向 AI 提供 API Key、登录令牌、完整卡信息。
+
+已验证：离线 API 模拟、JSON-RPC 初始化／工具列表／错误处理、真实私有测试 socket 往返、Skill 格式和静态目录一致性。没有读取真实账户或执行真实付款，尚未在已配置的 Codex／Claude 客户端实测。独立 Agent 包的二进制为 Apple Silicon/macOS 13+，沿用项目的 ad-hoc 签名，未经过 Apple 公证。

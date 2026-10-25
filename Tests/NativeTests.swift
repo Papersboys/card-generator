@@ -206,6 +206,68 @@ final class MockProtocol:URLProtocol {
         print("PASS: generated purchase context, pending approval filtering, and trusted approval links")
         let config=URLSessionConfiguration.ephemeral;config.protocolClasses=[MockProtocol.self]
         let api=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_OLD",refresh_token:"MOCK_REFRESH",expires_at:Date().timeIntervalSince1970*1000+600000),persistTokens:false)
+        let bridgeModel=Model(api:api);bridgeModel.isSignedIn=true;bridgeModel.checkingAccount=false
+        let bridgeAccounts=AccountManager(initialModel:bridgeModel)
+        let bridge=MCPBridge();bridge.configure(bridgeAccounts)
+        let callsBeforeInvalid=MockProtocol.calls.count
+        let invalidCreate=await bridge.handle(["name":"link_card_create_request","arguments":["account_id":"link","confirmed":false]])
+        precondition(invalidCreate["isError"] as? Bool==true && MockProtocol.calls.count==callsBeforeInvalid)
+        let invalidAccount=await bridge.handle(["name":"link_card_get_request","arguments":["account_id":UUID().uuidString,"request_id":"lsrq_mock"]])
+        precondition(invalidAccount["isError"] as? Bool==true && MockProtocol.calls.count==callsBeforeInvalid)
+        bridgeModel.awaitingAccountAdmission=true
+        let notAdmitted=await bridge.handle(["name":"link_card_requests","arguments":["account_id":"link"]])
+        precondition(notAdmitted["isError"] as? Bool==true && MockProtocol.calls.count==callsBeforeInvalid)
+        bridgeModel.awaitingAccountAdmission=false
+        let mcpRead=await bridge.handle(["name":"link_card_get_request","arguments":["account_id":"link","request_id":"lsrq_mock"]])
+        precondition(mcpRead["isError"] as? Bool==false && !MockProtocol.calls.last!.url!.absoluteString.contains("include=card"))
+        let serializedMCP=String(data:try JSONSerialization.data(withJSONObject:mcpRead),encoding:.utf8)!
+        precondition(!serializedMCP.contains("MOCK_NUMBER") && !serializedMCP.contains("MOCK_CVC"))
+        let redacted=MCPBridge.metadata(["id":"lsrq_mock","status":"pending_approval","card":["number":"SECRET_PAN","cvc":"SECRET_CVC"],"access_token":"SECRET_TOKEN","_next":["command":"evil"],"approval_url":"https://evil.example/approve","payment_history":[["outcome":"success","secret":"SECRET_HISTORY"]]])
+        let safeText=String(data:try JSONSerialization.data(withJSONObject:redacted),encoding:.utf8)!
+        precondition(!safeText.contains("SECRET") && redacted["approval_url"]==nil && redacted["_next"]==nil)
+        let createArgs:[String:Any]=["account_id":"link","confirmed":true,"payment_method_id":"csmrpd_mock","merchant_name":"Mock merchant","merchant_url":"https://example.com","item":"Mock item","amount":1500,"currency":"usd","idempotency_key":UUID().uuidString,"interval":"month"]
+        let mcpCreated=await bridge.handle(["name":"link_card_create_request","arguments":createArgs])
+        precondition(mcpCreated["isError"] as? Bool==false && MockProtocol.lastCreateBody["request_approval"] as? Bool==true)
+        precondition(MockProtocol.lastCreateBody["approve"]==nil && MockProtocol.lastCreateBody["expires_at"]==nil)
+        precondition(MockProtocol.lastCreateBody["idempotency_key"] as? String==createArgs["idempotency_key"] as? String)
+        precondition(bridgeModel.requests.first?.id=="lsrq_mock")
+        bridgeModel.approvalWatch?.cancel()
+        var deniedCreate=createArgs;deniedCreate["confirmed"]=false
+        let beforeDenied=MockProtocol.calls.count
+        let deniedMCP=await bridge.handle(["name":"link_card_create_request","arguments":deniedCreate])
+        precondition(deniedMCP["isError"] as? Bool==true && MockProtocol.calls.count==beforeDenied)
+        MockProtocol.requestStatus="created"
+        let approvalReply=await bridge.handle(["name":"link_card_request_approval","arguments":["account_id":"link","request_id":"lsrq_mock","confirmed":true]])
+        precondition(approvalReply["isError"] as? Bool==false && bridgeModel.pendingID=="lsrq_mock")
+        precondition((approvalReply["structuredContent"] as? [String:Any])?["approval_url"] as? String=="https://app.link.com/activity/approve/lsrq_mock")
+        bridgeModel.approvalWatch?.cancel();MockProtocol.requestStatus="approved"
+        bridgeModel.detail=[("Spend request ID","lsrq_mock"),("Card number","MOCK")]
+        let canceledMCP=await bridge.handle(["name":"link_card_cancel_request","arguments":["account_id":"link","request_id":"lsrq_mock","confirmed":true]])
+        precondition(canceledMCP["isError"] as? Bool==false && bridgeModel.detail.isEmpty && !bridgeModel.requests.contains{$0.id=="lsrq_mock"})
+        MockProtocol.terminalCancel=true;MockProtocol.requestStatus="approved"
+        let terminalMCP=await bridge.handle(["name":"link_card_cancel_request","arguments":["account_id":"link","request_id":"lsrq_mock","confirmed":true]])
+        precondition(terminalMCP["isError"] as? Bool==true)
+        let terminalData=terminalMCP["structuredContent"] as! [String:Any]
+        precondition((terminalData["request"] as? [String:Any])?["status"] as? String=="expired")
+        MockProtocol.terminalCancel=false;MockProtocol.requestStatus="approved"
+        var badAmount=createArgs;badAmount["amount"]=true
+        do {try MCPTools.validate(name:"link_card_create_request",args:badAmount);fatalError("Boolean amount accepted")} catch {}
+        var extraArg=createArgs;extraArg["approve"]=true
+        do {try MCPTools.validate(name:"link_card_create_request",args:extraArg);fatalError("Delegated approval accepted")} catch {}
+        let socketDir=URL(fileURLWithPath:"/tmp/lcmcp-"+String(UUID().uuidString.prefix(8)),isDirectory:true)
+        let socketPath=socketDir.appendingPathComponent("mcp.sock").path
+        let listener=try LocalMCPListener(path:socketPath) {_,complete in complete(MCPTools.result(["mock":true]))}
+        let socketReply=try MCPWire.call(["mock_request":true],path:socketPath)
+        precondition((socketReply["structuredContent"] as? [String:Any])?["mock"] as? Bool==true)
+        let socketAttributes=try FileManager.default.attributesOfItem(atPath:socketPath)
+        precondition((socketAttributes[.posixPermissions] as? NSNumber)?.intValue==0o600)
+        listener.stop();try? FileManager.default.removeItem(at:socketDir)
+        let unsafeDir=URL(fileURLWithPath:"/tmp/lcmcp-"+String(UUID().uuidString.prefix(8)),isDirectory:true)
+        try FileManager.default.createDirectory(at:unsafeDir,withIntermediateDirectories:true)
+        let regular=unsafeDir.appendingPathComponent("mcp.sock");try Data("keep".utf8).write(to:regular)
+        do {_ = try LocalMCPListener(path:regular.path) {_,done in done([:])};fatalError("Replaced non-socket file")} catch {}
+        let unchanged=try String(contentsOf:regular);precondition(unchanged=="keep");try FileManager.default.removeItem(at:unsafeDir)
+        print("PASS: MCP schema/admission/account gates, safe metadata, no PAN fetch, confirmed idempotent create, and private same-user socket transport")
         let accountA=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_ACCOUNT_A",refresh_token:nil,expires_at:Date().timeIntervalSince1970*1000+600000),persistTokens:false,storageAccount:"test-A")
         let accountB=NativeLink(session:URLSession(configuration:config),testTokens:LinkTokens(access_token:"MOCK_ACCOUNT_B",refresh_token:nil,expires_at:Date().timeIntervalSince1970*1000+600000),persistTokens:false,storageAccount:"test-B")
         _ = try await accountA.methods()

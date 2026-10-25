@@ -22,7 +22,9 @@ for size in 16 32 128 256 512; do
   sips -z "$double" "$double" Assets/AppIcon.png --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
 done
 iconutil -c icns "$iconset" -o "$bundle/Contents/Resources/AppIcon.icns"
-xcrun swiftc -parse-as-library -sdk "$(xcrun --show-sdk-path)" -target arm64-apple-macosx13.0 -swift-version 5 -module-cache-path "${TMPDIR:-/tmp}/linkcard-swift-cache" -o "$bundle/Contents/MacOS/LinkCard" Source/BrowserAutofill.swift Source/Notifications.swift Source/ProductFeatures.swift Source/WalletFeatureViews.swift Source/Design.swift Source/Accounts.swift Source/WalletFeatures.swift Source/ErrorReports.swift Source/Support.swift Source/Model.swift Source/Localization.swift Source/LinkCard.swift Source/NativeLink.swift Source/Updates.swift -F "$sparkle" -framework Sparkle -Xlinker -rpath -Xlinker @executable_path/../Frameworks -framework Security -framework AppKit -framework SwiftUI -framework UserNotifications
+xcrun swiftc -parse-as-library -sdk "$(xcrun --show-sdk-path)" -target arm64-apple-macosx13.0 -swift-version 5 -module-cache-path "${TMPDIR:-/tmp}/linkcard-swift-cache" -o "$bundle/Contents/MacOS/LinkCard" Source/MCPShared.swift Source/MCPBridge.swift Source/BrowserAutofill.swift Source/Notifications.swift Source/ProductFeatures.swift Source/WalletFeatureViews.swift Source/Design.swift Source/Accounts.swift Source/WalletFeatures.swift Source/ErrorReports.swift Source/Support.swift Source/Model.swift Source/Localization.swift Source/LinkCard.swift Source/NativeLink.swift Source/Updates.swift -F "$sparkle" -framework Sparkle -Xlinker -rpath -Xlinker @executable_path/../Frameworks -framework Security -framework AppKit -framework SwiftUI -framework UserNotifications
+xcrun swiftc -parse-as-library -sdk "$(xcrun --show-sdk-path)" -target arm64-apple-macosx13.0 -swift-version 5 -module-cache-path "${TMPDIR:-/tmp}/linkcard-swift-cache" -o "$bundle/Contents/MacOS/link-card-mcp" Source/MCPShared.swift Source/MCPMain.swift
+codesign --force --sign - "$bundle/Contents/MacOS/link-card-mcp"
 xattr -cr "$bundle"
 codesign --force --sign - "$bundle"
 codesign --verify "$bundle"

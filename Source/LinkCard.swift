@@ -8,6 +8,7 @@ struct ContentView: View {
     @EnvironmentObject var accounts:AccountManager
     @ObservedObject var updates=UpdateManager.shared
     @ObservedObject var notifications=NotificationManager.shared
+    @ObservedObject var mcp=MCPBridge.shared
     @State var tab = 0
     @State var requestFilter=RequestFilter()
     @State var selected:String?
@@ -232,6 +233,11 @@ struct ContentView: View {
                 Toggle(isOn:Binding(get:{notifications.enabled},set:{notifications.setEnabled($0)})) {Label(t("状态通知"),systemImage:"bell.badge")}.toggleStyle(.checkbox).disabled(notifications.requesting)
                 Text(t(notifications.message.isEmpty ? "开启后在 App 运行期间检查状态；通知不显示卡号、金额或账户信息。" : notifications.message)).font(.caption2).foregroundStyle(.secondary)
             }
+            VStack(alignment:.leading,spacing:6) {
+                Toggle(isOn:Binding(get:{mcp.enabled},set:{mcp.setEnabled($0)})) {Label(t("本地 MCP"),systemImage:"point.3.connected.trianglepath.dotted")}.toggleStyle(.checkbox)
+                Text(t(mcp.message.isEmpty ? "允许本机 AI 工具创建、查询和取消请求；不提供卡号或 CVC。每次启动默认关闭。" : mcp.message)).font(.caption2).foregroundStyle(.secondary)
+                Link(t("AI 接入指南"),destination:URL(string:model.language == .english ? "https://papersboys.github.io/card-generator/guide.en.html#ai-mcp" : "https://papersboys.github.io/card-generator/guide.html#ai-mcp")!).font(.caption)
+            }
             Text(t("原生直连 Link API，无需 CLI。登录存入 Keychain；卡信息仅保留在内存。关闭面板会清除显示。")).font(.caption2).foregroundStyle(.secondary)
             HStack(spacing:6) {
                 Text("Link Card \(Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "")").foregroundStyle(.secondary)
@@ -437,6 +443,7 @@ final class MenuBarProgressIndicator:NSProgressIndicator {
         languageObserver=model.$language.sink {[weak self] language in self?.updateMenu(language)}
         model.displayCredentials=false
         if startServices {
+            MCPBridge.shared.configure(accounts)
             accounts.onNotification={event,language in NotificationManager.shared.send(event,language:language)}
             notificationObserver=NotificationManager.shared.$enabled.sink {[weak self] enabled in self?.accounts.setNotifications(enabled)}
             NotificationManager.shared.checkPermission()

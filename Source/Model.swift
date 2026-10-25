@@ -343,6 +343,22 @@ struct RequestItem: Identifiable {
             var data=r.raw;for (key,value) in updated {data[key]=value};return RequestItem(raw:data)
         }
     } }
+    func storeMCPRequest(_ raw:[String:Any],created:Bool=false) {
+        let item=RequestItem(raw:raw)
+        guard !item.id.isEmpty else {return}
+        observeEvents([item])
+        if let index=requests.firstIndex(where:{$0.id==item.id}) {
+            var merged=requests[index].raw;for (key,value) in item.raw {merged[key]=value};requests[index]=RequestItem(raw:merged)
+        } else {requests.insert(item,at:0)}
+        if created {createdIDs.insert(item.id)}
+        if !item.isActive,detail.contains(where:{$0.0=="Spend request ID" && $0.1==item.id}) {detail=[]}
+    }
+    func storeMCPCancellation(_ raw:[String:Any]) {
+        let id=str(raw,"id");canceledIDs.insert(id)
+        if pendingID==id {approvalWatch?.cancel();pendingID="";approvalURL=""}
+        if detail.contains(where:{$0.0=="Spend request ID" && $0.1==id}) {detail=[]}
+        if history {storeMCPRequest(raw)} else {requests.removeAll{$0.id==id}}
+    }
     func requestApproval(_ id:String) { perform {
         try await self.prepareApproval(id)
         self.watchApproval(id)

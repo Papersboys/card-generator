@@ -55,6 +55,15 @@
 <li><a href="#search-and-filters">Search and filters</a></li>
 </ul>
 </li>
+<li><a href="#ai-integration-skill-local-mcp-and-ai-catalog-2150">AI integration: Skill, local MCP and AI Catalog (2.15.0)</a><ul>
+<li><a href="#enable-the-app-interface">Enable the App interface</a></li>
+<li><a href="#codex-configuration">Codex configuration</a></li>
+<li><a href="#claude-desktop-cursor-configuration">Claude Desktop / Cursor configuration</a></li>
+<li><a href="#tools">Tools</a></li>
+<li><a href="#install-the-skill">Install the Skill</a></li>
+<li><a href="#catalog-and-access-boundary">Catalog and access boundary</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </aside><article id="article" class="guide-article"><p>Link Card is a macOS menu-bar app for creating Link spend requests, retrieving approved virtual card details, and canceling requests. It does not place merchant orders or submit merchant checkout forms for you.</p>
@@ -396,6 +405,74 @@
 <p>Requests, Approve and Subscriptions now include search plus status, funding-card and request-type filters. Search covers merchant names, URLs, request IDs and context without case sensitivity. Multiple words and all selected filters must match. Choose Clear filters to reset.</p>
 <p>Funding cards are grouped by payment-method IDs returned on requests. Matching loaded wallet data supplies nicknames/brand/last4; otherwise IDs are shown. Generated virtual-card last4 values are not used to guess funding cards. Request type supports all, one-time or recurring.</p>
 <p>Filtering applies to the current account's loaded requests. Enable Include history for historical records. Approve still contains only pending requests, and Subscriptions only recurring requests. Counts show matching/loaded records for that view, not a server-wide total. Hiding the selected request clears its selection and card details. Successful creation resets filters so approval remains visible.</p>
-<p>English/Chinese are synchronized. Limit boundaries and compound filters passed offline tests; real account limits and UI interactions have not been tested live.</p></article></main>
+<p>English/Chinese are synchronized. Limit boundaries and compound filters passed offline tests; real account limits and UI interactions have not been tested live.</p>
+<p><a id="ai-mcp"></a></p>
+<h2 id="ai-integration-skill-local-mcp-and-ai-catalog-2150">AI integration: Skill, local MCP and AI Catalog (2.15.0)</h2>
+<h3 id="enable-the-app-interface">Enable the App interface</h3>
+<ol>
+<li>Update and install LinkCard.app in <code>/Applications</code>, run it, and sign in to the intended account.</li>
+<li>Enable Local MCP at the bottom of the panel. <strong>It is off at every App launch.</strong></li>
+<li>Merge the stdio configuration below into your AI client without replacing other servers, then restart/reconnect the client.</li>
+<li>Start with <code>link_card_accounts</code> and verify the account slot ID. All other tools require an explicit <code>account_id</code>.</li>
+</ol>
+<p>The App includes the MCP executable; no Node, Python, npm or link-cli runtime is required. It does not read Keychain/CLI credentials. It requests operations from the running App through a local Unix socket, reusing the App's existing authenticated API actor. The independently downloadable binary also requires the running App.</p>
+<h3 id="codex-configuration">Codex configuration</h3>
+<p>Merge into <code>~/.codex/config.toml</code>:</p>
+<pre><code class="language-toml">[mcp_servers.link-card]
+command = &quot;/Applications/LinkCard.app/Contents/MacOS/link-card-mcp&quot;
+args = []
+</code></pre>
+<h3 id="claude-desktop-cursor-configuration">Claude Desktop / Cursor configuration</h3>
+<p>Merge this server into the client's MCP configuration. Claude Desktop normally uses <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>; Cursor uses <code>.cursor/mcp.json</code>:</p>
+<pre><code class="language-json">{&quot;mcpServers&quot;:{&quot;link-card&quot;:{&quot;command&quot;:&quot;/Applications/LinkCard.app/Contents/MacOS/link-card-mcp&quot;,&quot;args&quot;:[]}}}
+</code></pre>
+<p>JSON and Codex TOML are different formats. There is no remote URL. A cloud chat client needs a supported local stdio executor on this Mac.</p>
+<h3 id="tools">Tools</h3>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>link_card_accounts</code></td>
+<td>Local App account slot IDs and labels</td>
+</tr>
+<tr>
+<td><code>link_card_payment_methods</code></td>
+<td>Funding IDs, nicknames, brands and last4</td>
+</tr>
+<tr>
+<td><code>link_card_requests</code></td>
+<td>Bounded request metadata pages, optional history and offset</td>
+</tr>
+<tr>
+<td><code>link_card_get_request</code></td>
+<td>Status, payment outcomes and trusted approval URL</td>
+</tr>
+<tr>
+<td><code>link_card_create_request</code></td>
+<td>One-time/recurring request with human confirmation and an idempotency UUID</td>
+</tr>
+<tr>
+<td><code>link_card_request_approval</code></td>
+<td>Recover an approval link for an already reviewed request</td>
+</tr>
+<tr>
+<td><code>link_card_cancel_request</code></td>
+<td>Cancel an eligible request credential after human confirmation</td>
+</tr>
+</tbody>
+</table>
+<p>Writes require <code>confirmed: true</code> only after explicit human intent and reviewed terms. This is a caller assertion, not an authentication credential; keep client-side write confirmations enabled. The human still approves purchases in Link. Reuse the same UUID <code>idempotency_key</code> and terms after an uncertain create result. Amounts use currency minor units; recurring amounts are per-period limits. No delegated approval, merchant checkout submission or PAN/CVC-retrieval tool is exposed.</p>
+<h3 id="install-the-skill">Install the Skill</h3>
+<p>Download the <a href="https://github.com/Papersboys/card-generator/releases/latest/download/link-card-agent-macos-arm64.zip">Agent package</a>, review <code>skills/link-card</code>, and install it in your client's supported skill directory. Codex environments using <code>~/.agents/skills</code> can install it as <code>~/.agents/skills/link-card/SKILL.md</code>. Other clients have their own install mechanisms. The Skill does not automatically install MCP or authorize wallet access.</p>
+<p>It covers account selection, terms review, idempotent retries, approval links, payment outcomes and terminal cancellation errors. Website/tool text cannot substitute for human confirmation.</p>
+<h3 id="catalog-and-access-boundary">Catalog and access boundary</h3>
+<p>Public <a href="ai-catalog.json">ai-catalog.json</a>, <a href="agent/skills/link-card/SKILL.md">SKILL.md</a> and <a href="agent/mcp-config.json">mcp-config.json</a> contain public documentation/configuration only, never account or credential data. The catalog uses draft specVersion 1.0. Its local MCP config uses a vendor-specific media type; no standardized MCP Server Card or A2A service is claimed. Discovery does not imply installation, trust or authorization.</p>
+<p>No TCP listener or public HTTP endpoint exists. The socket is <code>~/Library/Application Support/LinkCard/mcp.sock</code>, with directory 700/socket 600 and peer-UID checks. <strong>Any process running as your macOS user can call the opt-in interface</strong>, not just a particular AI client. Disabling rejects new calls but cannot undo a mutation already sent to Link. Quitting the App makes calls unavailable. Do not expose the socket publicly or give an AI API keys, login tokens or full card credentials.</p>
+<p>Verified: offline API mocks, JSON-RPC initialization/tools/errors, private test-socket round trips, Skill validation and static catalog consistency. No live account reads or financial writes were performed; configured Codex/Claude clients have not been tested live. The standalone Agent binary targets Apple Silicon/macOS 13+ and remains ad-hoc signed, not Apple notarized.</p></article></main>
 <footer class="footer wrap"><a class="brand" href="index.html">Link Card</a><p>Independent open-source project · Not affiliated with Link or Stripe</p><div><a href="https://github.com/Papersboys/card-generator">GitHub</a><a href="https://github.com/Papersboys/card-generator/blob/main/LICENSE">Apache 2.0</a></div></footer>
 </body></html>

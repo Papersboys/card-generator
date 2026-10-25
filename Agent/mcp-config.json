@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "link-card": {
+      "command": "/Applications/LinkCard.app/Contents/MacOS/link-card-mcp",
+      "args": []
+    }
+  }
+}

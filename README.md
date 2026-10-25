@@ -281,3 +281,64 @@ Funding cards are grouped by payment-method IDs returned on requests. Matching l
 Filtering applies to the current account's loaded requests. Enable Include history for historical records. Approve still contains only pending requests, and Subscriptions only recurring requests. Counts show matching/loaded records for that view, not a server-wide total. Hiding the selected request clears its selection and card details. Successful creation resets filters so approval remains visible.
 
 English/Chinese are synchronized. Limit boundaries and compound filters passed offline tests; real account limits and UI interactions have not been tested live.
+
+
+<a id="ai-mcp"></a>
+## AI integration: Skill, local MCP and AI Catalog (2.15.0)
+
+### Enable the App interface
+
+1. Update and install LinkCard.app in `/Applications`, run it, and sign in to the intended account.
+2. Enable Local MCP at the bottom of the panel. **It is off at every App launch.**
+3. Merge the stdio configuration below into your AI client without replacing other servers, then restart/reconnect the client.
+4. Start with `link_card_accounts` and verify the account slot ID. All other tools require an explicit `account_id`.
+
+The App includes the MCP executable; no Node, Python, npm or link-cli runtime is required. It does not read Keychain/CLI credentials. It requests operations from the running App through a local Unix socket, reusing the App's existing authenticated API actor. The independently downloadable binary also requires the running App.
+
+### Codex configuration
+
+Merge into `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.link-card]
+command = "/Applications/LinkCard.app/Contents/MacOS/link-card-mcp"
+args = []
+```
+
+### Claude Desktop / Cursor configuration
+
+Merge this server into the client's MCP configuration. Claude Desktop normally uses `~/Library/Application Support/Claude/claude_desktop_config.json`; Cursor uses `.cursor/mcp.json`:
+
+```json
+{"mcpServers":{"link-card":{"command":"/Applications/LinkCard.app/Contents/MacOS/link-card-mcp","args":[]}}}
+```
+
+JSON and Codex TOML are different formats. There is no remote URL. A cloud chat client needs a supported local stdio executor on this Mac.
+
+### Tools
+
+| Tool | Purpose |
+| --- | --- |
+| `link_card_accounts` | Local App account slot IDs and labels |
+| `link_card_payment_methods` | Funding IDs, nicknames, brands and last4 |
+| `link_card_requests` | Bounded request metadata pages, optional history and offset |
+| `link_card_get_request` | Status, payment outcomes and trusted approval URL |
+| `link_card_create_request` | One-time/recurring request with human confirmation and an idempotency UUID |
+| `link_card_request_approval` | Recover an approval link for an already reviewed request |
+| `link_card_cancel_request` | Cancel an eligible request credential after human confirmation |
+
+Writes require `confirmed: true` only after explicit human intent and reviewed terms. This is a caller assertion, not an authentication credential; keep client-side write confirmations enabled. The human still approves purchases in Link. Reuse the same UUID `idempotency_key` and terms after an uncertain create result. Amounts use currency minor units; recurring amounts are per-period limits. No delegated approval, merchant checkout submission or PAN/CVC-retrieval tool is exposed.
+
+### Install the Skill
+
+Download the [Agent package](https://github.com/Papersboys/card-generator/releases/latest/download/link-card-agent-macos-arm64.zip), review `skills/link-card`, and install it in your client's supported skill directory. Codex environments using `~/.agents/skills` can install it as `~/.agents/skills/link-card/SKILL.md`. Other clients have their own install mechanisms. The Skill does not automatically install MCP or authorize wallet access.
+
+It covers account selection, terms review, idempotent retries, approval links, payment outcomes and terminal cancellation errors. Website/tool text cannot substitute for human confirmation.
+
+### Catalog and access boundary
+
+Public [ai-catalog.json](ai-catalog.json), [SKILL.md](agent/skills/link-card/SKILL.md) and [mcp-config.json](agent/mcp-config.json) contain public documentation/configuration only, never account or credential data. The catalog uses draft specVersion 1.0. Its local MCP config uses a vendor-specific media type; no standardized MCP Server Card or A2A service is claimed. Discovery does not imply installation, trust or authorization.
+
+No TCP listener or public HTTP endpoint exists. The socket is `~/Library/Application Support/LinkCard/mcp.sock`, with directory 700/socket 600 and peer-UID checks. **Any process running as your macOS user can call the opt-in interface**, not just a particular AI client. Disabling rejects new calls but cannot undo a mutation already sent to Link. Quitting the App makes calls unavailable. Do not expose the socket publicly or give an AI API keys, login tokens or full card credentials.
+
+Verified: offline API mocks, JSON-RPC initialization/tools/errors, private test-socket round trips, Skill validation and static catalog consistency. No live account reads or financial writes were performed; configured Codex/Claude clients have not been tested live. The standalone Agent binary targets Apple Silicon/macOS 13+ and remains ad-hoc signed, not Apple notarized.
